@@ -1,0 +1,47 @@
+{
+  "name": "@dalpeng/math",
+  "version": "0.0.1",
+  "description": "A very simple typescript math library for dalpeng engine, including Vector, Matrix and Quaternion",
+  "main": "./dist/math.umd.js",
+  "module": "./dist/math.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/math.es.js",
+      "require": "./dist/math.umd.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "/dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/threedalpeng/CGD-WebGL-Math.git"
+  },
+  "bugs": {
+    "url": "https://github.com/threedalpeng/CGD-WebGL-Math/issues"
+  },
+  "homepage": "https://github.com/threedalpeng/CGD-WebGL-Math#readme",
+  "keywords": [
+    "dalpeng"
+  ],
+  "author": "Kim Jeong-Won <threedalpeng@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^8.3.1",
+    "rollup": ">=2.14.0 <3.0.0",
+    "tslib": "^2.3.1",
+    "typescript": "^4.6.3",
+    "vite": "^2.9.1",
+    "vitest": "^0.12.6"
+  },
+  "dependencies": {
+    "@types/node": "^17.0.23"
+  }
+}

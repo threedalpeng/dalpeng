@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+      body {
+        margin: 0;
+      }
+
+      canvas {
+        outline: none;
+      }
+
+      .floating-under {
+        position: fixed;
+
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+
+        font-size: 12px;
+
+        background-color: #2c3e50cc;
+        border-radius: 1em;
+
+        bottom: 1em;
+        left: 2em;
+      }
+
+      .floating-under > a {
+        padding: 0.5em 1em;
+        color: white;
+      }
+
+      .floating-right {
+        position: fixed;
+
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+
+        font-size: 12px;
+
+        background-color: transparent;
+        border-radius: 1em;
+
+        top: 1em;
+        right: 2em;
+      }
+
+      .floating-right > button {
+        padding: 0.5em 1em;
+        border-radius: 1em;
+        background-color: #2c3e50cc;
+        color: white;
+      }
+
+      #canvas-wrapper {
+        position: relative;
+        padding: none;
+        width: fit-content;
+        height: fit-content;
+      }
+
+      .score {
+        position: absolute;
+        color: white;
+        top: 0px;
+
+        font-size: 50px;
+        font-family: "Press Start 2P", cursive;
+      }
+
+      #player1Score {
+        left: 30%;
+        transform: translateX(-50%);
+      }
+      #player2Score {
+        right: 30%;
+        transform: translateX(+50%);
+      }
+    </style>
+    <title>Vite App</title>
+  </head>
+  <body>
+    <div id="canvas-wrapper">
+      <canvas id="app" width="1280" height="720"></canvas>
+      <h1 class="score" id="player1Score">0</h1>
+      <h1 class="score" id="player2Score">0</h1>
+    </div>
+    <p style="margin-left: 5em">
+      Player1: W / S | Player2: ⬆ / ⬇ | Start Game: Space
+    </p>
+    <div devmode>
+      <div class="floating-under">
+        <a
+          href="https://code.threedalpeng.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          >To Code-Server</a
+        >
+        <a
+          href="https://test.threedalpeng.com/__vitest__"
+          target="_blank"
+          rel="noopener noreferrer"
+          >To Vitest UI</a
+        >
+      </div>
+      <div class="floating-right">
+        <button id="btn-record-start">Start</button>
+        <button id="btn-record-stop">Stop</button>
+        <button id="btn-record-download">Download</button>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
