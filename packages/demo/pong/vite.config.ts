@@ -7,6 +7,7 @@ export default defineConfig({
     },
   },
   build: {
+    outDir: "../../../../webgl-guide/webgl-guide-backend/dist/client/pong",
     target: "esnext",
     rollupOptions: {
       output: {
