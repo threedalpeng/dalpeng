@@ -151,6 +151,7 @@ export default class Application {
     this.gl.clearColor(0, 0, 0, 0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
+    this.broadcastRun("cameraRender");
     this.broadcastRun("render");
     //forEachComponent(MeshRenderer2D, (renderer) => renderer.render());
   }

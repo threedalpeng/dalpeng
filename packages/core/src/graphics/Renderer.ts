@@ -1,6 +1,5 @@
 import Component from "../component/Component";
-import { Mat3 } from "@dalpeng/math";
-import WebGLShader from "./Shader";
+import Shader from "./Shader";
 import { Transform2D } from "../Transform";
 import GameEntity from "../entity/GameEntity";
 
@@ -22,9 +21,8 @@ export class BaseRenderer extends Component {
 
 export class MeshRenderer2D extends BaseRenderer {
   declare context: WebGL2RenderingContext;
-  shader!: WebGLShader;
+  shader!: Shader;
   #modelUniformLocation!: WebGLUniformLocation;
-  #projectionUniformLocation!: WebGLUniformLocation;
   #vao!: WebGLVertexArrayObject;
 
   constructor(gameEntity: GameEntity) {
@@ -41,8 +39,6 @@ export class MeshRenderer2D extends BaseRenderer {
     const colorAttribLocation = this.shader.getAttribLocation("a_color");
     const positionAttribLocation = this.shader.getAttribLocation("a_position");
     this.#modelUniformLocation = this.shader.getUniformLocation("u_model")!;
-    this.#projectionUniformLocation =
-      this.shader.getUniformLocation("u_projection")!;
 
     this.#vao = this.gl.createVertexArray()!;
     this.gl.bindVertexArray(this.#vao);
@@ -90,21 +86,6 @@ export class MeshRenderer2D extends BaseRenderer {
       this.#modelUniformLocation,
       false,
       this.transform.getModelMatrix()
-    );
-    this.gl.uniformMatrix3fv(
-      this.#projectionUniformLocation,
-      false,
-      new Mat3([
-        2 / this.gl.canvas.width,
-        0,
-        0,
-        0,
-        -2 / this.gl.canvas.height,
-        0,
-        -1,
-        1,
-        1,
-      ])
     );
 
     this.gl.bindVertexArray(this.#vao);

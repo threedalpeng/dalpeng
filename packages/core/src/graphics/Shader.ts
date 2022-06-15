@@ -61,4 +61,7 @@ export default class Shader extends Entity {
       (shader) => shader.name === name
     );
   }
+  static forEach(callback: (shader: Shader) => void) {
+    Object.values(this.#shaderList).forEach(callback);
+  }
 }
