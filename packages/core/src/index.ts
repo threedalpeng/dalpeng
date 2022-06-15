@@ -9,6 +9,7 @@ import Script from "./Script";
 import Scene from "./Scene";
 import Input, { MOUSE } from "./Input";
 import MeshBuilder2D from "./utils/mesh";
+import { Camera2D } from "./graphics/Camera";
 
 export {
   Application,
@@ -23,4 +24,5 @@ export {
   Input,
   MeshBuilder2D,
   MOUSE,
+  Camera2D,
 };

@@ -22,5 +22,6 @@ export {
   Time,
   MeshBuilder2D,
   Input,
+  Camera2D,
 } from "@dalpeng/core";
 export default Dalpeng;
