@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+      body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+
+        overflow: hidden;
+
+        background-color: black;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center;
+        border: none;
+        outline: none;
+      }
+
+      #canvas-wrapper {
+        position: relative;
+        padding: 0;
+        max-width: 100vw;
+        max-height: 100vh;
+        width: 100%;
+        height: 100%;
+      }
+
+      .score {
+        position: absolute;
+        color: white;
+        top: 50%;
+
+        font-size: 50px;
+        font-family: "Press Start 2P", cursive;
+      }
+
+      #player1Score {
+        left: 30%;
+        transform: translateX(-50%) translateY(-7em);
+      }
+      #player2Score {
+        right: 30%;
+        transform: translateX(+50%) translateY(-7em);
+      }
+    </style>
+    <title>Vite App</title>
+  </head>
+  <body>
+    <div id="canvas-wrapper">
+      <canvas id="app" width="1280" height="720"></canvas>
+      <div id="ui-wrapper" style="">
+        <h1 class="score" id="player1Score">0</h1>
+        <h1 class="score" id="player2Score">0</h1>
+      </div>
+    </div>
+    <!--p style="margin-left: 5em">
+      Player1: W / S | Player2: ⬆ / ⬇ | Start Game: Space
+    </p-->
+    <div devmode></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

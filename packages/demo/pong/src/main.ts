@@ -77,49 +77,46 @@ pongApp.setup = setup;
 Dalpeng.run();
 pongApp.start();
 
-/*
-const stream = app.captureStream();
+  const stream = app.captureStream();
 
-let recordedChunks: BlobPart[] = [];
-const recorder = new MediaRecorder(stream, {
-  mimeType: "video/webm; codecs=vp9",
-});
-recorder.ondataavailable = (e) => {
-  recordedChunks.push(e.data);
-};
+  let recordedChunks: BlobPart[] = [];
+  const recorder = new MediaRecorder(stream, {
+    mimeType: "video/webm; codecs=vp9",
+  });
+  recorder.ondataavailable = (e) => {
+    recordedChunks.push(e.data);
+  };
 
-const btnStart: HTMLButtonElement =
-  document.querySelector("#btn-record-start")!;
-btnStart.onclick = (e) => {
-  if (recorder.state !== "recording") {
-    recorder.start();
-    recordedChunks = [];
-  }
-};
+  const btnStart: HTMLButtonElement =
+    document.querySelector("#btn-record-start")!;
+  btnStart.onclick = (e) => {
+    if (recorder.state !== "recording") {
+      recorder.start();
+      recordedChunks = [];
+    }
+  };
 
-const btnStop: HTMLButtonElement = document.querySelector("#btn-record-stop")!;
-btnStop.onclick = (e) => {
-  if (recorder.state === "recording") {
-    recorder.stop();
-  }
-};
+  btnStop.onclick = (e) => {
+    if (recorder.state === "recording") {
+      recorder.stop();
+    }
+  };
 
-const btnDownload: HTMLButtonElement = document.querySelector(
-  "#btn-record-download"
-)!;
-btnDownload.onclick = (e) => {
-  if (recorder.state === "inactive") {
-    const blob = new Blob(recordedChunks, { type: "video/webm" });
-    const exportUrl = URL.createObjectURL(blob);
+  const btnDownload: HTMLButtonElement = document.querySelector(
+    "#btn-record-download"
+  )!;
+  btnDownload.onclick = (e) => {
+    if (recorder.state === "inactive") {
+      const blob = new Blob(recordedChunks, { type: "video/webm" });
+      const exportUrl = URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
-    document.body.appendChild(link);
-    link.href = exportUrl;
-    link.download = "captured.webm";
-    link.click();
+      const link = document.createElement("a");
+      document.body.appendChild(link);
+      link.href = exportUrl;
+      link.download = "captured.webm";
+      link.click();
 
-    window.URL.revokeObjectURL(exportUrl);
-    link.remove();
-  }
-};
-*/
+      window.URL.revokeObjectURL(exportUrl);
+      link.remove();
+    }
+  };
