@@ -8,6 +8,10 @@ import { Vec2 } from "@dalpeng/math";
 import PlayerScript from "./PlayerScript";
 import BallScript from "./BallScript";
 
+const FLAG = {
+  RELEASE: true,
+};
+
 const app = document.querySelector<HTMLCanvasElement>("#app")!;
 
 const player1 = Dalpeng.createGameEntity("player1");
@@ -77,6 +81,18 @@ pongApp.setup = setup;
 Dalpeng.run();
 pongApp.start();
 
+if (!FLAG.RELEASE) {
+  const devmodeOverlayTemplate = (
+    await import("./devmode/devmode-overlay.html?raw")
+  ).default;
+  const devmodeOverlayStyle = (
+    await import("./devmode/devmode-overlay.css?raw")
+  ).default;
+
+  const devmodeWrapperEl =
+    document.querySelector<HTMLDivElement>("div[devmode]")!;
+  devmodeWrapperEl.innerHTML = `${devmodeOverlayTemplate}\n\n<style>${devmodeOverlayStyle}</style>`;
+
   const stream = app.captureStream();
 
   let recordedChunks: BlobPart[] = [];
@@ -96,6 +112,8 @@ pongApp.start();
     }
   };
 
+  const btnStop: HTMLButtonElement =
+    document.querySelector("#btn-record-stop")!;
   btnStop.onclick = (e) => {
     if (recorder.state === "recording") {
       recorder.stop();
@@ -120,3 +138,4 @@ pongApp.start();
       link.remove();
     }
   };
+}
