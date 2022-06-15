@@ -3,7 +3,7 @@ import { Vec2 } from "@dalpeng/math";
 
 export default class PlayerScript extends Script {
   transform!: Transform2D;
-  direction = new Vec2([0, -1]);
+  direction = new Vec2([0, 1]);
   upKey!: string;
   downKey!: string;
   speed = 0.5;

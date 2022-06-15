@@ -3,10 +3,12 @@ import Dalpeng, {
   MeshRenderer2D,
   Shader,
   Transform2D,
+  Camera2D,
 } from "dalpeng";
 import { Vec2 } from "@dalpeng/math";
 import PlayerScript from "./PlayerScript";
 import BallScript from "./BallScript";
+import MainCameraScript from "./MainCameraScript";
 
 const FLAG = {
   RELEASE: true,
@@ -17,10 +19,13 @@ const app = document.querySelector<HTMLCanvasElement>("#app")!;
 const player1 = Dalpeng.createGameEntity("player1");
 const player2 = Dalpeng.createGameEntity("player2");
 const ball = Dalpeng.createGameEntity("ball");
+const mainCamera = Dalpeng.createGameEntity("Main Camera");
 const pongScene = Dalpeng.createScene("hi")
   .addEntity(player1)
   .addEntity(player2)
-  .addEntity(ball);
+  .addEntity(ball)
+  .addEntity(mainCamera);
+
 const mainShader = await Shader.create("main");
 const pongApp = Dalpeng.createApp()
   .mount(app)
@@ -74,6 +79,12 @@ async function setup() {
   script.transform = transform;
   script.player1 = player1.getComponent(Transform2D)!;
   script.player2 = player2.getComponent(Transform2D)!;
+
+  // main camera
+  transform = mainCamera.addComponent(Transform2D);
+  transform.position = new Vec2([640, 360]);
+  let camera = mainCamera.addComponent(Camera2D);
+  script = mainCamera.addComponent(MainCameraScript);
 }
 
 pongApp.setup = setup;
