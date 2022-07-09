@@ -9,7 +9,7 @@ import View from "./graphics/View";
 
 export default class Application {
   /* App Self-Managemnet */
-  static instanceList: { [instanceId: number]: Application } = {};
+  static instanceList: IndexedMap<number, Application> = {};
   static #nextId = 0;
   #id = 0;
   get id() {
@@ -24,7 +24,7 @@ export default class Application {
   }
 
   /* Scene Management */
-  #sceneList: { [sceneId: number]: Scene } = {};
+  #sceneList: IndexedMap<number, Scene> = {};
   addScene(scene: Scene) {
     if (scene.app !== undefined) {
       scene.app.removeScene(scene);
@@ -39,7 +39,7 @@ export default class Application {
   }
 
   /* Component Management */
-  activeComponents: { [id: number]: Component } = {};
+  activeComponents: IndexedMap<number, Component> = {};
 
   /* Graphic Context */
   context!: WebGL2RenderingContext;
@@ -73,7 +73,7 @@ export default class Application {
     return this;
   }
 
-  #viewList: { [viewId: number]: View } = {};
+  #viewList: IndexedMap<number, View> = {};
   addView(view: View) {
     if (view.app !== undefined) {
       view.app.removeView(view);
@@ -94,7 +94,7 @@ export default class Application {
   }
 
   /* Game Loop */
-  static #activeInstances: { [instanceId: number]: Application } = {};
+  static #activeInstances: IndexedMap<number, Application> = {};
   state: "new" | "ready" | "running" = "new";
   async start() {
     if (this.state === "new") {
