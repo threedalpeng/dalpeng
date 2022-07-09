@@ -1,6 +1,8 @@
 import { Mat3, Mat4 } from "./Matrix";
 import { Vec3 } from "./Vector";
 
+export type AxisAngle = [axis: Vec3, angle: number];
+
 export class Quaternion extends Float32Array {
   get x() {
     return this[0];
@@ -79,8 +81,8 @@ export class Quaternion extends Float32Array {
     );
   }
 
-  toAxisAngle(): [axis: Vec3, angle: number] {
-    let axis = new Vec3();
+  toAxisAngle(): AxisAngle {
+    let axis = Vec3.one();
     let angle = 2 * Math.acos(this.w);
     const s = Math.sqrt(1 - this.w * this.w);
     if (s < 0.00001) {
