@@ -1,3 +1,4 @@
+import { type Quaternion } from "./Quaternion";
 import { deg2rad } from "./utils";
 import { Vec3, Vec4, type Vec2 } from "./Vector";
 
@@ -556,7 +557,14 @@ export class Mat4 extends Float32Array {
   static translate(v: Float32List) {
     return new Mat4([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, v[0], v[1], v[2], 1]);
   }
-  static rotate(axis: Float32List, angle: number) {
+  static rotate(q: Quaternion) {
+    return q.toMatrix();
+  }
+  static scale(v: Float32List) {
+    return new Mat4([v[0], 0, 0, 0, 0, v[1], 0, 0, 0, 0, 0, v[2], 0, 0, 0, 1]);
+  }
+
+  static fromAxisAngle(axis: Float32List, angle: number) {
     const radian = deg2rad(angle);
     const s = Math.sin(radian);
     const c = Math.cos(radian);
@@ -581,8 +589,5 @@ export class Mat4 extends Float32Array {
       0,
       1,
     ]);
-  }
-  static scale(v: Float32List) {
-    return new Mat4([v[0], 0, 0, 0, 0, v[1], 0, 0, 0, 0, 0, v[2], 0, 0, 0, 1]);
   }
 }
