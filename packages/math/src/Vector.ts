@@ -60,6 +60,25 @@ export class Vec2 extends Float32Array {
     const size = this.size();
     return new Vec2([this[0] / size, this[1] / size]);
   }
+
+  static zero() {
+    return new Vec2([0, 0]);
+  }
+  static one() {
+    return new Vec2([1, 1]);
+  }
+  static up() {
+    return new Vec2([0, 1]);
+  }
+  static down() {
+    return new Vec2([0, -1]);
+  }
+  static left() {
+    return new Vec2([-1, 0]);
+  }
+  static right() {
+    return new Vec2([1, 0]);
+  }
 }
 
 export function vec2(): Vec2;
@@ -163,6 +182,25 @@ export class Vec3 extends Float32Array {
   normalize() {
     const size = this.size();
     return new Vec3([this[0] / size, this[1] / size, this[2] / size]);
+  }
+
+  static zero() {
+    return new Vec3([0, 0, 0]);
+  }
+  static one() {
+    return new Vec3([1, 1, 1]);
+  }
+  static up() {
+    return new Vec3([0, 1, 0]);
+  }
+  static down() {
+    return new Vec3([0, -1, 0]);
+  }
+  static left() {
+    return new Vec3([-1, 0, 0]);
+  }
+  static right() {
+    return new Vec3([1, 0, 0]);
   }
 }
 export function vec3(): Vec3;
@@ -302,6 +340,13 @@ export class Vec4 extends Float32Array {
       this[2] / size,
       this[3] / size,
     ]);
+  }
+
+  static zero() {
+    return new Vec4([0, 0, 0, 0]);
+  }
+  static one() {
+    return new Vec4([1, 1, 1, 1]);
   }
 }
 
