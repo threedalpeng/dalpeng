@@ -1,5 +1,5 @@
 import { deg2rad } from "./utils";
-import { Vec3, Vec4 } from "./Vector";
+import { Vec3, Vec4, type Vec2 } from "./Vector";
 
 export class Mat3 extends Float32Array {
   get _00() {
@@ -173,6 +173,17 @@ export class Mat3 extends Float32Array {
   }
   static scale(v: Float32List) {
     return new Mat3([v[0], 0, 0, 0, v[1], 0, 0, 0, 1]);
+  }
+
+  static view(center: Vec2, angle: number) {
+    const rMat = Mat3.rotate(angle);
+    rMat._20 = -center.x;
+    rMat._21 = -center.y;
+    return rMat;
+  }
+  static perspective(size: number, aspectRatio: number) {
+    const invSize = 1 / size;
+    return new Mat3([invSize / aspectRatio, 0, 0, 0, invSize, 0, 0, 0, 1]);
   }
 }
 
