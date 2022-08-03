@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { Vec2, Vec3, Vec4 } from "../src";
+import { vec2DeepTest, vec3DeepTest, vec4DeepTest } from "./utils";
 
 describe("Vector", () => {
   describe("Vec2", () => {
@@ -7,11 +8,6 @@ describe("Vector", () => {
     const vec2_i2 = new Vec2([3, -4]);
     const vec2_f1 = new Vec2([-1.324, 2.546]);
     const vec2_f2 = new Vec2([4.192, -8.006]);
-
-    function vec2DeepTest(v: Vec2, t: Vec2) {
-      expect(v.x).toBeCloseTo(t.x);
-      expect(v.y).toBeCloseTo(t.y);
-    }
 
     test("add", () => {
       vec2DeepTest(vec2_i1.add(vec2_i2), new Vec2([4, -3]));
@@ -55,12 +51,6 @@ describe("Vector", () => {
     const vec3_i2 = new Vec3([3, -4, 5]);
     const vec3_f1 = new Vec3([-1.324, 2.546, 0.921]);
     const vec3_f2 = new Vec3([4.192, -8.006, 2.301]);
-
-    function vec3DeepTest(v: Vec3, t: Vec3) {
-      expect(v.x).toBeCloseTo(t.x);
-      expect(v.y).toBeCloseTo(t.y);
-      expect(v.z).toBeCloseTo(t.z);
-    }
 
     test("add", () => {
       vec3DeepTest(vec3_i1.add(vec3_i2), new Vec3([4, -3, 6]));
@@ -118,13 +108,6 @@ describe("Vector", () => {
     const vec4_i2 = new Vec4([3, -4, 5, 2]);
     const vec4_f1 = new Vec4([-1.324, 2.546, 0.921, 3.581]);
     const vec4_f2 = new Vec4([4.192, -8.006, 2.301, -4]);
-
-    function vec4DeepTest(v: Vec4, t: Vec4) {
-      expect(v.x).toBeCloseTo(t.x);
-      expect(v.y).toBeCloseTo(t.y);
-      expect(v.z).toBeCloseTo(t.z);
-      expect(v.w).toBeCloseTo(t.w);
-    }
 
     test("add", () => {
       vec4DeepTest(vec4_i1.add(vec4_i2), new Vec4([4, -3, 6, 3]));
