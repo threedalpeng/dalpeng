@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:watch": "./scripts/build-watch.sh",
+    "test:ui": "vitest --ui --api.host 172.105.229.189 --api.port 5050"
   },
   "keywords": [],
   "author": "",
