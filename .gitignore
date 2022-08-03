@@ -128,4 +128,8 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# deprecated or temporary directories
+packages/core_old/
 packages/demo/old/
+packages/renderer/
