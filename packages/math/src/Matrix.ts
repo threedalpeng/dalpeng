@@ -497,4 +497,40 @@ export class Mat4 extends Float32Array {
       0,                        0,                        0,                        1,
     ]);
   }
+
+  static view(eye: Vec3, at: Vec3, up: Vec3) {
+    const n = eye.sub(at).normalize();
+    const u = up.cross(n).normalize();
+    const v = n.cross(u).normalize();
+
+    // prettier-ignore
+    return new Mat4([
+      u.x,          v.x,          n.x,          0, 
+      u.y,          v.y,          n.y,          0, 
+      u.z,          v.z,          n.z,          0, 
+      -u.dot(eye),  -v.dot(eye),  -n.dot(eye),  1
+    ]);
+  }
+
+  static perspective(
+    fovy: number,
+    aspect: number,
+    dnear: number,
+    dfar: number
+  ) {
+    const _11 = 1 / Math.tan(fovy / 2.0);
+    const _00 = _11 / aspect;
+    const _22 = (dnear + dfar) / (dnear - dfar);
+    const _23 = (2 * dnear * dfar) / (dnear - dfar);
+    const _32 = -1;
+    const _33 = 0;
+
+    // prettier-ignore
+    return new Mat4([
+      _00,  0,    0,    0,
+      0,    _11,  0,    0,
+      0,    0,    _22,  _32,
+      0,    0,    _23,  _33
+    ]);
+  }
 }
