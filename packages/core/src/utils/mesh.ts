@@ -4,11 +4,10 @@ interface Mesh {
     normal: Float32Array;
     texcoord: Float32Array;
   };
-  index: Float32Array;
+  index: Uint8Array;
 }
 
 export default class MeshBuilder {
-  static sphere() {}
   static box() {
     const boxMesh: Mesh = {
       // prettier-ignore
@@ -39,7 +38,7 @@ export default class MeshBuilder {
         ]),
       },
       // prettier-ignore
-      index: new Float32Array([
+      index: new Uint8Array([
         0, 1, 2,    0, 2, 3,    // top
         4, 5, 6,    4, 6, 7,    // bottom
         8, 9, 10,   8, 10, 11,  // left
@@ -48,7 +47,11 @@ export default class MeshBuilder {
         20, 21, 22, 20, 22, 23, // back
       ]),
     };
+    return boxMesh;
   }
+
+  static sphere() {}
+
   static cylinder() {}
   static capsule() {}
 }
