@@ -1,14 +1,15 @@
 {
   "name": "@dalpeng/core",
+  "type": "module",
   "version": "0.0.1",
   "description": "A core part of game engine",
-  "main": "./dist/core.umd.js",
-  "module": "./dist/core.es.js",
+  "main": "./dist/core.umd.cjs",
+  "module": "./dist/core.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/core.es.js",
-      "require": "./dist/core.umd.js",
+      "import": "./dist/core.js",
+      "require": "./dist/core.umd.cjs",
       "types": "./dist/index.d.ts"
     }
   },
@@ -32,14 +33,17 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@rollup/plugin-typescript": "^8.3.2",
-    "@types/web": "^0.0.67",
-    "rollup": "^2.75.4",
+    "@rollup/plugin-typescript": "^8.3.4",
+    "@types/node": "*",
+    "@types/web": "*",
+    "@zerollup/ts-transform-paths": "^1.7.18",
+    "rollup": "^2.77.2",
+    "ts-node": "^10.9.1",
     "tslib": "^2.4.0",
-    "typescript": "^4.7.2",
-    "vite": "^2.9.9",
-    "vitest": "^0.13.1",
-    "@webgpu/types": "^0.1.17"
+    "ttypescript": "^1.5.13",
+    "typescript": "^4.7.4",
+    "vite": "^3.0.4",
+    "vitest": "^0.20.3"
   },
   "dependencies": {
     "@dalpeng/math": "link:../math"

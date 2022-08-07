@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "pnpm -C packages/core build && pnpm -C packages/dalpeng build",
     "build:watch": "./scripts/build-watch.sh",
     "test:ui": "vitest --ui --api.host 172.105.229.189 --api.port 5050"
   },
