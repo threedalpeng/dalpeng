@@ -522,15 +522,13 @@ export class Mat4 extends Float32Array {
     const _00 = _11 / aspect;
     const _22 = (dnear + dfar) / (dnear - dfar);
     const _23 = (2 * dnear * dfar) / (dnear - dfar);
-    const _32 = -1;
-    const _33 = 0;
 
     // prettier-ignore
     return new Mat4([
       _00,  0,    0,    0,
       0,    _11,  0,    0,
-      0,    0,    _22,  _32,
-      0,    0,    _23,  _33
+      0,    0,    _22,  -1,
+      0,    0,    _23,  0
     ]);
   }
 }
