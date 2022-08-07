@@ -1,4 +1,4 @@
-(async function attachOverlay() {
+export async function attachOverlay() {
   const devmodeOverlayTemplate = (await import("./devmode-overlay.html?raw"))
     .default;
   const devmodeOverlayStyle = (await import("./devmode-overlay.css?raw"))
@@ -14,4 +14,4 @@
   const testEl = document.querySelector<HTMLAnchorElement>("#test")!;
   testEl.href = import.meta.env.VITE_TEST;
   testEl.innerText = import.meta.env.VITE_TEST_MSG;
-})();
+}
