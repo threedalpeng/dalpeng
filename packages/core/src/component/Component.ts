@@ -5,12 +5,11 @@ import type GameEntity from "../entity/GameEntity.js";
 export type ComponentConstructor<Type extends Component> = new (
   gameEntity: GameEntity
 ) => Type;
-interface ComponentGroup<Type extends Component> {
-  [id: number]: Type[];
-}
-interface ComponentGroups {
-  [type: ComponentConstructor<Component>["name"]]: ComponentGroup<Component>;
-}
+type ComponentGroup<Type extends Component> = Map<number, Type[]>;
+type ComponentGroups = Map<
+  ComponentConstructor<Component>["name"],
+  ComponentGroup<Component>
+>;
 type ComponentEventCallback = (...data: any[]) => void;
 export default class Component extends Entity {
   #gameEntity: GameEntity;
@@ -20,25 +19,34 @@ export default class Component extends Entity {
     this.#gameEntity = gameEntity;
   }
 
-  static componentGroups: ComponentGroups = {};
+  static componentGroups: ComponentGroups = new Map<
+    ComponentConstructor<Component>["name"],
+    ComponentGroup<Component>
+  >();
   static create<Type extends Component>(
     type: ComponentConstructor<Type>,
     gameEntity: GameEntity,
     isActive = true
   ) {
     const component = new type(gameEntity);
-    if (!this.componentGroups.hasOwnProperty(type.name)) {
-      this.componentGroups[type.name] = {};
+    let componentGroup: ComponentGroup<Type> | undefined =
+      this.componentGroups.get(type.name) as ComponentGroup<Type>;
+    if (componentGroup === undefined) {
+      componentGroup = new Map<number, Type[]>();
+      this.componentGroups.set(type.name, componentGroup);
     }
-    if (!this.componentGroups[type.name].hasOwnProperty(gameEntity.id)) {
-      this.componentGroups[type.name][gameEntity.id] = [];
+
+    let components: Type[] | undefined = componentGroup.get(gameEntity.id);
+    if (components === undefined) {
+      components = [];
+      componentGroup.set(gameEntity.id, components);
     }
-    this.componentGroups[type.name][gameEntity.id].push(component);
+    components.push(component);
 
     component.isActive = isActive;
     if (isActive) {
       const activeComponents = component.currentApp.activeComponents;
-      activeComponents[component.id] = component;
+      activeComponents.set(component.id, component);
     }
 
     component.on("run", (key: keyof Type) => {
@@ -61,14 +69,16 @@ export default class Component extends Entity {
     type: ComponentConstructor<Type>,
     gameEntityId?: number
   ): ComponentGroup<Type> | Type[] | null {
-    const typeList = this.componentGroups[type.name] as ComponentGroup<Type>;
-    if (isNil(typeList)) {
+    const componentGroup = this.componentGroups.get(
+      type.name
+    ) as ComponentGroup<Type>;
+    if (isNil(componentGroup)) {
       return null;
     } else {
       if (gameEntityId === undefined) {
-        return typeList;
+        return componentGroup;
       }
-      return typeList[gameEntityId] as Type[];
+      return componentGroup.get(gameEntityId) as Type[];
     }
   }
 
@@ -91,9 +101,9 @@ export default class Component extends Entity {
       this.#isActive = active;
       const activeComponents = this.currentApp.activeComponents;
       if (active) {
-        activeComponents[this.id] = this;
+        activeComponents.set(this.id, this);
       } else {
-        delete activeComponents[this.id];
+        activeComponents.delete(this.id);
       }
     }
   }
