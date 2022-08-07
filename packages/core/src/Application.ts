@@ -9,7 +9,7 @@ import View from "./graphics/View";
 
 export default class Application {
   /* App Self-Managemnet */
-  static instanceList: IndexedMap<number, Application> = {};
+  static instanceList = new Map<number, Application>();
   static #nextId = 0;
   #id = 0;
   get id() {
@@ -19,27 +19,27 @@ export default class Application {
 
   constructor(name: string = "") {
     this.#id = Application.#nextId++;
-    Application.instanceList[this.#id] = this;
+    Application.instanceList.set(this.#id, this);
     this.name = name;
   }
 
   /* Scene Management */
-  #sceneList: IndexedMap<number, Scene> = {};
+  #sceneList = new Map<number, Scene>();
   addScene(scene: Scene) {
     if (scene.app !== undefined) {
       scene.app.removeScene(scene);
     }
     scene.app = this;
-    this.#sceneList[scene.id] = scene;
+    this.#sceneList.set(scene.id, scene);
     return this;
   }
   removeScene(scene: Scene) {
-    delete this.#sceneList[scene.id];
+    this.#sceneList.delete(scene.id);
     return this;
   }
 
   /* Component Management */
-  activeComponents: IndexedMap<number, Component> = {};
+  activeComponents = new Map<number, Component>();
 
   /* Graphic Context */
   context!: WebGL2RenderingContext;
@@ -73,17 +73,17 @@ export default class Application {
     return this;
   }
 
-  #viewList: IndexedMap<number, View> = {};
+  #viewList = new Map<number, View>();
   addView(view: View) {
     if (view.app !== undefined) {
       view.app.removeView(view);
     }
     view.app = this;
-    this.#viewList[view.id] = view;
+    this.#viewList.set(view.id, view);
     return this;
   }
   removeView(view: View) {
-    delete this.#viewList[view.id];
+    this.#viewList.delete(view.id);
     return this;
   }
 
@@ -94,7 +94,7 @@ export default class Application {
   }
 
   /* Game Loop */
-  static #activeInstances: IndexedMap<number, Application> = {};
+  static #activeInstances = new Map<number, Application>();
   state: "new" | "ready" | "running" = "new";
   async start() {
     if (this.state === "new") {
@@ -102,12 +102,12 @@ export default class Application {
       await this.#setup();
     }
     this.state = "running";
-    Application.#activeInstances[this.#id] = this;
+    Application.#activeInstances.set(this.#id, this);
   }
   async stop() {
     if (this.state === "running") {
       this.state = "ready";
-      delete Application.#activeInstances[this.#id];
+      Application.#activeInstances.delete(this.#id);
     }
   }
 
@@ -157,14 +157,14 @@ export default class Application {
   }
 
   static async forEach(callback: (instance: Application) => void) {
-    Object.values(Application.instanceList).forEach(callback);
+    Application.instanceList.forEach(callback);
   }
   static async forEachActive(callback: (instance: Application) => void) {
-    Object.values(Application.#activeInstances).forEach(callback);
+    Application.#activeInstances.forEach(callback);
   }
 
   broadcastRun(event: string) {
-    Object.values(this.activeComponents).forEach((component) => {
+    this.activeComponents.forEach((component) => {
       component.emit("run", event);
     });
   }
@@ -174,7 +174,7 @@ function forEachComponent<Type extends Component>(
   type: ComponentConstructor<Type>,
   callback: (component: Type) => void
 ): void {
-  Object.values(Component.find(type)).forEach((components: Type[]) => {
+  Component.find(type).forEach((components: Type[]) => {
     components.forEach(callback);
   });
 }
