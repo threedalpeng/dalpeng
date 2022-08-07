@@ -9,7 +9,7 @@ import View from "./graphics/View";
 
 export default class Application {
   /* App Self-Managemnet */
-  static instanceList: { [instanceId: number]: Application } = {};
+  static instanceList = new Map<number, Application>();
   static #nextId = 0;
   #id = 0;
   get id() {
@@ -19,27 +19,27 @@ export default class Application {
 
   constructor(name: string = "") {
     this.#id = Application.#nextId++;
-    Application.instanceList[this.#id] = this;
+    Application.instanceList.set(this.#id, this);
     this.name = name;
   }
 
   /* Scene Management */
-  #sceneList: { [sceneId: number]: Scene } = {};
+  #sceneList = new Map<number, Scene>();
   addScene(scene: Scene) {
     if (scene.app !== undefined) {
       scene.app.removeScene(scene);
     }
     scene.app = this;
-    this.#sceneList[scene.id] = scene;
+    this.#sceneList.set(scene.id, scene);
     return this;
   }
   removeScene(scene: Scene) {
-    delete this.#sceneList[scene.id];
+    this.#sceneList.delete(scene.id);
     return this;
   }
 
   /* Component Management */
-  activeComponents: { [id: number]: Component } = {};
+  activeComponents = new Map<number, Component>();
 
   /* Graphic Context */
   context!: WebGL2RenderingContext;
@@ -61,6 +61,9 @@ export default class Application {
       return this;
     }
 
+    this.gl.enable(this.gl.CULL_FACE);
+    this.gl.enable(this.gl.DEPTH_TEST);
+
     canvas.setAttribute("tabindex", "0");
     canvas.focus();
     canvas.addEventListener("click", (e) => {
@@ -73,17 +76,17 @@ export default class Application {
     return this;
   }
 
-  #viewList: { [viewId: number]: View } = {};
+  #viewList = new Map<number, View>();
   addView(view: View) {
     if (view.app !== undefined) {
       view.app.removeView(view);
     }
     view.app = this;
-    this.#viewList[view.id] = view;
+    this.#viewList.set(view.id, view);
     return this;
   }
   removeView(view: View) {
-    delete this.#viewList[view.id];
+    this.#viewList.delete(view.id);
     return this;
   }
 
@@ -94,7 +97,7 @@ export default class Application {
   }
 
   /* Game Loop */
-  static #activeInstances: { [instanceId: number]: Application } = {};
+  static #activeInstances = new Map<number, Application>();
   state: "new" | "ready" | "running" = "new";
   async start() {
     if (this.state === "new") {
@@ -102,12 +105,12 @@ export default class Application {
       await this.#setup();
     }
     this.state = "running";
-    Application.#activeInstances[this.#id] = this;
+    Application.#activeInstances.set(this.#id, this);
   }
   async stop() {
     if (this.state === "running") {
       this.state = "ready";
-      delete Application.#activeInstances[this.#id];
+      Application.#activeInstances.delete(this.#id);
     }
   }
 
@@ -156,15 +159,36 @@ export default class Application {
     //forEachComponent(MeshRenderer2D, (renderer) => renderer.render());
   }
 
+  // observer = new ResizeObserver();
+
+  // onResize(entries: ResizeObserverEntry[]) {
+  //   for (const entry of entries) {
+  //     let width;
+  //     let height;
+  //     let dpr = window.devicePixelRatio;
+  //     if (entry.devicePixelContentBoxSize) {
+  //       width = entry.devicePixelContentBoxSize[0].inlineSize;
+  //       height = entry.devicePixelContentBoxSize[0].blockSize;
+  //       dpr = 1;
+  //     } else {
+  //       width = entry.contentBoxSize[0].inlineSize;
+  //       height = entry.contentBoxSize[0].blockSize;
+  //     }
+  //     const displayWidth = Math.round(width * dpr);
+  //     const displayHeight = Math.round(height * dpr);
+  //     canvasToDisplaySizeMap.set(entry.target, [displayWidth, displayHeight]);
+  //   }
+  // }
+
   static async forEach(callback: (instance: Application) => void) {
-    Object.values(Application.instanceList).forEach(callback);
+    Application.instanceList.forEach(callback);
   }
   static async forEachActive(callback: (instance: Application) => void) {
-    Object.values(Application.#activeInstances).forEach(callback);
+    Application.#activeInstances.forEach(callback);
   }
 
   broadcastRun(event: string) {
-    Object.values(this.activeComponents).forEach((component) => {
+    this.activeComponents.forEach((component) => {
       component.emit("run", event);
     });
   }
@@ -174,7 +198,7 @@ function forEachComponent<Type extends Component>(
   type: ComponentConstructor<Type>,
   callback: (component: Type) => void
 ): void {
-  Object.values(Component.find(type)).forEach((components: Type[]) => {
+  Component.find(type).forEach((components: Type[]) => {
     components.forEach(callback);
   });
 }

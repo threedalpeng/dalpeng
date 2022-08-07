@@ -1,4 +1,4 @@
-import type Application from "../Application";
+import type Application from "@/Application";
 
 export default class View {
   static #nextId = 0;
