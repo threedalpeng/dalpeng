@@ -14,7 +14,17 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "outDir": "./dist",
-    "typeRoots": ["./node_modules/@webgpu/types", "./node_modules/@types"]
+    "typeRoots": ["./node_modules/@webgpu/types", "./node_modules/@types"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "plugins": [
+      {
+        "transform": "@zerollup/ts-transform-paths",
+        "exclude": ["*"]
+      }
+    ]
   },
-  "include": ["src"]
+  "include": ["src", "test"]
 }
