@@ -1,14 +1,14 @@
-interface Mesh {
+export interface Mesh {
   vertex: {
     position: Float32Array;
     normal: Float32Array;
     texcoord: Float32Array;
   };
-  index: Uint8Array;
+  index: Uint16Array;
 }
 
 export default class MeshBuilder {
-  static box() {
+  static box(): Mesh {
     const boxMesh: Mesh = {
       // prettier-ignore
       vertex: {
@@ -38,7 +38,7 @@ export default class MeshBuilder {
         ]),
       },
       // prettier-ignore
-      index: new Uint8Array([
+      index: new Uint16Array([
         0, 1, 2,    0, 2, 3,    // top
         4, 5, 6,    4, 6, 7,    // bottom
         8, 9, 10,   8, 10, 11,  // left
