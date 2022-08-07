@@ -61,6 +61,9 @@ export default class Application {
       return this;
     }
 
+    this.gl.enable(this.gl.CULL_FACE);
+    this.gl.enable(this.gl.DEPTH_TEST);
+
     canvas.setAttribute("tabindex", "0");
     canvas.focus();
     canvas.addEventListener("click", (e) => {
@@ -155,6 +158,27 @@ export default class Application {
     this.broadcastRun("render");
     //forEachComponent(MeshRenderer2D, (renderer) => renderer.render());
   }
+
+  // observer = new ResizeObserver();
+
+  // onResize(entries: ResizeObserverEntry[]) {
+  //   for (const entry of entries) {
+  //     let width;
+  //     let height;
+  //     let dpr = window.devicePixelRatio;
+  //     if (entry.devicePixelContentBoxSize) {
+  //       width = entry.devicePixelContentBoxSize[0].inlineSize;
+  //       height = entry.devicePixelContentBoxSize[0].blockSize;
+  //       dpr = 1;
+  //     } else {
+  //       width = entry.contentBoxSize[0].inlineSize;
+  //       height = entry.contentBoxSize[0].blockSize;
+  //     }
+  //     const displayWidth = Math.round(width * dpr);
+  //     const displayHeight = Math.round(height * dpr);
+  //     canvasToDisplaySizeMap.set(entry.target, [displayWidth, displayHeight]);
+  //   }
+  // }
 
   static async forEach(callback: (instance: Application) => void) {
     Application.instanceList.forEach(callback);
