@@ -1,14 +1,15 @@
 {
   "name": "@dalpeng/math",
+  "type": "module",
   "version": "0.0.1",
   "description": "A very simple typescript math library for dalpeng engine, including Vector, Matrix and Quaternion",
-  "main": "./dist/math.umd.js",
-  "module": "./dist/math.es.js",
+  "main": "./dist/math.umd.cjs",
+  "module": "./dist/math.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/math.es.js",
-      "require": "./dist/math.umd.js",
+      "import": "./dist/math.js",
+      "require": "./dist/math.umd.cjs",
       "types": "./dist/index.d.ts"
     }
   },
@@ -31,17 +32,20 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui --api.host 172.105.229.189 --api.port 5050"
   },
   "devDependencies": {
-    "@rollup/plugin-typescript": "^8.3.1",
-    "rollup": ">=2.14.0 <3.0.0",
-    "tslib": "^2.3.1",
-    "typescript": "^4.6.3",
-    "vite": "^2.9.1",
-    "vitest": "^0.12.6"
+    "@rollup/plugin-typescript": "^8.3.4",
+    "@vitest/ui": "^0.20.3",
+    "rollup": "^2.77.2",
+    "tslib": "^2.4.0",
+    "typescript": "^4.7.4",
+    "vite": "^3.0.4",
+    "vitest": "^0.20.3"
   },
   "dependencies": {
-    "@types/node": "^17.0.23"
+    "@types/node": "^18.6.3"
   }
 }

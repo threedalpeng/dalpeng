@@ -1,5 +1,5 @@
 {
-  "name": "pong",
+  "name": "basic-3d-objects",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -8,10 +8,11 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "typescript": "^4.7.2",
-    "vite": "^2.9.9"
+    "typescript": "^4.7.4",
+    "vite": "^3.0.4"
   },
   "dependencies": {
+    "@dalpeng/demo-devmode": "link:../devmode",
     "dalpeng": "link:../../dalpeng"
   }
 }

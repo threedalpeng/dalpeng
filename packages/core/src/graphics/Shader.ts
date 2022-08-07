@@ -1,18 +1,16 @@
-import Entity from "../entity/Entity";
-import { isNil } from "../utils/basic";
-import { loadProgram, loadShader } from "../utils/gl";
+import Entity from "@/entity/Entity";
+import { isNil } from "@/utils/basic";
+import { loadProgram, loadShader } from "@/utils/gl";
 
 export default class Shader extends Entity {
   #program: WebGLProgram | null = null;
   gl!: WebGL2RenderingContext;
-  static #shaderList: {
-    [id: number]: Shader;
-  } = {};
+  static #shaderList = new Map<number, Shader>();
 
   constructor(name = "") {
     super();
     this.name = name;
-    Shader.#shaderList[this.id] = this;
+    Shader.#shaderList.set(this.id, this);
   }
 
   static create(name = "") {
@@ -57,11 +55,16 @@ export default class Shader extends Entity {
   }
 
   static find(name: string) {
-    return Object.values(this.#shaderList).find(
-      (shader) => shader.name === name
-    );
+    let toFind;
+    for (let [_, shader] of this.#shaderList) {
+      if (shader.name === name) {
+        toFind = shader;
+        break;
+      }
+    }
+    return toFind;
   }
   static forEach(callback: (shader: Shader) => void) {
-    Object.values(this.#shaderList).forEach(callback);
+    this.#shaderList.forEach(callback);
   }
 }

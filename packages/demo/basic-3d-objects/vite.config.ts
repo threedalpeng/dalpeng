@@ -3,6 +3,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   server: {
     host: "0.0.0.0",
+    port: 5050,
     /*
     hmr: {
       clientPort: 443,
@@ -10,7 +11,8 @@ export default defineConfig({
     */
   },
   build: {
-    outDir: "../../../../webgl-guide/webgl-guide-backend/dist/demo/pong",
+    outDir:
+      "../../../../webgl-guide/webgl-guide-backend/dist/demo/basic-3d-objects",
     target: "esnext",
     rollupOptions: {
       output: {

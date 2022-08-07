@@ -1,4 +1,5 @@
 import { Application, GameEntity, Scene } from "@dalpeng/core";
+
 const Dalpeng = {
   createApp(name?: string): Application {
     return new Application(name);
@@ -16,12 +17,12 @@ const Dalpeng = {
 
 export {
   Script,
-  Transform2D,
-  MeshRenderer2D,
+  Transform,
+  MeshRenderer,
   Shader,
   Time,
-  MeshBuilder2D,
+  MeshBuilder,
   Input,
-  Camera2D,
+  Camera,
 } from "@dalpeng/core";
 export default Dalpeng;

@@ -3,24 +3,22 @@ import Component, { ComponentConstructor } from "../component/Component.js";
 import Entity from "./Entity.js";
 
 export default class GameEntity extends Entity {
-  static #gameEntityList: {
-    [id: number]: GameEntity;
-  } = {};
+  static #gameEntityList = new Map<number, GameEntity>();
   #tag = "default";
 
   constructor(name = "") {
     super();
     this.name = name;
-    GameEntity.#gameEntityList[this.id] = this;
+    GameEntity.#gameEntityList.set(this.id, this);
   }
 
   scene!: Scene;
 
   remove() {
-    Object.values(Component.componentGroups).forEach((componentGroup) => {
-      delete componentGroup[this.id];
+    Component.componentGroups.forEach((componentGroup) => {
+      componentGroup.delete(this.id);
     });
-    delete GameEntity.#gameEntityList[this.id];
+    GameEntity.#gameEntityList.delete(this.id);
   }
 
   addComponent<Type extends Component>(type: ComponentConstructor<Type>): Type {
@@ -50,8 +48,13 @@ export default class GameEntity extends Entity {
   }
 
   static find(name: string) {
-    return Object.values(GameEntity.#gameEntityList).find(
-      (entity) => entity.name === name
-    );
+    let toFind;
+    for (let [_, entity] of GameEntity.#gameEntityList) {
+      if (entity.name === name) {
+        toFind = entity;
+        break;
+      }
+    }
+    return toFind;
   }
 }
