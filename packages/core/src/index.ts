@@ -10,6 +10,7 @@ import MeshRenderer from "./graphics/MeshRenderer";
 import MeshBuilder from "./utils/mesh";
 import Shader from "./graphics/Shader";
 import Camera from "./graphics/Camera";
+import Material from "./graphics/Material";
 
 export {
   Application,
@@ -25,4 +26,5 @@ export {
   Transform,
   MeshRenderer,
   MeshBuilder,
+  Material,
 };
