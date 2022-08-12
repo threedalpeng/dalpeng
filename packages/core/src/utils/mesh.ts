@@ -51,51 +51,40 @@ export default class MeshBuilder {
   }
 
   static sphere(): Mesh {
-    const DIVISION = 60;
-    const theta = Math.PI / DIVISION;
-    const phi = 2 * theta;
+    const DIVISION = 30;
+    const unitAngle = Math.PI / DIVISION;
 
-    const spherePoints = [0, 1, 0];
-    const texcoord = [1, 1];
-    for (let i = 1; i <= DIVISION - 1; i++) {
-      const t = theta * i;
+    const spherePoints = [];
+    const texcoord = [];
+    for (let i = 0; i <= DIVISION; i++) {
+      const t = unitAngle * i;
       const st = Math.sin(t);
       const ct = Math.cos(t);
-      const vtc = (DIVISION - i) / DIVISION;
+      const vTex = i / DIVISION;
 
-      for (let j = 0; j <= DIVISION; j++) {
-        const p = phi * j;
+      for (let j = 0; j <= DIVISION * 2; j++) {
+        const p = unitAngle * j;
         const sp = Math.sin(p);
         const cp = Math.cos(p);
         spherePoints.push(st * cp, ct, st * sp);
-        texcoord.push((DIVISION - j) / (DIVISION + 1), vtc);
+        texcoord.push((j / DIVISION) * 2, vTex);
       }
     }
-    spherePoints.push(0, -1, 0);
-    texcoord.push(0, 0);
 
     const indices = [];
-    for (let i = 0; i < DIVISION; i++) {
-      indices.push(0, i + 2, i + 1);
-    }
-    for (let j = 1; j < DIVISION; j++) {
-      for (let i = 0; i < DIVISION; i++) {
+    const OFFSET = 2 * DIVISION + 1;
+    for (let i = 1; i <= 2 * DIVISION; i++) {
+      for (let j = 0; j < DIVISION; j++) {
+        const J_OFFSET = j * OFFSET;
         indices.push(
-          (j - 1) * (DIVISION + 1) + i + 1,
-          (j - 1) * (DIVISION + 1) + i + 2,
-          j * (DIVISION + 1) + i + 1,
-          j * (DIVISION + 1) + i + 1,
-          (j - 1) * (DIVISION + 1) + i + 2,
-          j * (DIVISION + 1) + i + 2
+          J_OFFSET + i + OFFSET - 1,
+          J_OFFSET + i + OFFSET,
+          J_OFFSET + i - 1,
+          J_OFFSET + i + OFFSET,
+          J_OFFSET + i,
+          J_OFFSET + i - 1
         );
       }
-    }
-    for (let i = 0; i < DIVISION; i++) {
-      indices.push(
-        (DIVISION - 2) * (DIVISION + 1) + i + 1,
-        (DIVISION - 2) * (DIVISION + 1) + i + 2,
-        DIVISION * DIVISION
-      );
     }
 
     return {
