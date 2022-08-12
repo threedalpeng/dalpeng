@@ -2,11 +2,15 @@
 
 precision highp float;
 
-in vec2 v_texcoord;
+uniform vec4 uBaseColor;
+
+in vec3 vNormal;
 in vec2 vTexcoord;
 
 out vec4 outColor;
 
 void main() {
-  outColor = vec4(1.0, 1.0, 1.0, 1.0);
+  vNormal;
+  vTexcoord;
+  outColor = uBaseColor;
 }
