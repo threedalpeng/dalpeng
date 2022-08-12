@@ -1,24 +1,27 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 
-export default defineConfig({
-  server: {
-    host: "0.0.0.0",
-    port: 5050,
-    /*
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  return {
+    server: {
+      host: "0.0.0.0",
+      port: 5050,
+      /*
     hmr: {
       clientPort: 443,
     },
     */
-  },
-  build: {
-    outDir:
-      "../../../../webgl-guide/webgl-guide-backend/dist/demo/basic-3d-objects",
-    target: "esnext",
-    rollupOptions: {
-      output: {
-        generatedCode: "es2015",
+    },
+    build: {
+      outDir: env.BUILD_DIR,
+      emptyOutDir: true,
+      target: "esnext",
+      rollupOptions: {
+        output: {
+          generatedCode: "es2015",
+        },
       },
     },
-  },
-  base: "",
+    base: "",
+  };
 });
