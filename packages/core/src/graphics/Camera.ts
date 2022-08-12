@@ -27,9 +27,7 @@ export default class Camera extends Component {
   }
 
   async setup() {
-    if (this.isOrthographic) {
-      this.size = this.gl.canvas.height / 2;
-    }
+    this.size = 4;
     this.aspectRatio = this.gl.canvas.width / this.gl.canvas.height;
   }
 
@@ -39,12 +37,21 @@ export default class Camera extends Component {
 
     this.aspectRatio = this.gl.canvas.width / this.gl.canvas.height;
     this.viewMatrix = Mat4.view(this.eye, this.at, this.up);
-    this.projectionMatrix = Mat4.perspective(
-      this.fovy,
-      this.aspectRatio,
-      this.dNear,
-      this.dFar
-    );
+    if (this.isOrthographic) {
+      this.projectionMatrix = Mat4.orthographic(
+        this.size * this.aspectRatio,
+        this.size,
+        this.dNear,
+        this.dFar
+      );
+    } else {
+      this.projectionMatrix = Mat4.perspective(
+        this.fovy,
+        this.aspectRatio,
+        this.dNear,
+        this.dFar
+      );
+    }
   }
 
   async cameraRender() {

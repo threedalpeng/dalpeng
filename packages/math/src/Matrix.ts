@@ -512,6 +512,16 @@ export class Mat4 extends Float32Array {
     ]);
   }
 
+  static orthographic(xmag: number, ymag: number, znear: number, zfar: number) {
+    // prettier-ignore
+    return new Mat4([
+      1 / xmag, 0,        0,                                0,
+      0,        1 / ymag, 0,                                0,
+      0,        0,        2 / (znear - zfar),               0,
+      0,        0,        (znear + zfar) / (znear - zfar),  1,
+    ]);
+  }
+
   static perspective(
     fovy: number,
     aspect: number,

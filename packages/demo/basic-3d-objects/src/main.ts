@@ -7,6 +7,7 @@ import Dalpeng, {
 } from "dalpeng";
 import { vec3, vec4 } from "@dalpeng/math";
 import { attachOverlay } from "@dalpeng/demo-devmode";
+import MainCameraScript from "./MainCameraScript";
 
 const FLAG = {
   RELEASE: true,
@@ -86,6 +87,7 @@ async function setup() {
   transform = mainCamera.addComponent(Transform);
   transform.position = vec3(0, 5, 10);
   let camera = mainCamera.addComponent(Camera);
+  mainCamera.addComponent(MainCameraScript);
 }
 
 pongApp.setup = setup;
