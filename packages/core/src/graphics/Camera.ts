@@ -1,4 +1,4 @@
-import { Vec3, Mat4, Vec4 } from "@dalpeng/math";
+import { Vec3, Mat4 } from "@dalpeng/math";
 import Component from "@/component/Component";
 import Transform from "@/Transform";
 import Shader from "./Shader";
@@ -51,12 +51,12 @@ export default class Camera extends Component {
     Shader.forEach((shader) => {
       shader.use();
       this.gl.uniformMatrix4fv(
-        shader.getUniformLocation("u_view")!,
+        shader.getUniformLocation("uView")!,
         false,
         this.viewMatrix
       );
       this.gl.uniformMatrix4fv(
-        shader.getUniformLocation("u_projection")!,
+        shader.getUniformLocation("uProjection")!,
         false,
         this.projectionMatrix
       );
