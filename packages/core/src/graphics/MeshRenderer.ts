@@ -1,11 +1,14 @@
 import type GameEntity from "@/entity/GameEntity";
 import Transform from "../Transform";
 import BaseRenderer from "./BaseRenderer";
+import Material from "./Material";
 import type Shader from "./Shader";
 
 export default class MeshRenderer extends BaseRenderer {
   shader!: Shader;
+  material = new Material();
   #modelUniformLocation!: WebGLUniformLocation;
+  #baseColorUniformLocation!: WebGLUniformLocation;
   #vao!: WebGLVertexArrayObject;
 
   constructor(gameEntity: GameEntity) {
@@ -23,6 +26,8 @@ export default class MeshRenderer extends BaseRenderer {
     const normalAttribLocation = this.shader.getAttribLocation("aNormal");
     const texcoordAttribLocation = this.shader.getAttribLocation("aTexcoord");
     this.#modelUniformLocation = this.shader.getUniformLocation("uModel")!;
+    this.#baseColorUniformLocation =
+      this.shader.getUniformLocation("uBaseColor")!;
 
     this.#vao = this.gl.createVertexArray()!;
     this.gl.bindVertexArray(this.#vao);
@@ -98,6 +103,7 @@ export default class MeshRenderer extends BaseRenderer {
       false,
       this.transform.getModelMatrix()
     );
+    this.gl.uniform4fv(this.#baseColorUniformLocation, this.material.baseColor);
 
     this.gl.bindVertexArray(this.#vao);
 

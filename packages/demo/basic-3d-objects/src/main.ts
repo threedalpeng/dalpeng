@@ -5,7 +5,7 @@ import Dalpeng, {
   Transform,
   Camera,
 } from "dalpeng";
-import { vec3 } from "@dalpeng/math";
+import { vec3, vec4 } from "@dalpeng/math";
 import { attachOverlay } from "@dalpeng/demo-devmode";
 
 const FLAG = {
@@ -18,12 +18,14 @@ const box = Dalpeng.createGameEntity("Box");
 const sphere = Dalpeng.createGameEntity("Sphere");
 const cylinder = Dalpeng.createGameEntity("Cylinder");
 const capsule = Dalpeng.createGameEntity("Capsule");
+const ground = Dalpeng.createGameEntity("Ground");
 const mainCamera = Dalpeng.createGameEntity("Main Camera");
 const pongScene = Dalpeng.createScene("hi")
   .addEntity(box)
   .addEntity(sphere)
   .addEntity(cylinder)
   .addEntity(capsule)
+  .addEntity(ground)
   .addEntity(mainCamera);
 
 const mainShader = await Shader.create("main");
@@ -50,6 +52,7 @@ async function setup() {
   transform.scale = vec3(1, 1, 1);
   renderer = box.addComponent(MeshRenderer);
   renderer.mesh = MeshBuilder.box();
+  renderer.material.baseColor = vec4(1, 0, 0, 1);
   renderer.shader = mainShader;
 
   // sphere
@@ -58,6 +61,7 @@ async function setup() {
   transform.scale = vec3(1, 1, 1);
   renderer = sphere.addComponent(MeshRenderer);
   renderer.mesh = MeshBuilder.sphere();
+  renderer.material.baseColor = vec4(0, 1, 0, 1);
   renderer.shader = mainShader;
 
   // cylinder
@@ -66,6 +70,16 @@ async function setup() {
   transform.scale = vec3(1, 1, 1);
   renderer = cylinder.addComponent(MeshRenderer);
   renderer.mesh = MeshBuilder.cylinder();
+  renderer.material.baseColor = vec4(0, 0, 1, 1);
+  renderer.shader = mainShader;
+
+  // ground
+  transform = ground.addComponent(Transform);
+  transform.position = vec3(0, -1.5, 0);
+  transform.scale = vec3(5, 0.5, 5);
+  renderer = ground.addComponent(MeshRenderer);
+  renderer.mesh = MeshBuilder.box();
+  renderer.material.baseColor = vec4(1, 1, 1, 1);
   renderer.shader = mainShader;
 
   // main camera
@@ -79,7 +93,6 @@ pongApp.setup = setup;
 Dalpeng.run();
 pongApp.start();
 
-console.log(box);
 if (!FLAG.RELEASE) {
   attachOverlay();
 }
