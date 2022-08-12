@@ -3,6 +3,7 @@
 precision highp float;
 
 in vec2 v_texcoord;
+in vec2 vTexcoord;
 
 out vec4 outColor;
 

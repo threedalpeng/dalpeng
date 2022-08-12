@@ -19,10 +19,10 @@ export default class MeshRenderer extends BaseRenderer {
   async setup() {
     this.transform = this.getComponent(Transform)!;
 
-    const positionAttribLocation = this.shader.getAttribLocation("a_position");
-    const normalAttribLocation = this.shader.getAttribLocation("a_normal");
-    const texcoordAttribLocation = this.shader.getAttribLocation("a_texcoord");
-    this.#modelUniformLocation = this.shader.getUniformLocation("u_model")!;
+    const positionAttribLocation = this.shader.getAttribLocation("aPosition");
+    const normalAttribLocation = this.shader.getAttribLocation("aNormal");
+    const texcoordAttribLocation = this.shader.getAttribLocation("aTexcoord");
+    this.#modelUniformLocation = this.shader.getUniformLocation("uModel")!;
 
     this.#vao = this.gl.createVertexArray()!;
     this.gl.bindVertexArray(this.#vao);

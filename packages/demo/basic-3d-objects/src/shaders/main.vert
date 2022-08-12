@@ -1,24 +1,24 @@
 #version 300 es
 
-layout(location = 0) in vec3 a_position;
-layout(location = 1) in vec3 a_normal;
-layout(location = 2) in vec2 a_texcoord;
+in vec3 aPosition;
+in vec3 aNormal;
+in vec2 aTexcoord;
 
-out vec4 v_pos;
-out vec4 v_epos;
-out vec3 v_normal;
-out vec2 v_texcoord;
+out vec4 vPos;
+out vec4 vEpos;
+out vec3 vNormal;
+out vec2 vTexcoord;
 
-uniform mat4 u_model;
-uniform mat4 u_view;
-uniform mat4 u_projection;
+uniform mat4 uModel;
+uniform mat4 uView;
+uniform mat4 uProjection;
 
 void main() {
-  vec4 world_pos = u_model * vec4(a_position, 1);
-  v_epos = u_view * world_pos;
-  v_pos = u_projection * v_epos;
-  gl_Position = v_pos;
+  vec4 worldPos = uModel * vec4(aPosition, 1);
+  vEpos = uView * worldPos;
+  vPos = uProjection * vEpos;
+  gl_Position = vPos;
 
-  v_normal = normalize(mat3(u_view * u_model) * a_normal);
-  v_texcoord = a_texcoord;
+  vNormal = normalize(mat3(uView * uModel) * aNormal);
+  vTexcoord = aTexcoord;
 }
