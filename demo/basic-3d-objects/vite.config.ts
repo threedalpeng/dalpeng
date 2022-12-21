@@ -5,7 +5,7 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: "0.0.0.0",
-      port: 5050,
+      port: 8081,
       /*
     hmr: {
       clientPort: 443,
