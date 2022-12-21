@@ -133,3 +133,7 @@ dist
 packages/core_old/
 packages/demo/old/
 packages/renderer/
+
+# turborepo
+.turbo
+dist/**

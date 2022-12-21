@@ -42,9 +42,7 @@
     "vitest": "^0.20.3"
   },
   "dependencies": {
-    "@dalpeng/core": "link:../core",
-    "@dalpeng/math": "link:../math",
-    "@types/node": "^18.6.3",
-    "@webgpu/types": "^0.1.21"
+    "@dalpeng/core": "workspace:^0.0.2",
+    "@dalpeng/math": "workspace:^0.0.1"
   }
 }

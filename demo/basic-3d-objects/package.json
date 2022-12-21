@@ -12,7 +12,8 @@
     "vite": "^3.0.4"
   },
   "dependencies": {
-    "@dalpeng/demo-devmode": "link:../devmode",
-    "dalpeng": "link:../../dalpeng"
+    "@dalpeng/demo-devmode": "workspace:^0.0.1",
+    "@dalpeng/math": "workspace:^0.0.1",
+    "dalpeng": "workspace:^0.0.1"
   }
 }
