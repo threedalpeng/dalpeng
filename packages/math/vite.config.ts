@@ -17,7 +17,6 @@ export default defineConfig({
           declaration: true,
           emitDeclarationOnly: true,
           esModuleInterop: true,
-          declarationDir: "./dist",
           outDir: "./dist",
         }),
       ],

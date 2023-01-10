@@ -1,6 +1,5 @@
 import { defineConfig } from "vite";
-import typescript from "@rollup/plugin-typescript";
-import ttypescript from "ttypescript";
+import dts from "vite-plugin-dts";
 import path from "path";
 
 export default defineConfig({
@@ -12,20 +11,10 @@ export default defineConfig({
       name: "core",
       entry: "src/index.ts",
     },
-    rollupOptions: {
-      plugins: [
-        typescript({
-          target: "es2020",
-          module: "ESNext",
-          lib: ["ESNext", "DOM"],
-          moduleResolution: "Node",
-          declaration: true,
-          emitDeclarationOnly: true,
-          esModuleInterop: true,
-          outDir: "./dist",
-          typescript: ttypescript,
-        }),
-      ],
-    },
   },
+  plugins: [
+    dts({
+      insertTypesEntry: true,
+    }),
+  ],
 });
