@@ -54,13 +54,27 @@ export default class Application {
   ) {
     (this.activeComponents.get(type.name) as Type[]).forEach(callback);
   }
-  activeComponents = new Map<number, Component>();
+
+  /* Script Management */
+  activeScripts = new Map<number, Script>();
+  async forEachActiveScript(callback: (component: Script) => void) {
+    this.activeScripts.forEach(callback);
+  }
 
   /* Graphic Context */
   context!: WebGL2RenderingContext;
 
   get gl() {
     return this.context;
+  }
+  get isContextReady() {
+    if (isNil(this.context)) {
+      return false;
+    }
+    if (isNil(this.context.canvas)) {
+      return false;
+    }
+    return true;
   }
 
   async mount(canvas: HTMLCanvasElement) {
@@ -269,6 +283,10 @@ export default class Application {
       canvas.addEventListener(event, Input.handleEvent);
     });
 
+    if (await Application.shouldRun()) {
+      Application.run();
+    }
+
     return this;
   }
 
@@ -303,20 +321,49 @@ export default class Application {
 
   /* Game Loop */
   static #activeInstances = new Map<number, Application>();
+  static #instanceEvents: (() => any)[] = [];
   state: "new" | "ready" | "running" = "new";
   async start() {
-    if (this.state === "new") {
-      await this.#begin();
-      await this.#setup();
-    }
-    this.state = "running";
     Application.#activeInstances.set(this.#id, this);
+    Application.#instanceEvents.push(async () => {
+      if (this.state === "new") {
+        await this.#setup();
+      }
+      this.state = "running";
+    });
+    if (await Application.shouldRun()) {
+      Application.run();
+    }
   }
   async stop() {
-    if (this.state === "running") {
-      this.state = "ready";
-      Application.#activeInstances.delete(this.#id);
-    }
+    Application.#activeInstances.delete(this.#id);
+    Application.#instanceEvents.push(async () => {
+      if (this.state === "running") {
+        this.state = "ready";
+      }
+    });
+  }
+  static async processInstanceEvents() {
+    this.#instanceEvents.forEach((event) => {
+      event();
+    });
+    this.#instanceEvents = [];
+  }
+  static async shouldRun() {
+    const checkIfActiveInstancesExist = () => {
+      return this.#activeInstances.size !== 0;
+    };
+    const checkIfCanvasesMounted = () => {
+      let isCanvasesMounted = true;
+      this.forEachActive((app) => {
+        isCanvasesMounted = app.isContextReady;
+      });
+      return isCanvasesMounted;
+    };
+    return checkIfActiveInstancesExist() && checkIfCanvasesMounted();
+  }
+  static shouldQuit() {
+    return this.#activeInstances.size === 0;
   }
 
   static async run() {
@@ -324,6 +371,9 @@ export default class Application {
     Time._setup();
 
     const loop: FrameRequestCallback = async (t) => {
+      await this.processInstanceEvents();
+      if (this.shouldQuit()) return;
+
       Time._updateDelta(t);
       Input.poll();
 
@@ -348,6 +398,7 @@ export default class Application {
     this.activeComponents.forEach((components) =>
       components.forEach((component) => component.setup())
     );
+    this.forEachActiveScript((script) => script.setup());
   }
 
   async #fixedUpdate() {
@@ -355,6 +406,7 @@ export default class Application {
   }
   async #update() {
     await this.forEachActiveComponent(Camera, (camera) => camera.update());
+    await this.forEachActiveScript((script) => script.update());
     this.#sceneList.forEach((scene) =>
       Object.values(scene.rootEntities).forEach((rootEntity) => {
         rootEntity.getComponent(Transform)?.checkModelMatrixToBeUpdated();
