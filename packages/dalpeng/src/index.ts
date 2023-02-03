@@ -1,28 +1,21 @@
 import { Application, GameEntity, Scene } from "@dalpeng/core";
+import { UseApp } from "./hooks/app";
 
-const Dalpeng = {
-  createApp(name?: string): Application {
-    return new Application(name);
-  },
-  createScene(name?: string): Scene {
-    return new Scene(name);
-  },
-  createGameEntity(name?: string): GameEntity {
-    return new GameEntity(name);
-  },
-  run() {
-    Application.run();
-  },
-};
+function createApp(useApp: UseApp) {
+  const app = useApp();
+  app.start();
+  return app;
+}
 
 export {
-  Script,
-  Transform,
+  Camera,
+  Input,
+  Light,
+  MeshBuilder,
   MeshRenderer,
   Shader,
   Time,
-  MeshBuilder,
-  Input,
-  Camera,
+  Transform,
 } from "@dalpeng/core";
-export default Dalpeng;
+export * from "./hooks/index";
+export { type Application, type GameEntity, type Scene, createApp };
