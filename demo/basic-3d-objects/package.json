@@ -8,12 +8,12 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "typescript": "^4.7.4",
-    "vite": "^3.0.4"
+    "typescript": "^4.9.5",
+    "vite": "^4.1.1"
   },
   "dependencies": {
     "@dalpeng/demo-devmode": "workspace:^0.0.1",
-    "@dalpeng/math": "workspace:^0.0.1",
-    "dalpeng": "workspace:^0.0.1"
+    "@dalpeng/math": "workspace:^0.1.0",
+    "dalpeng": "workspace:^0.1.0"
   }
 }
