@@ -14,7 +14,7 @@ importers:
     specifiers:
       '@dalpeng/demo-devmode': workspace:^0.0.1
       '@dalpeng/math': workspace:^0.1.0
-      dalpeng: workspace:^0.0.1
+      dalpeng: workspace:^0.1.0
       typescript: ^4.9.5
       vite: ^4.1.1
     dependencies:
@@ -63,27 +63,17 @@ importers:
     specifiers:
       '@dalpeng/core': workspace:^0.1.0
       '@dalpeng/math': workspace:^0.1.0
-      '@rollup/plugin-typescript': ^11.0.0
-      '@types/node': ^18.11.18
-      '@types/web': ^0.0.90
-      '@webgpu/types': ^0.1.26
-      rollup: ^3.12.1
-      tslib: ^2.5.0
       typescript: ^4.9.5
       vite: ^4.1.1
+      vite-plugin-dts: ^1.7.2
       vitest: ^0.28.3
     dependencies:
       '@dalpeng/core': link:../core
       '@dalpeng/math': link:../math
     devDependencies:
-      '@rollup/plugin-typescript': 11.0.0_dacjhltxvpiymvk442t6rtzddq
-      '@types/node': 18.11.18
-      '@types/web': 0.0.90
-      '@webgpu/types': 0.1.26
-      rollup: 3.12.1
-      tslib: 2.5.0
       typescript: 4.9.5
-      vite: 4.1.1_@types+node@18.11.18
+      vite: 4.1.1
+      vite-plugin-dts: 1.7.2_vite@4.1.1
       vitest: 0.28.3
 
   packages/math:
@@ -480,10 +470,6 @@ packages:
   /@types/node/18.11.18:
     resolution: {integrity: sha512-DHQpWGjyQKSHj3ebjFI/wRKcqQcdR+MoFBygntYOZytCqNfkd2ZC4ARDJ2DQqhjH5p85Nnd3jhUJIXrszFX/JA==}
 
-  /@types/web/0.0.90:
-    resolution: {integrity: sha512-ow8CiNCDI8J5bwZQoFrDr/uqDCeLPOlaJixP7hZqoxoPWBcUXAwHhi+hvPiHTZk6YACoIPQXghxYEy8htXHwuw==}
-    dev: true
-
   /@vitest/expect/0.28.3:
     resolution: {integrity: sha512-dnxllhfln88DOvpAK1fuI7/xHwRgTgR4wdxHldPaoTaBu6Rh9zK5b//v/cjTkhOfNP/AJ8evbNO8H7c3biwd1g==}
     dependencies:
@@ -524,10 +510,6 @@ packages:
       loupe: 2.3.6
       picocolors: 1.0.0
       pretty-format: 27.5.1
-    dev: true
-
-  /@webgpu/types/0.1.26:
-    resolution: {integrity: sha512-UgJdvWyWex2aG6u9Erx8cJCYiB0Voy4Vk0FfeUl8k7pHxUbCKbPNm0YKZNzxsOuZWn178hPbsMlpfvI8D6lA+w==}
     dev: true
 
   /acorn-walk/8.2.0:
