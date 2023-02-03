@@ -469,7 +469,7 @@ export class Mat4 extends Float32Array {
     ]);
   }
   static rotate(q: Quaternion) {
-    return q.toMatrix();
+    return q.toMat4();
   }
   static scale(v: Float32List) {
     // prettier-ignore

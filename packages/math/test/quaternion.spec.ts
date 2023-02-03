@@ -1,43 +1,25 @@
-import { describe, expect, test } from "vitest";
-import { Vec3, type AxisAngle, Quaternion } from "../src";
+import { describe, test } from "vitest";
+import { Mat4, Quaternion, Vec3 } from "../src";
+import {
+  axisAngleDeepTest,
+  mat4DeepTest,
+  quaternionDeepTest,
+  vec3DeepTest,
+} from "./utils";
 
 const _1_0_0_90 = new Quaternion([0.7071068, 0, 0, 0.7071068]);
-
-const axisAngleDeepTest = (
-  [axis, angle]: AxisAngle,
-  [tAxis, tAngle]: AxisAngle
-) => {
-  function isInappropriateRatio(ratio) {
-    return (
-      isNaN(ratio) || !isFinite(ratio) || ratio === undefined || ratio === null
-    );
-  }
-  const ratio = isInappropriateRatio(axis.x / tAxis.x)
-    ? isInappropriateRatio(axis.y / tAxis.y)
-      ? isInappropriateRatio(axis.z / tAxis.z)
-        ? 0
-        : axis.z / tAxis.z
-      : axis.y / tAxis.y
-    : axis.x / tAxis.x;
-  expect(axis.x).toBeCloseTo(tAxis.x * ratio);
-  expect(axis.y).toBeCloseTo(tAxis.y * ratio);
-  expect(axis.z).toBeCloseTo(tAxis.z * ratio);
-  expect(((angle % 360) + 360) % 360).toBeCloseTo(((tAngle % 360) + 360) % 360);
-};
-
-const quaternionDeepTest = (q: Quaternion, t: Quaternion) => {
-  expect(q.x).toBeCloseTo(t.x);
-  expect(q.y).toBeCloseTo(t.y);
-  expect(q.z).toBeCloseTo(t.z);
-  expect(q.w).toBeCloseTo(t.w);
-};
 
 describe("quaternion", () => {
   test.todo("add", () => {});
   test.todo("sub", () => {});
   test.todo("muli", () => {});
   test.todo("divi", () => {});
-  test.todo("mulv", () => {});
+  test.todo("mulv", () => {
+    vec3DeepTest(
+      new Quaternion([0, 0, 0, 1]).mulv([0, 0, 1]),
+      new Vec3([0, 0, 1])
+    );
+  });
   test.todo("mul", () => {});
   test.todo("div", () => {});
   test.todo("normalize", () => {});
@@ -54,7 +36,16 @@ describe("quaternion", () => {
       [new Vec3([29, -86, 162]), -691]
     );
   });
-  test("toMatrix", () => {});
+  test("toMat4", () => {
+    mat4DeepTest(
+      new Quaternion([0, 0, 0, 1]).toMat4(),
+      new Mat4([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
+    );
+    mat4DeepTest(
+      new Quaternion([0, 0, 1, 0]).toMat4(),
+      new Mat4([-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
+    );
+  });
   test("fromAxisAngle", () => {
     const q1 = Quaternion.fromAxisAngle(new Vec3([1, 0, 0]), 90);
     quaternionDeepTest(q1, _1_0_0_90);

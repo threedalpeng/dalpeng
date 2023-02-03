@@ -202,6 +202,12 @@ export class Vec3 extends Float32Array {
   static right() {
     return new Vec3([1, 0, 0]);
   }
+  static front() {
+    return new Vec3([0, 0, 1]);
+  }
+  static back() {
+    return new Vec2([0, 0, -1]);
+  }
 }
 export function vec3(): Vec3;
 export function vec3(x: number): Vec3;
