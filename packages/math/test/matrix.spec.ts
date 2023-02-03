@@ -1,8 +1,14 @@
-import { describe, expect, test } from "vitest";
-import { Mat4, Vec2, Vec3, Vec4 } from "../src";
-import { vec4DeepTest } from "./utils";
+import { describe, test } from "vitest";
+import { Mat3, Mat4, Vec3, Vec4 } from "../src";
+import { vec3DeepTest, vec4DeepTest } from "./utils";
 
 describe("Matrix", () => {
+  describe("Mat3", () => {
+    test("mulv", () => {
+      const m = new Mat3([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+      vec3DeepTest(m.mulv([0, 0, 1]), new Vec3([0, 0, 1]));
+    });
+  });
   describe("Mat4", () => {
     test("view", () => {
       const eye = new Vec3([0, 0, -5]);
