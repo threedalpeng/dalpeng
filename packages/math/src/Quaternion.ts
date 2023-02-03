@@ -43,7 +43,7 @@ export class Quaternion extends Float32Array {
   }
 
   mulv(v: Float32List) {
-    return new Mat3(this.toMatrix()).mulv(v);
+    return new Mat3(this.toMat3()).mulv(v);
   }
   mul(q: Quaternion) {
     const v = new Vec3([this[0], this[1], this[2]]);
@@ -97,7 +97,29 @@ export class Quaternion extends Float32Array {
     angle = (angle * 180) / Math.PI;
     return [axis, angle];
   }
-  toMatrix() {
+  toMat3() {
+    const x2 = this.x * this.x;
+    const y2 = this.y * this.y;
+    const z2 = this.z * this.z;
+    const xy = this.x * this.y;
+    const xz = this.x * this.z;
+    const yz = this.y * this.z;
+    const xw = this.x * this.w;
+    const yw = this.y * this.w;
+    const zw = this.z * this.w;
+    return new Mat3([
+      1 - 2 * (y2 + z2),
+      2 * (xy + zw),
+      2 * (xz - yw),
+      2 * (xy - zw),
+      1 - 2 * (x2 + z2),
+      2 * (yz + xw),
+      2 * (xz + yw),
+      2 * (yz - xw),
+      1 - 2 * (x2 + y2),
+    ]);
+  }
+  toMat4() {
     const x2 = this.x * this.x;
     const y2 = this.y * this.y;
     const z2 = this.z * this.z;

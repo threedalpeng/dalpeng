@@ -1,5 +1,5 @@
-import type Scene from "../Scene.js";
 import Component, { ComponentConstructor } from "../component/Component.js";
+import type Scene from "../Scene.js";
 import Entity from "./Entity.js";
 
 export default class GameEntity extends Entity {
@@ -13,6 +13,21 @@ export default class GameEntity extends Entity {
   }
 
   scene!: Scene;
+  #parent: GameEntity | null = null;
+  get parent() {
+    return this.#parent;
+  }
+
+  #children: GameEntity[] = [];
+  get children() {
+    return this.#children;
+  }
+
+  addChild(child: GameEntity) {
+    this.#children.push(child);
+    child.#parent = this;
+    child.scene = this.scene;
+  }
 
   remove() {
     Component.componentGroups.forEach((componentGroup) => {
@@ -27,7 +42,12 @@ export default class GameEntity extends Entity {
   getComponent<Type extends Component>(
     type: ComponentConstructor<Type>
   ): Type | null {
-    return Component.find(type, this.id)[0] ?? null;
+    const components = Component.find(type, this.id);
+    if (components) {
+      return components[0] ?? null;
+    } else {
+      return null;
+    }
   }
   getComponents<Type extends Component>(
     type: ComponentConstructor<Type>

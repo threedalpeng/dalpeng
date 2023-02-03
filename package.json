@@ -4,11 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "pnpm -C packages/core build && pnpm -C packages/dalpeng build",
-    "build:watch": "./scripts/build-watch.sh",
-    "test:ui": "vitest --ui --api.host 172.105.229.189 --api.port 5050"
+    "build": "turbo run build",
+    "build:dev": "turbo run build:dev",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "dev": "turbo run dev"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "turbo": "^1.7.2",
+    "typescript": "^4.9.5"
+  }
 }

@@ -10,9 +10,6 @@ export default class BaseRenderer extends Component {
 
   constructor(gameEntity: GameEntity) {
     super(gameEntity);
-    this.context = gameEntity.scene.app.context;
   }
-
-  async setup() {}
   async render() {}
 }

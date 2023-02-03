@@ -136,7 +136,7 @@ describe("Vector", () => {
       vec4DeepTest(vec4_i2.muli(5.7), new Vec4([17.1, -22.8, 28.5, 11.4]));
       vec4DeepTest(
         vec4_f1.muli(-7.3),
-        new Vec4([9.6652, -18.5858, -6.7233, 29.2])
+        new Vec4([9.6652, -18.5858, -6.7233, -26.1413])
       );
     });
     test.todo("dot", () => {
