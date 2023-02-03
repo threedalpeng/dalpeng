@@ -168,3 +168,7 @@ export default class MeshBuilder {
   }
   static capsule() {}
 }
+
+export function dummyQuadForLight() {
+  return new Float32Array([-1, 1, 0, -1, -1, 0, 1, 1, 0, 1, -1, 0]);
+}
