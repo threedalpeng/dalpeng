@@ -1,7 +1,7 @@
 {
   "name": "@dalpeng/core",
   "type": "module",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "A core part of game engine",
   "main": "./dist/core.umd.cjs",
   "module": "./dist/core.js",
@@ -18,12 +18,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/threedalpeng/CGD-WebGL-Math.git"
+    "url": "git+https://github.com/threedalpeng/dalpeng.git"
   },
   "bugs": {
-    "url": "https://github.com/threedalpeng/CGD-WebGL-Math/issues"
+    "url": "https://github.com/threedalpeng/dalpeng/issues"
   },
-  "homepage": "https://github.com/threedalpeng/CGD-WebGL-Math#readme",
+  "homepage": "https://github.com/threedalpeng/dalpeng/packages/core#readme",
   "keywords": [],
   "author": "Kim Jeong-Won <threedalpeng@gmail.com>",
   "license": "MIT",

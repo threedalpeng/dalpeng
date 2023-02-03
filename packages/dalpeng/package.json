@@ -1,8 +1,8 @@
 {
   "name": "dalpeng",
   "type": "module",
-  "version": "0.0.1",
-  "description": "A game engine",
+  "version": "0.1.0",
+  "description": "A game engine wrapper for user",
   "main": "./dist/dalpeng.umd.cjs",
   "module": "./dist/dalpeng.js",
   "types": "./dist/index.d.ts",
@@ -18,12 +18,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/threedalpeng/CGD-WebGL-Math.git"
+    "url": "git+https://github.com/threedalpeng/dalpeng.git"
   },
   "bugs": {
-    "url": "https://github.com/threedalpeng/CGD-WebGL-Math/issues"
+    "url": "https://github.com/threedalpeng/dalpeng/issues"
   },
-  "homepage": "https://github.com/threedalpeng/CGD-WebGL-Math#readme",
+  "homepage": "https://github.com/threedalpeng/dalpeng/packages/dalpeng#readme",
   "keywords": [],
   "author": "Kim Jeong-Won <threedalpeng@gmail.com>",
   "license": "MIT",
