@@ -27,7 +27,12 @@ export default class GameEntity extends Entity {
   getComponent<Type extends Component>(
     type: ComponentConstructor<Type>
   ): Type | null {
-    return Component.find(type, this.id)[0] ?? null;
+    const components = Component.find(type, this.id);
+    if (components) {
+      return components[0] ?? null;
+    } else {
+      return null;
+    }
   }
   getComponents<Type extends Component>(
     type: ComponentConstructor<Type>

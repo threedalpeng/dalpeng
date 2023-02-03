@@ -39,6 +39,13 @@ export default class Application {
   }
 
   /* Component Management */
+  activeComponents = new Map<string, Component[]>();
+  async forEachActiveComponent<Type extends Component>(
+    type: ComponentConstructor<Type>,
+    callback: (component: Type) => void
+  ) {
+    (this.activeComponents.get(type.name) as Type[]).forEach(callback);
+  }
   activeComponents = new Map<number, Component>();
 
   /* Graphic Context */
