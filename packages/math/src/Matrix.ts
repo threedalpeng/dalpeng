@@ -469,7 +469,7 @@ export class Mat4 extends Float32Array {
     ]);
   }
   static rotate(q: Quaternion) {
-    return q.toMatrix();
+    return q.toMat4();
   }
   static scale(v: Float32List) {
     // prettier-ignore
@@ -509,6 +509,16 @@ export class Mat4 extends Float32Array {
       u.y,          v.y,          n.y,          0, 
       u.z,          v.z,          n.z,          0, 
       -u.dot(eye),  -v.dot(eye),  -n.dot(eye),  1
+    ]);
+  }
+
+  static orthographic(xmag: number, ymag: number, znear: number, zfar: number) {
+    // prettier-ignore
+    return new Mat4([
+      1 / xmag, 0,        0,                                0,
+      0,        1 / ymag, 0,                                0,
+      0,        0,        2 / (znear - zfar),               0,
+      0,        0,        (znear + zfar) / (znear - zfar),  1,
     ]);
   }
 

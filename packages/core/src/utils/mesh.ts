@@ -78,11 +78,11 @@ export default class MeshBuilder {
         const J_OFFSET = j * OFFSET;
         indices.push(
           J_OFFSET + i + OFFSET - 1,
-          J_OFFSET + i + OFFSET,
           J_OFFSET + i - 1,
           J_OFFSET + i + OFFSET,
-          J_OFFSET + i,
-          J_OFFSET + i - 1
+          J_OFFSET + i + OFFSET,
+          J_OFFSET + i - 1,
+          J_OFFSET + i
         );
       }
     }
@@ -167,4 +167,8 @@ export default class MeshBuilder {
     };
   }
   static capsule() {}
+}
+
+export function dummyQuadForLight() {
+  return new Float32Array([-1, 1, 0, -1, -1, 0, 1, 1, 0, 1, -1, 0]);
 }

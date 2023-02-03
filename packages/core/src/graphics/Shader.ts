@@ -14,7 +14,8 @@ export default class Shader extends Entity {
   }
 
   static create(name = "") {
-    return new Shader(name);
+    const newShader = new Shader(name);
+    return newShader;
   }
 
   async loadFrom(vertexShaderSource: string, fragmentShaderSource: string) {

@@ -1,6 +1,6 @@
-import { isNil } from "../utils/basic.js";
 import Entity from "../entity/Entity.js";
 import type GameEntity from "../entity/GameEntity.js";
+import { isNil } from "../utils/basic.js";
 
 export type ComponentConstructor<Type extends Component> = new (
   gameEntity: GameEntity
@@ -14,9 +14,15 @@ type ComponentEventCallback = (...data: any[]) => void;
 export default class Component extends Entity {
   #gameEntity: GameEntity;
   #isActive: boolean = true;
+  componentGroup!: ComponentGroup<Component>;
   constructor(gameEntity: GameEntity) {
     super();
     this.#gameEntity = gameEntity;
+  }
+
+  #isSetup: boolean = false;
+  setup() {
+    this.#isSetup = true;
   }
 
   static componentGroups: ComponentGroups = new Map<
@@ -35,6 +41,7 @@ export default class Component extends Entity {
       componentGroup = new Map<number, Type[]>();
       this.componentGroups.set(type.name, componentGroup);
     }
+    component.componentGroup = componentGroup;
 
     let components: Type[] | undefined = componentGroup.get(gameEntity.id);
     if (components === undefined) {
@@ -45,8 +52,13 @@ export default class Component extends Entity {
 
     component.isActive = isActive;
     if (isActive) {
-      const activeComponents = component.currentApp.activeComponents;
-      activeComponents.set(component.id, component);
+      let activeComponents = gameEntity.currentApp.activeComponents;
+      let components = activeComponents.get(type.name) as Type[];
+      if (components === undefined) {
+        components = [];
+        activeComponents.set(type.name, components);
+      }
+      components.push(component);
     }
 
     component.on("run", (key: keyof Type) => {
@@ -60,11 +72,11 @@ export default class Component extends Entity {
 
   static find<Type extends Component>(
     type: ComponentConstructor<Type>
-  ): ComponentGroup<Type>;
+  ): ComponentGroup<Type> | null;
   static find<Type extends Component>(
     type: ComponentConstructor<Type>,
     gameEntityId: number
-  ): Type[];
+  ): Type[] | null;
   static find<Type extends Component>(
     type: ComponentConstructor<Type>,
     gameEntityId?: number
@@ -78,7 +90,7 @@ export default class Component extends Entity {
       if (gameEntityId === undefined) {
         return componentGroup;
       }
-      return componentGroup.get(gameEntityId) as Type[];
+      return (componentGroup.get(gameEntityId) ?? []) as Type[];
     }
   }
 
@@ -99,11 +111,18 @@ export default class Component extends Entity {
   set isActive(active) {
     if (this.#isActive !== active) {
       this.#isActive = active;
-      const activeComponents = this.currentApp.activeComponents;
       if (active) {
-        activeComponents.set(this.id, this);
+        if (!this.#isSetup) {
+          this.setup();
+        }
+        this.gameEntity.currentApp.activeComponents.get(this.name)?.push(this);
       } else {
-        activeComponents.delete(this.id);
+        const activeComponents =
+          this.gameEntity.currentApp.activeComponents.get(this.name);
+        const idx = activeComponents?.findIndex((c) => c === this) ?? -1;
+        if (idx >= 0) {
+          activeComponents?.splice(idx, 1);
+        }
       }
     }
   }
@@ -114,6 +133,7 @@ export default class Component extends Entity {
     return this.#gameEntity.getComponent<Type>(type);
   }
 
+  /** Event */
   #callbacks: { [event: string]: ComponentEventCallback[] } = {};
   on(event: string, callback: ComponentEventCallback) {
     this.#callbacks = this.#callbacks || {};

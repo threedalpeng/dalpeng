@@ -1,7 +1,7 @@
 {
   "name": "@dalpeng/core",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A core part of game engine",
   "main": "./dist/core.umd.cjs",
   "module": "./dist/core.js",
@@ -18,34 +18,28 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/threedalpeng/CGD-WebGL-Math.git"
+    "url": "git+https://github.com/threedalpeng/dalpeng.git"
   },
   "bugs": {
-    "url": "https://github.com/threedalpeng/CGD-WebGL-Math/issues"
+    "url": "https://github.com/threedalpeng/dalpeng/issues"
   },
-  "homepage": "https://github.com/threedalpeng/CGD-WebGL-Math#readme",
+  "homepage": "https://github.com/threedalpeng/dalpeng/packages/core#readme",
   "keywords": [],
   "author": "Kim Jeong-Won <threedalpeng@gmail.com>",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:dev": "vite build --mode development",
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@rollup/plugin-typescript": "^8.3.4",
-    "@types/node": "*",
-    "@types/web": "*",
-    "@zerollup/ts-transform-paths": "^1.7.18",
-    "rollup": "^2.77.2",
-    "ts-node": "^10.9.1",
-    "tslib": "^2.4.0",
-    "ttypescript": "^1.5.13",
-    "typescript": "^4.7.4",
-    "vite": "^3.0.4",
-    "vitest": "^0.20.3"
+    "typescript": "^4.9.5",
+    "vite": "^4.1.1",
+    "vite-plugin-dts": "^1.7.2",
+    "vitest": "^0.28.3"
   },
   "dependencies": {
-    "@dalpeng/math": "link:../math"
+    "@dalpeng/math": "workspace:^0.1.0"
   }
 }

@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import typescript from "@rollup/plugin-typescript";
+import dts from "vite-plugin-dts";
 
 export default defineConfig({
   build: {
@@ -7,20 +7,10 @@ export default defineConfig({
       name: "math",
       entry: "src/index.ts",
     },
-    rollupOptions: {
-      plugins: [
-        typescript({
-          target: "es6",
-          module: "ESNext",
-          lib: ["ESNext", "DOM"],
-          moduleResolution: "Node",
-          declaration: true,
-          emitDeclarationOnly: true,
-          esModuleInterop: true,
-          declarationDir: "./dist",
-          outDir: "./dist",
-        }),
-      ],
-    },
   },
+  plugins: [
+    dts({
+      insertTypesEntry: true,
+    }),
+  ],
 });
