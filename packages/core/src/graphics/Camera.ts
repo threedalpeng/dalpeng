@@ -1,7 +1,6 @@
-import { Vec3, Mat4 } from "@dalpeng/math";
 import Component from "@/component/Component";
 import Transform from "@/Transform";
-import Shader from "./Shader";
+import { Mat4, Vec3 } from "@dalpeng/math";
 
 export default class Camera extends Component {
   viewMatrix!: Mat4;
@@ -27,6 +26,8 @@ export default class Camera extends Component {
   }
 
   async setup() {
+    super.setup();
+
     this.size = 4;
     this.aspectRatio = this.gl.canvas.width / this.gl.canvas.height;
   }
@@ -54,20 +55,25 @@ export default class Camera extends Component {
     }
   }
 
-  async cameraRender() {
-    Shader.forEach((shader) => {
-      shader.use();
-      this.gl.uniformMatrix4fv(
-        shader.getUniformLocation("uView")!,
-        false,
-        this.viewMatrix
-      );
-      this.gl.uniformMatrix4fv(
-        shader.getUniformLocation("uProjection")!,
-        false,
-        this.projectionMatrix
-      );
-      // this.gl.uniform3fv(shader.getUniformLocation("u_viewPos")!, this.eye);
-    });
+  async renderCameraToGeometry() {
+    const shader = this.currentApp.shader.geometry;
+    this.gl.uniformMatrix4fv(
+      shader.getUniformLocation("uView")!,
+      false,
+      this.viewMatrix
+    );
+    this.gl.uniformMatrix4fv(
+      shader.getUniformLocation("uProjection")!,
+      false,
+      this.projectionMatrix
+    );
+  }
+
+  async renderCameraToLighting() {
+    const shader = this.currentApp.shader.lighting;
+    this.gl.uniform3fv(
+      shader.getUniformLocation("uViewPos")!,
+      this.transform.worldPosition
+    );
   }
 }
