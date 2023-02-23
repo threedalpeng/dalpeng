@@ -33,10 +33,21 @@ export default class Light extends Component {
     this.#vao = gl.createVertexArray()!;
     gl.bindVertexArray(this.#vao);
     const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, quadPos, gl.STATIC_DRAW);
+    gl.bindBuffer(WebGL2RenderingContext.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(
+      WebGL2RenderingContext.ARRAY_BUFFER,
+      quadPos,
+      WebGL2RenderingContext.STATIC_DRAW
+    );
     gl.enableVertexAttribArray(positionAttribLocation);
-    gl.vertexAttribPointer(positionAttribLocation, 3, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(
+      positionAttribLocation,
+      3,
+      WebGL2RenderingContext.FLOAT,
+      false,
+      0,
+      0
+    );
     gl.bindVertexArray(null);
   }
 
@@ -63,7 +74,7 @@ export default class Light extends Component {
     lightingShader.gl.uniform1f(lightIntensityLocation, this.intensity);
 
     lightingShader.gl.bindVertexArray(this.#vao);
-    lightingShader.gl.drawArrays(lightingShader.gl.TRIANGLE_STRIP, 0, 4);
+    lightingShader.gl.drawArrays(WebGL2RenderingContext.TRIANGLE_STRIP, 0, 4);
     lightingShader.gl.bindVertexArray(null);
   }
 }

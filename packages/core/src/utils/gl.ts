@@ -7,7 +7,7 @@ export function loadShader(
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
 
-  if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+  if (gl.getShaderParameter(shader, WebGL2RenderingContext.COMPILE_STATUS)) {
     return shader;
   } else {
     console.error(gl.getShaderInfoLog(shader));
@@ -26,7 +26,7 @@ export function loadProgram(
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);
 
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+  if (!gl.getProgramParameter(program, WebGL2RenderingContext.LINK_STATUS)) {
     console.error(gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
     return null;

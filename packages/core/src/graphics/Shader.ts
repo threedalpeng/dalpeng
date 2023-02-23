@@ -24,8 +24,16 @@ export default class Shader extends Entity {
     }
 
     const shaders = await Promise.all([
-      loadShader(this.gl, this.gl.VERTEX_SHADER, vertexShaderSource)!,
-      loadShader(this.gl, this.gl.FRAGMENT_SHADER, fragmentShaderSource)!,
+      loadShader(
+        this.gl,
+        WebGL2RenderingContext.VERTEX_SHADER,
+        vertexShaderSource
+      )!,
+      loadShader(
+        this.gl,
+        WebGL2RenderingContext.FRAGMENT_SHADER,
+        fragmentShaderSource
+      )!,
     ]);
     this.#program = loadProgram(this.gl, ...shaders);
 

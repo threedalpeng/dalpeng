@@ -90,10 +90,10 @@ export default class Application {
       return this;
     }
 
-    this.gl.enable(this.gl.CULL_FACE);
-    this.gl.enable(this.gl.DEPTH_TEST);
-    this.gl.depthFunc(this.gl.LEQUAL);
-    this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
+    this.gl.enable(WebGL2RenderingContext.CULL_FACE);
+    this.gl.enable(WebGL2RenderingContext.DEPTH_TEST);
+    this.gl.depthFunc(WebGL2RenderingContext.LEQUAL);
+    this.gl.blendFunc(WebGL2RenderingContext.ONE, WebGL2RenderingContext.ONE);
 
     if (!this.gl.getExtension("EXT_color_buffer_float")) {
       console.error("FLOAT color buffer not available");
@@ -110,169 +110,181 @@ export default class Application {
     ]);
 
     this.gBuffer = this.gl.createFramebuffer();
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer!);
+    this.gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, this.gBuffer!);
 
     this.gPositionMetallic = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gPositionMetallic!);
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MIN_FILTER,
-      this.gl.NEAREST
+    this.gl.bindTexture(
+      WebGL2RenderingContext.TEXTURE_2D,
+      this.gPositionMetallic!
     );
     this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MAG_FILTER,
-      this.gl.NEAREST
+      WebGL2RenderingContext.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_MIN_FILTER,
+      WebGL2RenderingContext.NEAREST
+    );
+    this.gl.texParameteri(
+      WebGL2RenderingContext.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_MAG_FILTER,
+      WebGL2RenderingContext.NEAREST
     );
     this.gl.texStorage2D(
-      this.gl.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_2D,
       1,
-      this.gl.RGBA16F,
+      WebGL2RenderingContext.RGBA16F,
       this.gl.drawingBufferWidth,
       this.gl.drawingBufferHeight
     );
     this.gl.framebufferTexture2D(
-      this.gl.FRAMEBUFFER,
-      this.gl.COLOR_ATTACHMENT0,
-      this.gl.TEXTURE_2D,
+      WebGL2RenderingContext.FRAMEBUFFER,
+      WebGL2RenderingContext.COLOR_ATTACHMENT0,
+      WebGL2RenderingContext.TEXTURE_2D,
       this.gPositionMetallic!,
       0
     );
 
     this.gNormalRoughness = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gNormalRoughness!);
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MIN_FILTER,
-      this.gl.NEAREST
+    this.gl.bindTexture(
+      WebGL2RenderingContext.TEXTURE_2D,
+      this.gNormalRoughness!
     );
     this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MAG_FILTER,
-      this.gl.NEAREST
+      WebGL2RenderingContext.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_MIN_FILTER,
+      WebGL2RenderingContext.NEAREST
+    );
+    this.gl.texParameteri(
+      WebGL2RenderingContext.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_MAG_FILTER,
+      WebGL2RenderingContext.NEAREST
     );
     this.gl.texStorage2D(
-      this.gl.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_2D,
       1,
-      this.gl.RGBA16F,
+      WebGL2RenderingContext.RGBA16F,
       this.gl.drawingBufferWidth,
       this.gl.drawingBufferHeight
     );
     this.gl.framebufferTexture2D(
-      this.gl.FRAMEBUFFER,
-      this.gl.COLOR_ATTACHMENT1,
-      this.gl.TEXTURE_2D,
+      WebGL2RenderingContext.FRAMEBUFFER,
+      WebGL2RenderingContext.COLOR_ATTACHMENT1,
+      WebGL2RenderingContext.TEXTURE_2D,
       this.gNormalRoughness!,
       0
     );
 
     this.gAlbedo = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gAlbedo!);
+    this.gl.bindTexture(WebGL2RenderingContext.TEXTURE_2D, this.gAlbedo!);
     this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MIN_FILTER,
-      this.gl.NEAREST
+      WebGL2RenderingContext.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_MIN_FILTER,
+      WebGL2RenderingContext.NEAREST
     );
     this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MAG_FILTER,
-      this.gl.NEAREST
+      WebGL2RenderingContext.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_MAG_FILTER,
+      WebGL2RenderingContext.NEAREST
     );
     this.gl.texStorage2D(
-      this.gl.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_2D,
       1,
-      this.gl.RGBA16F,
+      WebGL2RenderingContext.RGBA16F,
       this.gl.drawingBufferWidth,
       this.gl.drawingBufferHeight
     );
     this.gl.framebufferTexture2D(
-      this.gl.FRAMEBUFFER,
-      this.gl.COLOR_ATTACHMENT2,
-      this.gl.TEXTURE_2D,
+      WebGL2RenderingContext.FRAMEBUFFER,
+      WebGL2RenderingContext.COLOR_ATTACHMENT2,
+      WebGL2RenderingContext.TEXTURE_2D,
       this.gAlbedo!,
       0
     );
 
     this.gEmissive = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gEmissive!);
+    this.gl.bindTexture(WebGL2RenderingContext.TEXTURE_2D, this.gEmissive!);
     this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MIN_FILTER,
-      this.gl.NEAREST
+      WebGL2RenderingContext.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_MIN_FILTER,
+      WebGL2RenderingContext.NEAREST
     );
     this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MAG_FILTER,
-      this.gl.NEAREST
+      WebGL2RenderingContext.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_MAG_FILTER,
+      WebGL2RenderingContext.NEAREST
     );
     this.gl.texStorage2D(
-      this.gl.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_2D,
       1,
-      this.gl.RGBA16F,
+      WebGL2RenderingContext.RGBA16F,
       this.gl.drawingBufferWidth,
       this.gl.drawingBufferHeight
     );
     this.gl.framebufferTexture2D(
-      this.gl.FRAMEBUFFER,
-      this.gl.COLOR_ATTACHMENT3,
-      this.gl.TEXTURE_2D,
+      WebGL2RenderingContext.FRAMEBUFFER,
+      WebGL2RenderingContext.COLOR_ATTACHMENT3,
+      WebGL2RenderingContext.TEXTURE_2D,
       this.gEmissive!,
       0
     );
 
     const depthTexture = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_2D, depthTexture);
+    this.gl.bindTexture(WebGL2RenderingContext.TEXTURE_2D, depthTexture);
     this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MAG_FILTER,
-      this.gl.NEAREST
+      WebGL2RenderingContext.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_MAG_FILTER,
+      WebGL2RenderingContext.NEAREST
     );
     this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MIN_FILTER,
-      this.gl.NEAREST
+      WebGL2RenderingContext.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_MIN_FILTER,
+      WebGL2RenderingContext.NEAREST
     );
     this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_WRAP_S,
-      this.gl.CLAMP_TO_EDGE
+      WebGL2RenderingContext.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_WRAP_S,
+      WebGL2RenderingContext.CLAMP_TO_EDGE
     );
     this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_WRAP_T,
-      this.gl.CLAMP_TO_EDGE
+      WebGL2RenderingContext.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_WRAP_T,
+      WebGL2RenderingContext.CLAMP_TO_EDGE
     );
     this.gl.texStorage2D(
-      this.gl.TEXTURE_2D,
+      WebGL2RenderingContext.TEXTURE_2D,
       1,
-      this.gl.DEPTH_COMPONENT16,
+      WebGL2RenderingContext.DEPTH_COMPONENT16,
       this.gl.drawingBufferWidth,
       this.gl.drawingBufferHeight
     );
     this.gl.framebufferTexture2D(
-      this.gl.FRAMEBUFFER,
-      this.gl.DEPTH_ATTACHMENT,
-      this.gl.TEXTURE_2D,
+      WebGL2RenderingContext.FRAMEBUFFER,
+      WebGL2RenderingContext.DEPTH_ATTACHMENT,
+      WebGL2RenderingContext.TEXTURE_2D,
       depthTexture,
       0
     );
 
     this.gl.drawBuffers([
-      this.gl.COLOR_ATTACHMENT0,
-      this.gl.COLOR_ATTACHMENT1,
-      this.gl.COLOR_ATTACHMENT2,
-      this.gl.COLOR_ATTACHMENT3,
+      WebGL2RenderingContext.COLOR_ATTACHMENT0,
+      WebGL2RenderingContext.COLOR_ATTACHMENT1,
+      WebGL2RenderingContext.COLOR_ATTACHMENT2,
+      WebGL2RenderingContext.COLOR_ATTACHMENT3,
     ]);
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+    this.gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, null);
 
-    this.gl.activeTexture(this.gl.TEXTURE0);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gPositionMetallic);
-    this.gl.activeTexture(this.gl.TEXTURE1);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gNormalRoughness);
-    this.gl.activeTexture(this.gl.TEXTURE2);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gAlbedo);
-    this.gl.activeTexture(this.gl.TEXTURE3);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gEmissive);
+    this.gl.activeTexture(WebGL2RenderingContext.TEXTURE0);
+    this.gl.bindTexture(
+      WebGL2RenderingContext.TEXTURE_2D,
+      this.gPositionMetallic
+    );
+    this.gl.activeTexture(WebGL2RenderingContext.TEXTURE1);
+    this.gl.bindTexture(
+      WebGL2RenderingContext.TEXTURE_2D,
+      this.gNormalRoughness
+    );
+    this.gl.activeTexture(WebGL2RenderingContext.TEXTURE2);
+    this.gl.bindTexture(WebGL2RenderingContext.TEXTURE_2D, this.gAlbedo);
+    this.gl.activeTexture(WebGL2RenderingContext.TEXTURE3);
+    this.gl.bindTexture(WebGL2RenderingContext.TEXTURE_2D, this.gEmissive);
 
     canvas.setAttribute("tabindex", "0");
     canvas.focus();
@@ -419,11 +431,14 @@ export default class Application {
 
     this.gl.clearColor(0, 0, 0, 0);
 
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer!);
+    this.gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, this.gBuffer!);
     this.shader.geometry.use();
     this.gl.depthMask(true);
-    this.gl.disable(this.gl.BLEND);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    this.gl.disable(WebGL2RenderingContext.BLEND);
+    this.gl.clear(
+      WebGL2RenderingContext.COLOR_BUFFER_BIT |
+        WebGL2RenderingContext.DEPTH_BUFFER_BIT
+    );
 
     await this.forEachActiveComponent(Camera, (camera) => {
       camera.renderCameraToGeometry();
@@ -431,12 +446,15 @@ export default class Application {
     await this.forEachActiveComponent(MeshRenderer, (renderer) => {
       renderer.render();
     });
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+    this.gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, null);
 
     this.shader.lighting.use();
     this.gl.depthMask(false);
-    this.gl.enable(this.gl.BLEND);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    this.gl.enable(WebGL2RenderingContext.BLEND);
+    this.gl.clear(
+      WebGL2RenderingContext.COLOR_BUFFER_BIT |
+        WebGL2RenderingContext.DEPTH_BUFFER_BIT
+    );
 
     this.gl.uniform1i(
       this.shader.lighting.getUniformLocation("gPositionMetallic"),
