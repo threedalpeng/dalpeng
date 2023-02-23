@@ -50,34 +50,34 @@ export default class MeshRenderer extends BaseRenderer {
     this.gl.bindVertexArray(this.#vao);
 
     const positionBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+    this.gl.bindBuffer(WebGL2RenderingContext.ARRAY_BUFFER, positionBuffer);
     this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
+      WebGL2RenderingContext.ARRAY_BUFFER,
       this.mesh.vertex.position,
-      this.gl.STATIC_DRAW
+      WebGL2RenderingContext.STATIC_DRAW
     );
     this.gl.enableVertexAttribArray(positionAttribLocation);
     this.gl.vertexAttribPointer(
       positionAttribLocation,
       3,
-      this.gl.FLOAT,
+      WebGL2RenderingContext.FLOAT,
       false,
       0,
       0
     );
 
     const normalBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normalBuffer);
+    this.gl.bindBuffer(WebGL2RenderingContext.ARRAY_BUFFER, normalBuffer);
     this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
+      WebGL2RenderingContext.ARRAY_BUFFER,
       this.mesh.vertex.normal,
-      this.gl.STATIC_DRAW
+      WebGL2RenderingContext.STATIC_DRAW
     );
     this.gl.enableVertexAttribArray(normalAttribLocation);
     this.gl.vertexAttribPointer(
       normalAttribLocation,
       3,
-      this.gl.FLOAT,
+      WebGL2RenderingContext.FLOAT,
       false,
       0,
       0
@@ -85,17 +85,17 @@ export default class MeshRenderer extends BaseRenderer {
 
     if (texcoordAttribLocation >= 0) {
       const texcoordBuffer = this.gl.createBuffer();
-      this.gl.bindBuffer(this.gl.ARRAY_BUFFER, texcoordBuffer);
+      this.gl.bindBuffer(WebGL2RenderingContext.ARRAY_BUFFER, texcoordBuffer);
       this.gl.bufferData(
-        this.gl.ARRAY_BUFFER,
+        WebGL2RenderingContext.ARRAY_BUFFER,
         this.mesh.vertex.texcoord,
-        this.gl.STATIC_DRAW
+        WebGL2RenderingContext.STATIC_DRAW
       );
       this.gl.enableVertexAttribArray(texcoordAttribLocation);
       this.gl.vertexAttribPointer(
         texcoordAttribLocation,
         2,
-        this.gl.FLOAT,
+        WebGL2RenderingContext.FLOAT,
         false,
         0,
         0
@@ -103,11 +103,14 @@ export default class MeshRenderer extends BaseRenderer {
     }
 
     const indexBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    this.gl.bindBuffer(
+      WebGL2RenderingContext.ELEMENT_ARRAY_BUFFER,
+      indexBuffer
+    );
     this.gl.bufferData(
-      this.gl.ELEMENT_ARRAY_BUFFER,
+      WebGL2RenderingContext.ELEMENT_ARRAY_BUFFER,
       this.mesh.index,
-      this.gl.STATIC_DRAW
+      WebGL2RenderingContext.STATIC_DRAW
     );
 
     this.gl.bindVertexArray(null);
@@ -127,9 +130,9 @@ export default class MeshRenderer extends BaseRenderer {
     this.gl.bindVertexArray(this.#vao);
 
     this.gl.drawElements(
-      this.gl.TRIANGLES,
+      WebGL2RenderingContext.TRIANGLES,
       this.mesh.index.length,
-      this.gl.UNSIGNED_SHORT,
+      WebGL2RenderingContext.UNSIGNED_SHORT,
       0
     );
     this.gl.bindVertexArray(null);
