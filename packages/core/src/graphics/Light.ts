@@ -2,7 +2,7 @@ import Component from "@/component/Component";
 import Transform from "@/Transform";
 import { dummyQuadForLight } from "@/utils/mesh";
 import { Vec3 } from "@dalpeng/math";
-import Shader from "./Shader";
+import Shader from "./resource/Shader";
 
 export type LightType = "directional" | "point" | "spot";
 const LIGHT_TYPE_CODE = Object.freeze({

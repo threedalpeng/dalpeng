@@ -2,7 +2,7 @@ import type GameEntity from "@/entity/GameEntity";
 import Transform from "../Transform";
 import BaseRenderer from "./BaseRenderer";
 import Material from "./Material";
-import type Shader from "./Shader";
+import type Shader from "./resource/Shader";
 
 export default class MeshRenderer extends BaseRenderer {
   geometryShader!: Shader;
@@ -19,7 +19,7 @@ export default class MeshRenderer extends BaseRenderer {
   }
 
   get gl() {
-    if (!this.context) this.context = this.gameEntity.currentApp.context;
+    if (!this.context) this.context = this.gameEntity.currentApp.gl;
     return this.context;
   }
 

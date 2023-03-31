@@ -2,7 +2,7 @@ import Component, { type ComponentConstructor } from "./component/Component";
 import Camera from "./graphics/Camera";
 import Light from "./graphics/Light";
 import MeshRenderer from "./graphics/MeshRenderer";
-import Shader from "./graphics/Shader";
+import Shader from "./graphics/Shaderer";
 import View from "./graphics/View";
 import Input from "./Input";
 import type Scene from "./Scene";
@@ -14,6 +14,9 @@ import mainvert from "./shaders/main.vert?raw";
 import Time from "./Time";
 import Transform from "./Transform";
 import { isNil } from "./utils/basic";
+import GLContext from "./graphics/states/GLContext";
+import GLTexture from "./graphics/states/GLTexture";
+import GLFramebuffer from "./graphics/states/GLFrameBuffer";
 
 export default class Application {
   /* App Self-Managemnet */
@@ -62,16 +65,16 @@ export default class Application {
   }
 
   /* Graphic Context */
-  context!: WebGL2RenderingContext;
+  context!: GLContext;
 
   get gl() {
-    return this.context;
+    return this.context.gl;
   }
   get isContextReady() {
     if (isNil(this.context)) {
       return false;
     }
-    if (isNil(this.context.canvas)) {
+    if (this.context.isReady) {
       return false;
     }
     return true;
@@ -83,15 +86,10 @@ export default class Application {
       return this;
     }
 
-    this.context = canvas.getContext("webgl2", { alpha: false })!;
+    this.context = GLContext.create(canvas, { alpha: false });
 
-    if (isNil(this.context)) {
-      console.error("Cannot use WebGL2");
-      return this;
-    }
-
-    this.gl.enable(WebGL2RenderingContext.CULL_FACE);
-    this.gl.enable(WebGL2RenderingContext.DEPTH_TEST);
+    this.context.enable("CULL_FACE");
+    this.context.enable("DEPTH_TEST");
     this.gl.depthFunc(WebGL2RenderingContext.LEQUAL);
     this.gl.blendFunc(WebGL2RenderingContext.ONE, WebGL2RenderingContext.ONE);
 
@@ -101,32 +99,23 @@ export default class Application {
         "This requires EXT_color_buffer_float which is unavailable on this system.";
     }
 
-    this.registerShader(this.shader.geometry);
-    this.registerShader(this.shader.lighting);
+    this.shader.geometry = this.context.createShader("geometry");
+    this.shader.lighting = this.context.createShader("lighting");
 
     await Promise.allSettled([
       this.shader.geometry.loadFrom(gbufvert, gbuffrag),
       this.shader.lighting.loadFrom(mainvert, mainfrag),
     ]);
 
-    this.gBuffer = this.gl.createFramebuffer();
-    this.gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, this.gBuffer!);
+    this.gBuffer = this.context.createFramebuffer();
 
-    this.gPositionMetallic = this.gl.createTexture();
-    this.gl.bindTexture(
-      WebGL2RenderingContext.TEXTURE_2D,
-      this.gPositionMetallic!
-    );
-    this.gl.texParameteri(
-      WebGL2RenderingContext.TEXTURE_2D,
-      WebGL2RenderingContext.TEXTURE_MIN_FILTER,
-      WebGL2RenderingContext.NEAREST
-    );
-    this.gl.texParameteri(
-      WebGL2RenderingContext.TEXTURE_2D,
-      WebGL2RenderingContext.TEXTURE_MAG_FILTER,
-      WebGL2RenderingContext.NEAREST
-    );
+    this.gPositionMetallic = this.context.createTexture();
+    this.gPositionMetallic.setParams({
+      minFilters: "NEAREST",
+      magFilters: "NEAREST",
+    });
+    this.gPositionMetallic.texS;
+
     this.gl.texStorage2D(
       WebGL2RenderingContext.TEXTURE_2D,
       1,
@@ -134,29 +123,17 @@ export default class Application {
       this.gl.drawingBufferWidth,
       this.gl.drawingBufferHeight
     );
-    this.gl.framebufferTexture2D(
-      WebGL2RenderingContext.FRAMEBUFFER,
-      WebGL2RenderingContext.COLOR_ATTACHMENT0,
-      WebGL2RenderingContext.TEXTURE_2D,
-      this.gPositionMetallic!,
-      0
+    this.gBuffer.registerTexture2D(
+      this.gPositionMetallic,
+      "COLOR_ATTACHMENT0",
+      "2D"
     );
 
-    this.gNormalRoughness = this.gl.createTexture();
-    this.gl.bindTexture(
-      WebGL2RenderingContext.TEXTURE_2D,
-      this.gNormalRoughness!
-    );
-    this.gl.texParameteri(
-      WebGL2RenderingContext.TEXTURE_2D,
-      WebGL2RenderingContext.TEXTURE_MIN_FILTER,
-      WebGL2RenderingContext.NEAREST
-    );
-    this.gl.texParameteri(
-      WebGL2RenderingContext.TEXTURE_2D,
-      WebGL2RenderingContext.TEXTURE_MAG_FILTER,
-      WebGL2RenderingContext.NEAREST
-    );
+    this.gNormalRoughness = this.context.createTexture();
+    this.gNormalRoughness.setParams({
+      minFilters: "NEAREST",
+      magFilters: "NEAREST",
+    });
     this.gl.texStorage2D(
       WebGL2RenderingContext.TEXTURE_2D,
       1,
@@ -164,26 +141,17 @@ export default class Application {
       this.gl.drawingBufferWidth,
       this.gl.drawingBufferHeight
     );
-    this.gl.framebufferTexture2D(
-      WebGL2RenderingContext.FRAMEBUFFER,
-      WebGL2RenderingContext.COLOR_ATTACHMENT1,
-      WebGL2RenderingContext.TEXTURE_2D,
-      this.gNormalRoughness!,
-      0
+    this.gBuffer.registerTexture2D(
+      this.gNormalRoughness,
+      "COLOR_ATTACHMENT1",
+      "2D"
     );
 
-    this.gAlbedo = this.gl.createTexture();
-    this.gl.bindTexture(WebGL2RenderingContext.TEXTURE_2D, this.gAlbedo!);
-    this.gl.texParameteri(
-      WebGL2RenderingContext.TEXTURE_2D,
-      WebGL2RenderingContext.TEXTURE_MIN_FILTER,
-      WebGL2RenderingContext.NEAREST
-    );
-    this.gl.texParameteri(
-      WebGL2RenderingContext.TEXTURE_2D,
-      WebGL2RenderingContext.TEXTURE_MAG_FILTER,
-      WebGL2RenderingContext.NEAREST
-    );
+    this.gAlbedo = this.context.createTexture();
+    this.gAlbedo.setParams({
+      minFilters: "NEAREST",
+      magFilters: "NEAREST",
+    });
     this.gl.texStorage2D(
       WebGL2RenderingContext.TEXTURE_2D,
       1,
@@ -199,18 +167,11 @@ export default class Application {
       0
     );
 
-    this.gEmissive = this.gl.createTexture();
-    this.gl.bindTexture(WebGL2RenderingContext.TEXTURE_2D, this.gEmissive!);
-    this.gl.texParameteri(
-      WebGL2RenderingContext.TEXTURE_2D,
-      WebGL2RenderingContext.TEXTURE_MIN_FILTER,
-      WebGL2RenderingContext.NEAREST
-    );
-    this.gl.texParameteri(
-      WebGL2RenderingContext.TEXTURE_2D,
-      WebGL2RenderingContext.TEXTURE_MAG_FILTER,
-      WebGL2RenderingContext.NEAREST
-    );
+    this.gEmissive = this.context.createTexture();
+    this.gEmissive.setParams({
+      minFilters: "NEAREST",
+      magFilters: "NEAREST",
+    });
     this.gl.texStorage2D(
       WebGL2RenderingContext.TEXTURE_2D,
       1,
@@ -218,6 +179,7 @@ export default class Application {
       this.gl.drawingBufferWidth,
       this.gl.drawingBufferHeight
     );
+
     this.gl.framebufferTexture2D(
       WebGL2RenderingContext.FRAMEBUFFER,
       WebGL2RenderingContext.COLOR_ATTACHMENT3,
@@ -321,15 +283,12 @@ export default class Application {
     shader.gl = this.context;
     return this;
   }
-  shader = {
-    geometry: new Shader(),
-    lighting: new Shader(),
-  };
-  gBuffer: WebGLFramebuffer | null = null;
-  gPositionMetallic: WebGLTexture | null = null;
-  gNormalRoughness: WebGLTexture | null = null;
-  gAlbedo: WebGLTexture | null = null;
-  gEmissive: WebGLTexture | null = null;
+  shader: { geometry: Shader; lighting: Shader };
+  gBuffer: GLFramebuffer | null = null;
+  gPositionMetallic: GLTexture | null = null;
+  gNormalRoughness: GLTexture | null = null;
+  gAlbedo: GLTexture | null = null;
+  gEmissive: GLTexture | null = null;
 
   /* Game Loop */
   static #activeInstances = new Map<number, Application>();
