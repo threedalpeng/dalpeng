@@ -1,21 +1,17 @@
-import Entity from "@/entity/Entity";
 import { isNil } from "@/utils/basic";
 import { loadProgram, loadShader } from "@/utils/gl";
+import GLState from "./GLState";
 
-export default class Shader extends Entity {
+export default class GLShader extends GLState {
   #program: WebGLProgram | null = null;
   gl!: WebGL2RenderingContext;
   static #shaderList = new Map<number, Shader>();
 
-  constructor(name = "") {
+  constructor(gl: WebGL2RenderingContext, name = "") {
     super();
+    this.gl = gl;
     this.name = name;
     Shader.#shaderList.set(this.id, this);
-  }
-
-  static create(name = "") {
-    const newShader = new Shader(name);
-    return newShader;
   }
 
   async loadFrom(vertexShaderSource: string, fragmentShaderSource: string) {
