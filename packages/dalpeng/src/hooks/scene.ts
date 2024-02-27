@@ -1,5 +1,5 @@
 import { Scene } from "@dalpeng/core";
-import { getThisApp, getThisScene, setThisScene } from "./context";
+import { getThisApp, setThisScene } from "./context";
 import { UseGameEntity } from "./gameEntity";
 
 export type UseScene = ReturnType<typeof defineScene>;
@@ -20,10 +20,4 @@ export function defineScene(setup: () => UseGameEntity[] | void) {
 
     return scene;
   };
-}
-
-function withName(name: string) {
-  const thisScene = getThisScene();
-  if (thisScene === null) return;
-  thisScene.name = name;
 }

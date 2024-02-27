@@ -26,12 +26,6 @@ export function defineGameEntity(setup: () => UseGameEntity[] | void) {
   };
 }
 
-export function withName(name: string) {
-  const thisEntity = getThisEntity();
-  if (thisEntity === null) return;
-  thisEntity.name = name;
-}
-
 type ComponentConstructor<Type extends Component> = new (
   gameEntity: GameEntity
 ) => Type;
