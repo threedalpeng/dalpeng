@@ -12,6 +12,8 @@
 
 ## About dalpeng
 
+![Basic 3D Objects Demo](./docs/demo-basic-3d-objects.gif)
+
 ### Supporting Features
 
 Now on development, supporting below features:
