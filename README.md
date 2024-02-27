@@ -12,8 +12,6 @@
 
 ## About dalpeng
 
-This is a game engine for web. It has
-
 ### Supporting Features
 
 Now on development, supporting below features:
@@ -38,6 +36,36 @@ Or install the core part without a scripting API
 ```sh
 npm i @dalpeng/core
 ```
+
+### Usage
+
+You can define App, Scene, and GameEntity with function form.
+
+```typescript
+defineGameEntity(() => {
+  withName("Box");
+
+  const transform = useComponent(Transform);
+  transform.position = vec3(0, 0, 0);
+
+  const renderer = useBox();
+  renderer.material.baseColor = vec3(0, 1, 1);
+  renderer.material.metallic = 0.2;
+  renderer.material.roughness = 0.4;
+});
+```
+
+You can group or preconfigure components with composable scripting API.
+
+```typescript
+const useBox = () => {
+  const renderer = useComponent(MeshRenderer);
+  renderer.mesh = MeshBuilder.box();
+  return renderer;
+};
+```
+
+Check out demo for details.
 
 ## How to run demo
 
