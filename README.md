@@ -23,6 +23,11 @@ Now on development, supporting below features:
 - PBR Material, with basic properties(base color, metallic, roughness, emissive)
 - Composable scripting API, inspired by modern web frameworks(React, Vue...)
 
+## Requirements
+
+- Node.js 18.18 or newer (the repo currently targets Node 24.x)
+- [pnpm](https://pnpm.io) 10.x managed through Corepack (`corepack enable && corepack prepare pnpm@10.21.0 --activate`)
+
 ## Getting Started
 
 The latest version of `node` and `npm` should be installed in your environment.
@@ -97,6 +102,16 @@ The latest version of `node` and `pnpm` should be installed in your environment.
    cd demo/basic-3d-objects
    pnpm run dev
    ```
+
+### Live development workflow
+
+To run a demo and automatically rebuild dependent packages on code changes:
+
+```sh
+pnpm run dev:basic
+```
+
+This command launches the `basic-3d-objects` demo alongside watch builds for its package dependencies, so editing `packages/*` triggers rebuilds and hot reloads in the demo.
 
 ## About subpackages
 

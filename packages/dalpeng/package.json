@@ -8,13 +8,13 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/dalpeng.js",
-      "require": "./dist/dalpeng.umd.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/dalpeng.umd.cjs"
     }
   },
   "files": [
-    "/dist"
+    "dist"
   ],
   "repository": {
     "type": "git",
@@ -28,16 +28,16 @@
   "author": "Kim Jeong-Won <threedalpeng@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite build --watch --mode development",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview"
   },
   "devDependencies": {
-    "typescript": "^4.9.5",
-    "vite": "^4.1.1",
-    "vite-plugin-dts": "^1.7.2",
-    "vitest": "^0.28.3"
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.8"
   },
   "dependencies": {
     "@dalpeng/core": "workspace:^0.1.0",

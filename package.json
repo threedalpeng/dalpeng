@@ -1,20 +1,32 @@
 {
-  "name": "webgraphics",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "dalpeng",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Monorepo for the dalpeng web game engine and demos",
+  "license": "MIT",
+  "packageManager": "pnpm@10.21.0",
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:basic": "turbo run dev --filter=basic-3d-objects --parallel",
     "build": "turbo run build",
     "build:dev": "turbo run build:dev",
     "test": "turbo run test",
-    "lint": "turbo run lint",
-    "dev": "turbo run dev"
+    "lint": "turbo run lint"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
-    "turbo": "^1.12.4",
-    "typescript": "^5.3.3"
+    "turbo": "^2.6.0",
+    "typescript": "^5.9.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "typescript": "^5.9.3",
+      "vite": "^7.2.2",
+      "vite-plugin-dts": "^4.5.4",
+      "vitest": "^4.0.8",
+      "@vitest/ui": "^4.0.8"
+    }
   }
 }

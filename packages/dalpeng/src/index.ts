@@ -1,5 +1,5 @@
 import { Application, GameEntity, Scene } from "@dalpeng/core";
-import { UseApp } from "./hooks/app";
+import type { UseApp } from "./hooks/app";
 
 function createApp(useApp: UseApp) {
   const app = useApp();

@@ -1,20 +1,34 @@
+import path from "node:path";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
-import path from "path";
 
 export default defineConfig({
   resolve: {
-    alias: [{ find: "@", replacement: path.resolve(__dirname, "./src") }],
+    alias: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
   },
   build: {
+    target: "esnext",
     lib: {
-      name: "core",
-      entry: "src/index.ts",
+      entry: path.resolve(__dirname, "src/index.ts"),
+      name: "DalpengCore",
+      formats: ["es", "umd"],
+      fileName: (format) => (format === "es" ? "core.js" : "core.umd.cjs"),
+    },
+    rollupOptions: {
+      external: ["@dalpeng/math"],
+      output: {
+        exports: "named",
+        globals: {
+          "@dalpeng/math": "DalpengMath",
+        },
+      },
     },
   },
   plugins: [
     dts({
+      tsconfigPath: path.resolve(__dirname, "tsconfig.json"),
       insertTypesEntry: true,
+      rollupTypes: true,
     }),
   ],
 });

@@ -1,6 +1,6 @@
 import { Application } from "@dalpeng/core";
 import { setThisApp } from "./context";
-import { UseScene } from "./scene";
+import type { UseScene } from "./scene";
 
 export type UseApp = ReturnType<typeof defineApp>;
 export function defineApp(setup: () => UseScene | undefined) {
@@ -10,7 +10,7 @@ export function defineApp(setup: () => UseScene | undefined) {
 
     const sceneFn = setup();
     if (sceneFn) {
-      const scene = sceneFn();
+      sceneFn();
     }
     setThisApp(null);
 

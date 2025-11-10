@@ -1,6 +1,6 @@
 import { Scene } from "@dalpeng/core";
 import { getThisApp, setThisScene } from "./context";
-import { UseGameEntity } from "./gameEntity";
+import type { UseGameEntity } from "./gameEntity";
 
 export type UseScene = ReturnType<typeof defineScene>;
 export function defineScene(setup: () => UseGameEntity[] | void) {
@@ -13,7 +13,7 @@ export function defineScene(setup: () => UseGameEntity[] | void) {
     const rootEntites = setup() ?? [];
 
     rootEntites.forEach((entityFn) => {
-      const entity = entityFn();
+      entityFn();
     });
 
     setThisScene(null);

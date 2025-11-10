@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^5.1.4"
+    "vite": "^7.2.2"
   },
   "dependencies": {
     "@dalpeng/demo-devmode": "workspace:^0.0.1",

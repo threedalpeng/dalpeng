@@ -1,4 +1,4 @@
-import Component, { ComponentConstructor } from "../component/Component.js";
+import Component, { type ComponentConstructor } from "../component/Component.js";
 import type Scene from "../Scene.js";
 import Entity from "./Entity.js";
 

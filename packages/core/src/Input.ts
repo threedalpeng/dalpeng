@@ -44,12 +44,12 @@ export default class Input {
       this.#mousePos.x = e.offsetX;
       this.#mousePos.y = e.offsetY;
     },
-    pointerout: (e: PointerEvent) => {
+    pointerout: () => {
       this.#mouseMoved = true;
       this.#unpolledCursorAxis.x = 0;
       this.#unpolledCursorAxis.y = 0;
     },
-    pointerleave: (e: PointerEvent) => {
+    pointerleave: () => {
       this.#mouseMoved = true;
       this.#unpolledCursorAxis.x = 0;
       this.#unpolledCursorAxis.y = 0;
