@@ -1,4 +1,6 @@
-import Component, { type ComponentConstructor } from "../component/Component.js";
+import Component, {
+  type ComponentConstructor,
+} from "../component/Component.js";
 import Transform from "../Transform";
 import type Scene from "../Scene.js";
 import Entity from "./Entity.js";
@@ -34,6 +36,7 @@ export default class GameEntity extends Entity {
     child.#parent = this;
     if (this.scene !== undefined) {
       child.scene = this.scene;
+      this.scene?._attachEntityHierarchy(child);
     }
     child.getComponent(Transform)?.markDirty();
     return this;
@@ -52,6 +55,7 @@ export default class GameEntity extends Entity {
 
   detach() {
     if (this.#parent) {
+      this.scene?._detachEntityHierarchy(this);
       this.#parent.removeChild(this);
       this.#parent = null;
     } else if (this.scene) {
@@ -91,8 +95,10 @@ export default class GameEntity extends Entity {
     return this.#tag;
   }
   set tag(tag) {
+    if (this.#tag === tag) return;
+    const prev = this.#tag;
     this.#tag = tag;
-    // TODO: add to tag map
+    this.scene?._updateEntityTag(this, prev, tag);
   }
 
   get currentApp() {

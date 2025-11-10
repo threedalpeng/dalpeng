@@ -122,9 +122,9 @@ export default class Component extends Entity {
         }
         const app = this.gameEntity.scene?.app;
         if (app) {
-          let components = app.activeComponents.get(
-            this.constructor.name
-          ) as Set<this> | undefined;
+          let components = app.activeComponents.get(this.constructor.name) as
+            | Set<this>
+            | undefined;
           if (components === undefined) {
             components = new Set<this>();
             app.activeComponents.set(this.constructor.name, components);
@@ -133,9 +133,9 @@ export default class Component extends Entity {
         }
       } else {
         const app = this.gameEntity.scene?.app;
-        const components = app?.activeComponents.get(
-          this.constructor.name
-        ) as Set<this> | undefined;
+        const components = app?.activeComponents.get(this.constructor.name) as
+          | Set<this>
+          | undefined;
         components?.delete(this);
       }
     }
