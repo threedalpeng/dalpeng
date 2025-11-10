@@ -16,7 +16,8 @@ import Transform from "./Transform";
 import { isNil } from "./utils/basic";
 
 export default class Application {
-  /* App Self-Managemnet */
+  // ─── App Self-Management ───────────────────────────────────────────────────
+  // Handles instance registration and naming for Applications.
   static instanceList = new Map<number, Application>();
   static #nextId = 0;
   #id = 0;
@@ -31,7 +32,8 @@ export default class Application {
     this.name = name;
   }
 
-  /* Scene Management */
+  // ─── Scene Management ──────────────────────────────────────────────────────
+  // Adds/removes scenes while keeping ownership references consistent.
   #sceneList = new Map<number, Scene>();
   addScene(scene: Scene) {
     if (scene.app !== undefined) {
@@ -46,7 +48,8 @@ export default class Application {
     return this;
   }
 
-  /* Component Management */
+  // ─── Component Management ──────────────────────────────────────────────────
+  // Tracks active component sets and dirty transforms per frame.
   activeComponents = new Map<string, Set<Component>>();
   #dirtyTransforms = new Set<Transform>();
   async forEachActiveComponent<Type extends Component>(
@@ -73,13 +76,15 @@ export default class Application {
     dirty.forEach((transform) => transform.checkModelMatrixToBeUpdated());
   }
 
-  /* Script Management */
+  // ─── Script Management ─────────────────────────────────────────────────────
+  // Iterates active scripts for setup, update, and fixed-update phases.
   activeScripts = new Map<number, Script>();
   async forEachActiveScript(callback: (component: Script) => void) {
     this.activeScripts.forEach(callback);
   }
 
-  /* Graphic Context */
+  // ─── Graphic Context ───────────────────────────────────────────────────────
+  // Owns the WebGL2 context and performs readiness checks.
   context!: WebGL2RenderingContext;
 
   get gl() {
@@ -95,6 +100,8 @@ export default class Application {
     return true;
   }
 
+  // ─── Mount & Render Loop ───────────────────────────────────────────────────
+  // Initializes WebGL state and kicks off the main render/update loop.
   async mount(canvas: HTMLCanvasElement) {
     if (isNil(canvas)) {
       console.error("Canvas Not Mounted");

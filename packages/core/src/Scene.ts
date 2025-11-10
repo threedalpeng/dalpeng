@@ -4,7 +4,8 @@ import Transform from "./Transform";
 import type GameEntity from "./entity/GameEntity";
 
 export default class Scene {
-  // Scene identity
+  // ─── Scene Identity ────────────────────────────────────────────────────────
+  // Assigns a unique id and friendly name to each scene instance.
   static #nextId = 0;
   #id = 0;
   get id() {
@@ -17,7 +18,8 @@ export default class Scene {
     this.name = name;
   }
 
-  // Application binding
+  // ─── Application Binding ────────────────────────────────────────────────────
+  // Tracks which Application currently owns this scene.
   #app!: Application;
   get app() {
     return this.#app;
@@ -26,12 +28,14 @@ export default class Scene {
     this.#app = app;
   }
 
-  // Entity registry
+  // ─── Entity Registry ────────────────────────────────────────────────────────
+  // Keeps root entities plus flattened sets for tags and spatial queries.
   rootEntities: { [key: number]: GameEntity } = {};
   #entities = new Set<GameEntity>();
   #tagMap = new Map<string, Set<GameEntity>>();
 
-  // Public entity management
+  // ─── Entity Management API ──────────────────────────────────────────────────
+  // Public helpers for injecting and ejecting entity hierarchies.
   addEntity(entity: GameEntity) {
     entity.detach();
     entity.scene = this;
@@ -46,7 +50,8 @@ export default class Scene {
     return this;
   }
 
-  // Query APIs
+  // ─── Query APIs ─────────────────────────────────────────────────────────────
+  // Provide tag lookups and simple proximity queries over scene entities.
   findByTag(tag: string) {
     return Array.from(this.#tagMap.get(tag) ?? []);
   }
@@ -68,7 +73,8 @@ export default class Scene {
     return results;
   }
 
-  // Internal helpers
+  // ─── Internal Helpers ───────────────────────────────────────────────────────
+  // Scene-private hooks used by GameEntity to keep registries in sync.
   _attachEntityHierarchy(entity: GameEntity) {
     const stack: GameEntity[] = [entity];
     while (stack.length) {

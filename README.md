@@ -22,6 +22,7 @@ Now on development, supporting below features:
 - Directional and point lights
 - PBR Material, with basic properties(base color, metallic, roughness, emissive)
 - Composable scripting API, inspired by modern web frameworks(React, Vue...)
+- Scene-level entity utilities (tag queries, proximity lookups)
 
 ## Requirements
 
@@ -74,6 +75,17 @@ const useBox = () => {
 
 Check out demo for details.
 
+#### Scene utilities
+
+Scenes expose helper APIs for entity lookup:
+
+```ts
+const enemies = scene.findByTag("enemy");
+const nearby = scene.queryRadius(vec3(0, 0, 0), 5);
+```
+
+Child entities inherit their parent's scene/tag state automatically, so tagging an entity or reparenting it keeps these queries accurate.
+
 ## How to run demo
 
 The latest version of `node` and `pnpm` should be installed in your environment.
@@ -112,6 +124,7 @@ pnpm run dev:basic
 ```
 
 This command launches the `basic-3d-objects` demo alongside watch builds for its package dependencies, so editing `packages/*` triggers rebuilds and hot reloads in the demo.
+
 
 ## About subpackages
 

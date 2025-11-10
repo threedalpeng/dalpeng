@@ -2,6 +2,8 @@ import { Mat3, Mat4, Quaternion, Vec3 } from "@dalpeng/math";
 import Component from "./component/Component";
 
 export default class Transform extends Component {
+  // ─── Local State ───────────────────────────────────────────────────────────
+  // Stores position, rotation, scale and their world-space counterparts.
   #position: Vec3 = new Vec3([0, 0, 0]);
   get position() {
     return this.#position;
@@ -42,6 +44,8 @@ export default class Transform extends Component {
     return this.#isDirty;
   }
 
+  // ─── Mutation Helpers ──────────────────────────────────────────────────────
+  // High-level operations that mutate local transform state.
   translate(v: Float32List) {
     this.#position = this.#position.add(v);
     this.markDirty();
@@ -58,6 +62,8 @@ export default class Transform extends Component {
     this.markDirty();
   }
 
+  // ─── Matrix Computation ────────────────────────────────────────────────────
+  // Builds model matrices and propagates updates to child entities.
   #modelMatrix: Mat4 = new Mat4();
   get modelMatrix() {
     return this.#modelMatrix;
@@ -104,6 +110,8 @@ export default class Transform extends Component {
     }
   }
 
+  // ─── Coordinate Conversion ─────────────────────────────────────────────────
+  // Converts points between local and world space using the cached matrices.
   localToWorldPoint(v: Vec3) {
     return new Mat3(this.#modelMatrix).mulv(v);
   }
@@ -111,6 +119,9 @@ export default class Transform extends Component {
   worldToLocalPoint(v: Vec3) {
     return new Mat3(this.#modelMatrix).transpose().mulv(v);
   }
+
+  // ─── Dirty Tracking ────────────────────────────────────────────────────────
+  // Notifies the owning Application when transform data needs processing.
   markDirty() {
     this.#isDirty = true;
     const app = this.gameEntity.scene?.app;
