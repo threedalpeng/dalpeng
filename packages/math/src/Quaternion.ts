@@ -1,5 +1,6 @@
 import { Mat3, Mat4 } from "./Matrix";
 import { Vec3 } from "./Vector";
+import { EPSILON } from "./utils";
 
 export type AxisAngle = [axis: Vec3, angle: number];
 
@@ -43,34 +44,87 @@ export class Quaternion extends Float32Array {
   }
 
   mulv(v: Float32List) {
-    return new Mat3(this.toMat3()).mulv(v);
+    const qx = this.x;
+    const qy = this.y;
+    const qz = this.z;
+    const qw = this.w;
+
+    const vx = v[0];
+    const vy = v[1];
+    const vz = v[2];
+
+    const tx = 2 * (qy * vz - qz * vy);
+    const ty = 2 * (qz * vx - qx * vz);
+    const tz = 2 * (qx * vy - qy * vx);
+
+    return new Vec3([
+      vx + qw * tx + (qy * tz - qz * ty),
+      vy + qw * ty + (qz * tx - qx * tz),
+      vz + qw * tz + (qx * ty - qy * tx),
+    ]);
   }
   mul(q: Quaternion) {
-    const v = new Vec3([this[0], this[1], this[2]]);
-    const qV = new Vec3([q.x, q.y, q.z]);
-    const tV = qV.muli(this.w).add(v.muli(q.w)).add(v.cross(qV));
-    const tW = this.w * q.w - v.dot(qV);
-    return new Quaternion([...tV, tW]).normalize();
+    const ax = this.x;
+    const ay = this.y;
+    const az = this.z;
+    const aw = this.w;
+    const bx = q.x;
+    const by = q.y;
+    const bz = q.z;
+    const bw = q.w;
+
+    return new Quaternion([
+      aw * bx + ax * bw + ay * bz - az * by,
+      aw * by - ax * bz + ay * bw + az * bx,
+      aw * bz + ax * by - ay * bx + az * bw,
+      aw * bw - ax * bx - ay * by - az * bz,
+    ]).normalize();
   }
   div(q: Quaternion) {
-    const v = new Vec3([this[0], this[1], this[2]]);
-    const qV = new Vec3([q.x, q.y, q.z]);
-    const tV = qV.muli(-this.w).add(v.muli(q.w)).sub(v.cross(qV));
-    const tW = this.w * q.w + v.dot(qV);
-    return new Quaternion([...tV, tW]).normalize();
+    const ax = this.x;
+    const ay = this.y;
+    const az = this.z;
+    const aw = this.w;
+    const bx = q.x;
+    const by = q.y;
+    const bz = q.z;
+    const bw = q.w;
+
+    const lenSq = q.size2();
+    if (lenSq <= EPSILON * EPSILON) {
+      return Quaternion.identity();
+    }
+    const invLenSq = 1 / lenSq;
+
+    const ix = -bx * invLenSq;
+    const iy = -by * invLenSq;
+    const iz = -bz * invLenSq;
+    const iw = bw * invLenSq;
+
+    return new Quaternion([
+      aw * ix + ax * iw + ay * iz - az * iy,
+      aw * iy - ax * iz + ay * iw + az * ix,
+      aw * iz + ax * iy - ay * ix + az * iw,
+      aw * iw - ax * ix - ay * iy - az * iz,
+    ]).normalize();
   }
 
-  normalize() {
-    return this.divi(this.size());
+  normalize(epsilon = EPSILON) {
+    const lenSq = this.size2();
+    if (lenSq <= epsilon * epsilon) {
+      return Quaternion.identity();
+    }
+    const inv = 1 / Math.sqrt(lenSq);
+    return new Quaternion([
+      this[0] * inv,
+      this[1] * inv,
+      this[2] * inv,
+      this[3] * inv,
+    ]);
   }
 
   size() {
-    return Math.sqrt(
-      this[0] * this[0] +
-        this[1] * this[1] +
-        this[2] * this[2] +
-        this[3] * this[3]
-    );
+    return Math.sqrt(this.size2());
   }
   size2() {
     return (
@@ -107,16 +161,11 @@ export class Quaternion extends Float32Array {
     const xw = this.x * this.w;
     const yw = this.y * this.w;
     const zw = this.z * this.w;
+    // prettier-ignore
     return new Mat3([
-      1 - 2 * (y2 + z2),
-      2 * (xy + zw),
-      2 * (xz - yw),
-      2 * (xy - zw),
-      1 - 2 * (x2 + z2),
-      2 * (yz + xw),
-      2 * (xz + yw),
-      2 * (yz - xw),
-      1 - 2 * (x2 + y2),
+      1 - 2 * (y2 + z2),  2 * (xy + zw),      2 * (xz - yw),
+      2 * (xy - zw),      1 - 2 * (x2 + z2),  2 * (yz + xw),
+      2 * (xz + yw),      2 * (yz - xw),      1 - 2 * (x2 + y2),
     ]);
   }
   toMat4() {
@@ -129,23 +178,12 @@ export class Quaternion extends Float32Array {
     const xw = this.x * this.w;
     const yw = this.y * this.w;
     const zw = this.z * this.w;
+    // prettier-ignore
     return new Mat4([
-      1 - 2 * (y2 + z2),
-      2 * (xy + zw),
-      2 * (xz - yw),
-      0,
-      2 * (xy - zw),
-      1 - 2 * (x2 + z2),
-      2 * (yz + xw),
-      0,
-      2 * (xz + yw),
-      2 * (yz - xw),
-      1 - 2 * (x2 + y2),
-      0,
-      0,
-      0,
-      0,
-      1,
+      1 - 2 * (y2 + z2),  2 * (xy + zw),      2 * (xz - yw),      0,
+      2 * (xy - zw),      1 - 2 * (x2 + z2),  2 * (yz + xw),      0,
+      2 * (xz + yw),      2 * (yz - xw),      1 - 2 * (x2 + y2),  0,
+      0,                  0,                  0,                  1,
     ]);
   }
 
@@ -158,6 +196,55 @@ export class Quaternion extends Float32Array {
       axis.y * s,
       axis.z * s,
       Math.cos(angle * 0.5),
+    ]);
+  }
+
+  static identity() {
+    return new Quaternion([0, 0, 0, 1]);
+  }
+
+  static lerp(a: Quaternion, b: Quaternion, t: number) {
+    return new Quaternion([
+      a.x + (b.x - a.x) * t,
+      a.y + (b.y - a.y) * t,
+      a.z + (b.z - a.z) * t,
+      a.w + (b.w - a.w) * t,
+    ]).normalize();
+  }
+
+  static slerp(a: Quaternion, b: Quaternion, t: number) {
+    let bx = b.x;
+    let by = b.y;
+    let bz = b.z;
+    let bw = b.w;
+    let cosHalfTheta = a.x * bx + a.y * by + a.z * bz + a.w * bw;
+
+    if (cosHalfTheta < 0) {
+      cosHalfTheta = -cosHalfTheta;
+      bx = -bx;
+      by = -by;
+      bz = -bz;
+      bw = -bw;
+    }
+
+    if (cosHalfTheta > 1 - EPSILON) {
+      return Quaternion.lerp(a, new Quaternion([bx, by, bz, bw]), t);
+    }
+
+    const halfTheta = Math.acos(cosHalfTheta);
+    const sinHalfTheta = Math.sin(halfTheta);
+    if (Math.abs(sinHalfTheta) <= EPSILON) {
+      return Quaternion.lerp(a, new Quaternion([bx, by, bz, bw]), t);
+    }
+
+    const ratioA = Math.sin((1 - t) * halfTheta) / sinHalfTheta;
+    const ratioB = Math.sin(t * halfTheta) / sinHalfTheta;
+
+    return new Quaternion([
+      a.x * ratioA + bx * ratioB,
+      a.y * ratioA + by * ratioB,
+      a.z * ratioA + bz * ratioB,
+      a.w * ratioA + bw * ratioB,
     ]);
   }
 }

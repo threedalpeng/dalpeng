@@ -44,6 +44,15 @@ describe("Vector", () => {
       vec2DeepTest(vec2_i2.normalize(), new Vec2([0.6, -0.8]));
       vec2DeepTest(vec2_f1.normalize(), new Vec2([-0.4613746, 0.8872053]));
     });
+    test("normalize returns zero for zero-length vectors", () => {
+      vec2DeepTest(new Vec2([0, 0]).normalize(), Vec2.zero());
+    });
+    test("lerp", () => {
+      vec2DeepTest(
+        Vec2.lerp(new Vec2([0, 0]), new Vec2([2, 4]), 0.5),
+        new Vec2([1, 2])
+      );
+    });
   });
 
   describe("Vec3", () => {
@@ -99,6 +108,15 @@ describe("Vector", () => {
       vec3DeepTest(
         vec3_f1.normalize(),
         new Vec3([-0.439304, 0.844764, 0.305588])
+      );
+    });
+    test("normalize returns zero for zero-length vectors", () => {
+      vec3DeepTest(new Vec3([0, 0, 0]).normalize(), Vec3.zero());
+    });
+    test("lerp", () => {
+      vec3DeepTest(
+        Vec3.lerp(new Vec3([0, 0, 0]), new Vec3([2, -2, 4]), 0.25),
+        new Vec3([0.5, -0.5, 1])
       );
     });
   });
@@ -163,6 +181,15 @@ describe("Vector", () => {
       vec4DeepTest(
         vec4_f1.normalize(),
         new Vec4([-0.439304, 0.844764, 0.305588])
+      );
+    });
+    test("normalize returns zero for zero-length vectors", () => {
+      vec4DeepTest(new Vec4([0, 0, 0, 0]).normalize(), Vec4.zero());
+    });
+    test("lerp", () => {
+      vec4DeepTest(
+        Vec4.lerp(new Vec4([0, 0, 0, 0]), new Vec4([4, 2, -2, 6]), 0.5),
+        new Vec4([2, 1, -1, 3])
       );
     });
   });

@@ -1,3 +1,5 @@
+export const EPSILON = 1e-8;
+
 export function deg2rad(degree: number) {
   return (degree * Math.PI) / 180;
 }

@@ -1,5 +1,5 @@
 import { type Quaternion } from "./Quaternion";
-import { deg2rad } from "./utils";
+import { EPSILON, deg2rad } from "./utils";
 import { Vec3, Vec4, type Vec2 } from "./Vector";
 
 export class Mat3 extends Float32Array {
@@ -99,7 +99,12 @@ export class Mat3 extends Float32Array {
   }
 
   static identity() {
-    return new Mat3([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+    // prettier-ignore
+    return new Mat3([
+      1, 0, 0,
+      0, 1, 0,
+      0, 0, 1,
+    ]);
   }
 
   transpose() {
@@ -119,10 +124,11 @@ export class Mat3 extends Float32Array {
     );
   }
 
-  inverse() {
+  inverse(): Mat3 | null {
     const d = this.det();
-    if (d === 0) {
-      console.error("inverse() might be singular.");
+    if (Math.abs(d) <= EPSILON) {
+      console.warn("Mat3.inverse() attempted on a singular matrix.");
+      return null;
     }
     const s = 1 / d;
 
@@ -135,16 +141,31 @@ export class Mat3 extends Float32Array {
   }
 
   static translate(v: Float32List) {
-    return new Mat3([1, 0, 0, 0, 1, 0, v[0], v[1], 1]);
+    // prettier-ignore
+    return new Mat3([
+      1,    0,    0,
+      0,    1,    0,
+      v[0], v[1], 1,
+    ]);
   }
   static rotate(angle: number) {
     const radian = deg2rad(angle);
     const s = Math.sin(radian);
     const c = Math.cos(radian);
-    return new Mat3([c, s, 0, -s, c, 0, 0, 0, 1]);
+    // prettier-ignore
+    return new Mat3([
+      c,  s,  0,
+     -s,  c,  0,
+      0,  0,  1,
+    ]);
   }
   static scale(v: Float32List) {
-    return new Mat3([v[0], 0, 0, 0, v[1], 0, 0, 0, 1]);
+    // prettier-ignore
+    return new Mat3([
+      v[0], 0,    0,
+      0,    v[1], 0,
+      0,    0,    1,
+    ]);
   }
 
   static view(center: Vec2, angle: number) {
@@ -155,7 +176,12 @@ export class Mat3 extends Float32Array {
   }
   static perspective(size: number, aspectRatio: number) {
     const invSize = 1 / size;
-    return new Mat3([invSize / aspectRatio, 0, 0, 0, invSize, 0, 0, 0, 1]);
+    // prettier-ignore
+    return new Mat3([
+      invSize / aspectRatio, 0,       0,
+      0,                     invSize, 0,
+      0,                     0,       1,
+    ]);
   }
 }
 
@@ -337,10 +363,11 @@ export class Mat4 extends Float32Array {
     );
   }
 
-  inverse() {
+  inverse(): Mat4 | null {
     const d = this.det();
-    if (d === 0) {
-      console.error("inverse() might be singular.");
+    if (Math.abs(d) <= EPSILON) {
+      console.warn("Mat4.inverse() attempted on a singular matrix.");
+      return null;
     }
     const s = 1 / d;
     return new Mat4([

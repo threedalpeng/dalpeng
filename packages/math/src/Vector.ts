@@ -1,3 +1,5 @@
+import { EPSILON } from "./utils";
+
 export class Vec2 extends Float32Array {
   get x() {
     return this[0];
@@ -56,9 +58,13 @@ export class Vec2 extends Float32Array {
     return this[0] * this[0] + this[1] * this[1];
   }
 
-  normalize() {
-    const size = this.size();
-    return new Vec2([this[0] / size, this[1] / size]);
+  normalize(epsilon = EPSILON) {
+    const lenSq = this.size2();
+    if (lenSq <= epsilon * epsilon) {
+      return Vec2.zero();
+    }
+    const inv = 1 / Math.sqrt(lenSq);
+    return new Vec2([this[0] * inv, this[1] * inv]);
   }
 
   static zero() {
@@ -78,6 +84,12 @@ export class Vec2 extends Float32Array {
   }
   static right() {
     return new Vec2([1, 0]);
+  }
+  static lerp(a: Float32List, b: Float32List, t: number) {
+    return new Vec2([
+      a[0] + (b[0] - a[0]) * t,
+      a[1] + (b[1] - a[1]) * t,
+    ]);
   }
 }
 
@@ -179,9 +191,13 @@ export class Vec3 extends Float32Array {
     return this[0] * this[0] + this[1] * this[1] + this[2] * this[2];
   }
 
-  normalize() {
-    const size = this.size();
-    return new Vec3([this[0] / size, this[1] / size, this[2] / size]);
+  normalize(epsilon = EPSILON) {
+    const lenSq = this.size2();
+    if (lenSq <= epsilon * epsilon) {
+      return Vec3.zero();
+    }
+    const inv = 1 / Math.sqrt(lenSq);
+    return new Vec3([this[0] * inv, this[1] * inv, this[2] * inv]);
   }
 
   static zero() {
@@ -206,7 +222,14 @@ export class Vec3 extends Float32Array {
     return new Vec3([0, 0, 1]);
   }
   static back() {
-    return new Vec2([0, 0, -1]);
+    return new Vec3([0, 0, -1]);
+  }
+  static lerp(a: Float32List, b: Float32List, t: number) {
+    return new Vec3([
+      a[0] + (b[0] - a[0]) * t,
+      a[1] + (b[1] - a[1]) * t,
+      a[2] + (b[2] - a[2]) * t,
+    ]);
   }
 }
 export function vec3(): Vec3;
@@ -338,13 +361,17 @@ export class Vec4 extends Float32Array {
     );
   }
 
-  normalize() {
-    const size = this.size();
+  normalize(epsilon = EPSILON) {
+    const lenSq = this.size2();
+    if (lenSq <= epsilon * epsilon) {
+      return Vec4.zero();
+    }
+    const inv = 1 / Math.sqrt(lenSq);
     return new Vec4([
-      this[0] / size,
-      this[1] / size,
-      this[2] / size,
-      this[3] / size,
+      this[0] * inv,
+      this[1] * inv,
+      this[2] * inv,
+      this[3] * inv,
     ]);
   }
 
@@ -353,6 +380,14 @@ export class Vec4 extends Float32Array {
   }
   static one() {
     return new Vec4([1, 1, 1, 1]);
+  }
+  static lerp(a: Float32List, b: Float32List, t: number) {
+    return new Vec4([
+      a[0] + (b[0] - a[0]) * t,
+      a[1] + (b[1] - a[1]) * t,
+      a[2] + (b[2] - a[2]) * t,
+      a[3] + (b[3] - a[3]) * t,
+    ]);
   }
 }
 

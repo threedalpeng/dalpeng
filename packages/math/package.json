@@ -1,7 +1,7 @@
 {
   "name": "@dalpeng/math",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A very simple typescript math library for dalpeng engine, including Vector, Matrix and Quaternion",
   "main": "./dist/math.umd.cjs",
   "module": "./dist/math.js",
