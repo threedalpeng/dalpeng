@@ -52,7 +52,13 @@ export default class Application {
     type: ComponentConstructor<Type>,
     callback: (component: Type) => void
   ) {
-    (this.activeComponents.get(type.name) as Type[]).forEach(callback);
+    const components = this.activeComponents.get(type.name) as
+      | Type[]
+      | undefined;
+    if (components === undefined) {
+      return;
+    }
+    components.slice().forEach(callback);
   }
 
   /* Script Management */

@@ -25,7 +25,7 @@ export default class Transform extends Component {
   }
   #worldRotation: Quaternion = new Quaternion([0, 0, 0, 1]);
   get worldRotation() {
-    return this.#rotation;
+    return this.#worldRotation;
   }
 
   #scale: Vec3 = new Vec3([1, 1, 1]);

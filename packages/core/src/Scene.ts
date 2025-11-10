@@ -25,6 +25,7 @@ export default class Scene {
   rootEntities: { [key: number]: GameEntity } = {};
 
   addEntity(entity: GameEntity) {
+    entity.detach();
     entity.scene = this;
     this.rootEntities[entity.id] = entity;
     return this;

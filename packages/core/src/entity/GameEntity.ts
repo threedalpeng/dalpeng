@@ -24,12 +24,42 @@ export default class GameEntity extends Entity {
   }
 
   addChild(child: GameEntity) {
+    if (child === this) {
+      return this;
+    }
+    child.detach();
     this.#children.push(child);
     child.#parent = this;
-    child.scene = this.scene;
+    if (this.scene !== undefined) {
+      child.scene = this.scene;
+    }
+    return this;
+  }
+
+  removeChild(child: GameEntity) {
+    const idx = this.#children.indexOf(child);
+    if (idx >= 0) {
+      this.#children.splice(idx, 1);
+      if (child.#parent === this) {
+        child.#parent = null;
+      }
+    }
+    return this;
+  }
+
+  detach() {
+    if (this.#parent) {
+      this.#parent.removeChild(this);
+      this.#parent = null;
+    } else if (this.scene) {
+      this.scene.removeEntity(this);
+    }
+    return this;
   }
 
   remove() {
+    [...this.#children].forEach((child) => child.remove());
+    this.detach();
     Component.componentGroups.forEach((componentGroup) => {
       componentGroup.delete(this.id);
     });
