@@ -49,16 +49,21 @@ export default class Component extends Entity {
       componentGroup.set(gameEntity.id, components);
     }
     components.push(component);
+    gameEntity._registerComponentInstance(component);
 
     component.isActive = isActive;
     if (isActive) {
-      let activeComponents = gameEntity.currentApp.activeComponents;
-      let components = activeComponents.get(type.name) as Type[];
-      if (components === undefined) {
-        components = [];
-        activeComponents.set(type.name, components);
+      const app = gameEntity.scene?.app;
+      if (app) {
+        let components = app.activeComponents.get(type.name) as
+          | Set<Type>
+          | undefined;
+        if (components === undefined) {
+          components = new Set<Type>();
+          app.activeComponents.set(type.name, components);
+        }
+        components.add(component);
       }
-      components.push(component);
     }
 
     component.on("run", (key: keyof Type) => {
@@ -115,14 +120,23 @@ export default class Component extends Entity {
         if (!this.#isSetup) {
           this.setup();
         }
-        this.gameEntity.currentApp.activeComponents.get(this.name)?.push(this);
-      } else {
-        const activeComponents =
-          this.gameEntity.currentApp.activeComponents.get(this.name);
-        const idx = activeComponents?.findIndex((c) => c === this) ?? -1;
-        if (idx >= 0) {
-          activeComponents?.splice(idx, 1);
+        const app = this.gameEntity.scene?.app;
+        if (app) {
+          let components = app.activeComponents.get(
+            this.constructor.name
+          ) as Set<this> | undefined;
+          if (components === undefined) {
+            components = new Set<this>();
+            app.activeComponents.set(this.constructor.name, components);
+          }
+          components.add(this);
         }
+      } else {
+        const app = this.gameEntity.scene?.app;
+        const components = app?.activeComponents.get(
+          this.constructor.name
+        ) as Set<this> | undefined;
+        components?.delete(this);
       }
     }
   }

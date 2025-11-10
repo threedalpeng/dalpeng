@@ -47,18 +47,30 @@ export default class Application {
   }
 
   /* Component Management */
-  activeComponents = new Map<string, Component[]>();
+  activeComponents = new Map<string, Set<Component>>();
+  #dirtyTransforms = new Set<Transform>();
   async forEachActiveComponent<Type extends Component>(
     type: ComponentConstructor<Type>,
     callback: (component: Type) => void
   ) {
     const components = this.activeComponents.get(type.name) as
-      | Type[]
+      | Set<Type>
       | undefined;
     if (components === undefined) {
       return;
     }
-    components.slice().forEach(callback);
+    for (const component of components) {
+      callback(component);
+    }
+  }
+  queueTransformUpdate(transform: Transform) {
+    this.#dirtyTransforms.add(transform);
+  }
+  #processDirtyTransforms() {
+    if (this.#dirtyTransforms.size === 0) return;
+    const dirty = Array.from(this.#dirtyTransforms);
+    this.#dirtyTransforms.clear();
+    dirty.forEach((transform) => transform.checkModelMatrixToBeUpdated());
   }
 
   /* Script Management */
@@ -396,11 +408,7 @@ export default class Application {
   }
 
   async #setup() {
-    this.#sceneList.forEach((scene) =>
-      Object.values(scene.rootEntities).forEach((rootEntity) => {
-        rootEntity.getComponent(Transform)?.checkModelMatrixToBeUpdated();
-      })
-    );
+    this.#processDirtyTransforms();
     this.activeComponents.forEach((components) =>
       components.forEach((component) => component.setup())
     );
@@ -411,13 +419,9 @@ export default class Application {
     this.forEachActiveScript((script) => script.fixedUpdate());
   }
   async #update() {
+    this.#processDirtyTransforms();
     await this.forEachActiveComponent(Camera, (camera) => camera.update());
     await this.forEachActiveScript((script) => script.update());
-    this.#sceneList.forEach((scene) =>
-      Object.values(scene.rootEntities).forEach((rootEntity) => {
-        rootEntity.getComponent(Transform)?.checkModelMatrixToBeUpdated();
-      })
-    );
   }
 
   async #render() {

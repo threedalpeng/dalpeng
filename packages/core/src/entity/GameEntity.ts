@@ -1,10 +1,12 @@
 import Component, { type ComponentConstructor } from "../component/Component.js";
+import Transform from "../Transform";
 import type Scene from "../Scene.js";
 import Entity from "./Entity.js";
 
 export default class GameEntity extends Entity {
   static #gameEntityList = new Map<number, GameEntity>();
   #tag = "default";
+  #componentsByType = new Map<string, Component[]>();
 
   constructor(name = "") {
     super();
@@ -33,6 +35,7 @@ export default class GameEntity extends Entity {
     if (this.scene !== undefined) {
       child.scene = this.scene;
     }
+    child.getComponent(Transform)?.markDirty();
     return this;
   }
 
@@ -54,6 +57,7 @@ export default class GameEntity extends Entity {
     } else if (this.scene) {
       this.scene.removeEntity(this);
     }
+    this.getComponent(Transform)?.markDirty();
     return this;
   }
 
@@ -72,17 +76,15 @@ export default class GameEntity extends Entity {
   getComponent<Type extends Component>(
     type: ComponentConstructor<Type>
   ): Type | null {
-    const components = Component.find(type, this.id);
-    if (components) {
-      return components[0] ?? null;
-    } else {
-      return null;
-    }
+    const components = this.#componentsByType.get(type.name) as
+      | Type[]
+      | undefined;
+    return components?.[0] ?? null;
   }
   getComponents<Type extends Component>(
     type: ComponentConstructor<Type>
   ): Type[] {
-    return Component.find(type, this.id) ?? [];
+    return (this.#componentsByType.get(type.name) as Type[] | undefined) ?? [];
   }
 
   get tag() {
@@ -95,6 +97,29 @@ export default class GameEntity extends Entity {
 
   get currentApp() {
     return this.scene.app;
+  }
+
+  _registerComponentInstance(component: Component) {
+    const typeName = component.constructor.name;
+    let components = this.#componentsByType.get(typeName);
+    if (components === undefined) {
+      components = [];
+      this.#componentsByType.set(typeName, components);
+    }
+    components.push(component);
+  }
+
+  _unregisterComponentInstance(component: Component) {
+    const typeName = component.constructor.name;
+    const components = this.#componentsByType.get(typeName);
+    if (!components) return;
+    const idx = components.indexOf(component);
+    if (idx >= 0) {
+      components.splice(idx, 1);
+      if (components.length === 0) {
+        this.#componentsByType.delete(typeName);
+      }
+    }
   }
 
   static find(name: string) {

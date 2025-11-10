@@ -8,7 +8,7 @@ export default class Transform extends Component {
   }
   set position(value: Vec3) {
     this.#position = value;
-    this.#isDirty = true;
+    this.markDirty();
   }
   #worldPosition: Vec3 = new Vec3([0, 0, 0]);
   get worldPosition() {
@@ -21,7 +21,7 @@ export default class Transform extends Component {
   }
   set rotation(value: Quaternion) {
     this.#rotation = value;
-    this.#isDirty = true;
+    this.markDirty();
   }
   #worldRotation: Quaternion = new Quaternion([0, 0, 0, 1]);
   get worldRotation() {
@@ -34,7 +34,7 @@ export default class Transform extends Component {
   }
   set scale(value: Vec3) {
     this.#scale = value;
-    this.#isDirty = true;
+    this.markDirty();
   }
 
   #isDirty: boolean = true;
@@ -44,17 +44,18 @@ export default class Transform extends Component {
 
   translate(v: Float32List) {
     this.#position = this.#position.add(v);
-    this.#isDirty = true;
+    this.markDirty();
   }
 
   rotate(axis: Vec3, angle: number) {
     this.#rotation = this.#rotation.mul(Quaternion.fromAxisAngle(axis, angle));
-    this.#isDirty = true;
+    this.markDirty();
   }
   rotateAround(worldPoint: Vec3, axis: Vec3, angle: number) {
     const q = Quaternion.fromAxisAngle(axis, angle);
     this.#position = q.mulv(this.#position.sub(worldPoint)).add(worldPoint);
     this.#rotation = q.mul(this.#rotation);
+    this.markDirty();
   }
 
   #modelMatrix: Mat4 = new Mat4();
@@ -109,5 +110,12 @@ export default class Transform extends Component {
 
   worldToLocalPoint(v: Vec3) {
     return new Mat3(this.#modelMatrix).transpose().mulv(v);
+  }
+  markDirty() {
+    this.#isDirty = true;
+    const app = this.gameEntity.scene?.app;
+    if (app) {
+      app.queueTransformUpdate(this);
+    }
   }
 }
