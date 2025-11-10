@@ -40,6 +40,6 @@
     "vitest": "^4.0.8"
   },
   "dependencies": {
-    "@dalpeng/math": "workspace:^0.1.0"
+    "@dalpeng/math": "workspace:^0.2.0"
   }
 }

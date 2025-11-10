@@ -28,7 +28,7 @@ importers:
         specifier: workspace:^0.0.1
         version: link:../devmode
       '@dalpeng/math':
-        specifier: workspace:^0.1.0
+        specifier: workspace:^0.2.0
         version: link:../../packages/math
       dalpeng:
         specifier: workspace:^0.1.0
@@ -60,7 +60,7 @@ importers:
   packages/core:
     dependencies:
       '@dalpeng/math':
-        specifier: workspace:^0.1.0
+        specifier: workspace:^0.2.0
         version: link:../math
     devDependencies:
       typescript:
@@ -82,7 +82,7 @@ importers:
         specifier: workspace:^0.1.0
         version: link:../core
       '@dalpeng/math':
-        specifier: workspace:^0.1.0
+        specifier: workspace:^0.2.0
         version: link:../math
     devDependencies:
       typescript:
