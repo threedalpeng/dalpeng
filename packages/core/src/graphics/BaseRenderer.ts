@@ -4,7 +4,8 @@ import Transform from "@/Transform";
 import { type Mesh } from "@/utils/mesh";
 
 export default class BaseRenderer extends Component {
-  context!: WebGL2RenderingContext;
+  // Reserved for any backend-specific context if needed later
+  context: any;
   mesh!: Mesh;
   transform!: Transform;
 

@@ -29,14 +29,16 @@ export default class Camera extends Component {
     super.setup();
 
     this.size = 4;
-    this.aspectRatio = this.gl.canvas.width / this.gl.canvas.height;
+    const size = this.currentApp.renderer.getDrawableSize(this.currentApp);
+    this.aspectRatio = size.width / size.height;
   }
 
   async update() {
     const transform = this.transform;
     this.eye = transform.position;
 
-    this.aspectRatio = this.gl.canvas.width / this.gl.canvas.height;
+    const size = this.currentApp.renderer.getDrawableSize(this.currentApp);
+    this.aspectRatio = size.width / size.height;
     this.viewMatrix = Mat4.view(this.eye, this.at, this.up);
     if (this.isOrthographic) {
       this.projectionMatrix = Mat4.orthographic(
@@ -57,23 +59,12 @@ export default class Camera extends Component {
 
   async renderCameraToGeometry() {
     const shader = this.currentApp.shader.geometry;
-    this.gl.uniformMatrix4fv(
-      shader.getUniformLocation("uView")!,
-      false,
-      this.viewMatrix
-    );
-    this.gl.uniformMatrix4fv(
-      shader.getUniformLocation("uProjection")!,
-      false,
-      this.projectionMatrix
-    );
+    shader.setUniformMat4("uView", this.viewMatrix);
+    shader.setUniformMat4("uProjection", this.projectionMatrix);
   }
 
   async renderCameraToLighting() {
     const shader = this.currentApp.shader.lighting;
-    this.gl.uniform3fv(
-      shader.getUniformLocation("uViewPos")!,
-      this.transform.worldPosition
-    );
+    shader.setUniformVec3("uViewPos", this.transform.worldPosition);
   }
 }

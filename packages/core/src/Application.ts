@@ -2,6 +2,7 @@ import Component, { type ComponentConstructor } from "./component/Component";
 import Camera from "./graphics/Camera";
 import Light from "./graphics/Light";
 import MeshRenderer from "./graphics/MeshRenderer";
+import SpriteRenderer from "./graphics/SpriteRenderer";
 import Shader from "./graphics/Shader";
 import View from "./graphics/View";
 import Input from "./Input";
@@ -14,6 +15,9 @@ import mainvert from "./shaders/main.vert?raw";
 import Time from "./Time";
 import Transform from "./Transform";
 import { isNil } from "./utils/basic";
+import type { RendererBackend } from "./gfx/RendererBackend";
+import WebGL2Renderer from "./gfx/webgl2/WebGL2Renderer";
+import type { CanvasOptions } from "./CanvasOptions";
 
 export default class Application {
   // ─── App Self-Management ───────────────────────────────────────────────────
@@ -84,8 +88,14 @@ export default class Application {
   }
 
   // ─── Graphic Context ───────────────────────────────────────────────────────
-  // Owns the WebGL2 context and performs readiness checks.
-  context!: WebGL2RenderingContext;
+  // Graphics context (backend-specific)
+  context!: any;
+  renderer: RendererBackend = new WebGL2Renderer();
+
+  useRenderer(renderer: RendererBackend) {
+    this.renderer = renderer;
+    return this;
+  }
 
   get gl() {
     return this.context;
@@ -108,22 +118,15 @@ export default class Application {
       return this;
     }
 
-    this.context = canvas.getContext("webgl2", { alpha: false })!;
+    // Initialize renderer backend (creates context and G-Buffer)
+    await this.renderer.init(this, canvas);
 
-    if (isNil(this.context)) {
-      console.error("Cannot use WebGL2");
-      return this;
-    }
-
-    this.gl.enable(this.gl.CULL_FACE);
-    this.gl.enable(this.gl.DEPTH_TEST);
-    this.gl.depthFunc(this.gl.LEQUAL);
-    this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
-
-    if (!this.gl.getExtension("EXT_color_buffer_float")) {
-      console.error("FLOAT color buffer not available");
-      document.body.innerHTML =
-        "This requires EXT_color_buffer_float which is unavailable on this system.";
+    // Setup canvas sizing configuration
+    this.#canvas = canvas;
+    this.setCanvasOptions();
+    this.#applyCanvasSizing();
+    if (this.#canvasOptions.autoResize) {
+      window.addEventListener("resize", this.#handleResize);
     }
 
     this.registerShader(this.shader.geometry);
@@ -133,171 +136,6 @@ export default class Application {
       this.shader.geometry.loadFrom(gbufvert, gbuffrag),
       this.shader.lighting.loadFrom(mainvert, mainfrag),
     ]);
-
-    this.gBuffer = this.gl.createFramebuffer();
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer!);
-
-    this.gPositionMetallic = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gPositionMetallic!);
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MIN_FILTER,
-      this.gl.NEAREST
-    );
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MAG_FILTER,
-      this.gl.NEAREST
-    );
-    this.gl.texStorage2D(
-      this.gl.TEXTURE_2D,
-      1,
-      this.gl.RGBA16F,
-      this.gl.drawingBufferWidth,
-      this.gl.drawingBufferHeight
-    );
-    this.gl.framebufferTexture2D(
-      this.gl.FRAMEBUFFER,
-      this.gl.COLOR_ATTACHMENT0,
-      this.gl.TEXTURE_2D,
-      this.gPositionMetallic!,
-      0
-    );
-
-    this.gNormalRoughness = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gNormalRoughness!);
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MIN_FILTER,
-      this.gl.NEAREST
-    );
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MAG_FILTER,
-      this.gl.NEAREST
-    );
-    this.gl.texStorage2D(
-      this.gl.TEXTURE_2D,
-      1,
-      this.gl.RGBA16F,
-      this.gl.drawingBufferWidth,
-      this.gl.drawingBufferHeight
-    );
-    this.gl.framebufferTexture2D(
-      this.gl.FRAMEBUFFER,
-      this.gl.COLOR_ATTACHMENT1,
-      this.gl.TEXTURE_2D,
-      this.gNormalRoughness!,
-      0
-    );
-
-    this.gAlbedo = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gAlbedo!);
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MIN_FILTER,
-      this.gl.NEAREST
-    );
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MAG_FILTER,
-      this.gl.NEAREST
-    );
-    this.gl.texStorage2D(
-      this.gl.TEXTURE_2D,
-      1,
-      this.gl.RGBA16F,
-      this.gl.drawingBufferWidth,
-      this.gl.drawingBufferHeight
-    );
-    this.gl.framebufferTexture2D(
-      this.gl.FRAMEBUFFER,
-      this.gl.COLOR_ATTACHMENT2,
-      this.gl.TEXTURE_2D,
-      this.gAlbedo!,
-      0
-    );
-
-    this.gEmissive = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gEmissive!);
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MIN_FILTER,
-      this.gl.NEAREST
-    );
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MAG_FILTER,
-      this.gl.NEAREST
-    );
-    this.gl.texStorage2D(
-      this.gl.TEXTURE_2D,
-      1,
-      this.gl.RGBA16F,
-      this.gl.drawingBufferWidth,
-      this.gl.drawingBufferHeight
-    );
-    this.gl.framebufferTexture2D(
-      this.gl.FRAMEBUFFER,
-      this.gl.COLOR_ATTACHMENT3,
-      this.gl.TEXTURE_2D,
-      this.gEmissive!,
-      0
-    );
-
-    const depthTexture = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_2D, depthTexture);
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MAG_FILTER,
-      this.gl.NEAREST
-    );
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_MIN_FILTER,
-      this.gl.NEAREST
-    );
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_WRAP_S,
-      this.gl.CLAMP_TO_EDGE
-    );
-    this.gl.texParameteri(
-      this.gl.TEXTURE_2D,
-      this.gl.TEXTURE_WRAP_T,
-      this.gl.CLAMP_TO_EDGE
-    );
-    this.gl.texStorage2D(
-      this.gl.TEXTURE_2D,
-      1,
-      this.gl.DEPTH_COMPONENT16,
-      this.gl.drawingBufferWidth,
-      this.gl.drawingBufferHeight
-    );
-    this.gl.framebufferTexture2D(
-      this.gl.FRAMEBUFFER,
-      this.gl.DEPTH_ATTACHMENT,
-      this.gl.TEXTURE_2D,
-      depthTexture,
-      0
-    );
-
-    this.gl.drawBuffers([
-      this.gl.COLOR_ATTACHMENT0,
-      this.gl.COLOR_ATTACHMENT1,
-      this.gl.COLOR_ATTACHMENT2,
-      this.gl.COLOR_ATTACHMENT3,
-    ]);
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-
-    this.gl.activeTexture(this.gl.TEXTURE0);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gPositionMetallic);
-    this.gl.activeTexture(this.gl.TEXTURE1);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gNormalRoughness);
-    this.gl.activeTexture(this.gl.TEXTURE2);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gAlbedo);
-    this.gl.activeTexture(this.gl.TEXTURE3);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.gEmissive);
 
     canvas.setAttribute("tabindex", "0");
     canvas.focus();
@@ -313,6 +151,92 @@ export default class Application {
     }
 
     return this;
+  }
+
+  /* Canvas sizing */
+  #canvas!: HTMLCanvasElement;
+  #canvasOptions: Required<CanvasOptions> = {
+    mode: "fill",
+    fixedAspect: 0,
+    pixelRatio: "device",
+    autoResize: true,
+  };
+  setCanvasOptions(options?: CanvasOptions) {
+    if (!options) return this;
+    this.#canvasOptions = {
+      mode: options.mode ?? this.#canvasOptions.mode,
+      fixedAspect: options.fixedAspect ?? this.#canvasOptions.fixedAspect,
+      pixelRatio: options.pixelRatio ?? this.#canvasOptions.pixelRatio,
+      autoResize: options.autoResize ?? this.#canvasOptions.autoResize,
+    } as Required<CanvasOptions>;
+    return this;
+  }
+  async run(canvas: HTMLCanvasElement, options?: CanvasOptions) {
+    if (options) this.setCanvasOptions(options);
+    await this.mount(canvas);
+    await this.start();
+    return this;
+  }
+  async runOn(target: HTMLCanvasElement | string, options?: CanvasOptions) {
+    const canvas =
+      typeof target === "string"
+        ? (document.querySelector(target) as HTMLCanvasElement)
+        : target;
+    return this.run(canvas, options);
+  }
+  #handleResize = () => {
+    this.#applyCanvasSizing();
+    this.renderer.resize(this);
+  };
+  #applyCanvasSizing() {
+    const canvas = this.#canvas;
+    if (!canvas) return;
+    const parent = (canvas.parentElement ?? document.body) as HTMLElement;
+    const parentRect = parent.getBoundingClientRect();
+    const parentW = Math.max(1, Math.floor(parentRect.width));
+    const parentH = Math.max(1, Math.floor(parentRect.height));
+    const dpr = this.#canvasOptions.pixelRatio === "device" ? Math.min(window.devicePixelRatio || 1, 4) : Math.max(1, this.#canvasOptions.pixelRatio as number);
+
+    let cssW = parentW;
+    let cssH = parentH;
+    const aspect = this.#canvasOptions.fixedAspect;
+    if (this.#canvasOptions.mode === "contain" && aspect && aspect > 0) {
+      const targetH = Math.floor(parentW / aspect);
+      if (targetH <= parentH) {
+        cssW = parentW;
+        cssH = targetH;
+      } else {
+        cssH = parentH;
+        cssW = Math.floor(parentH * aspect);
+      }
+    } else if (this.#canvasOptions.mode === "cover" && aspect && aspect > 0) {
+      const targetH = Math.floor(parentW / aspect);
+      if (targetH >= parentH) {
+        cssW = parentW;
+        cssH = targetH;
+      } else {
+        cssH = parentH;
+        cssW = Math.floor(parentH * aspect);
+      }
+    } else if (this.#canvasOptions.mode === "none") {
+      // leave cssW/cssH as is (fallback to current style size)
+      const styleW = parseInt(canvas.style.width || "0");
+      const styleH = parseInt(canvas.style.height || "0");
+      cssW = styleW || parentW;
+      cssH = styleH || parentH;
+    }
+
+    const bufferW = Math.max(1, Math.floor(cssW * dpr));
+    const bufferH = Math.max(1, Math.floor(cssH * dpr));
+    if (canvas.width !== bufferW) canvas.width = bufferW;
+    if (canvas.height !== bufferH) canvas.height = bufferH;
+
+    canvas.style.width = cssW + "px";
+    canvas.style.height = cssH + "px";
+    canvas.style.display = "block";
+
+    // Ensure backend resources match new size
+    this.renderer.resize(this);
   }
 
   #viewList = new Map<number, View>();
@@ -331,18 +255,19 @@ export default class Application {
 
   /* Resource Management */
   registerShader(shader: Shader) {
-    shader.gl = this.context;
+    shader.bindBackend(this.renderer);
     return this;
   }
   shader = {
     geometry: new Shader(),
     lighting: new Shader(),
   };
-  gBuffer: WebGLFramebuffer | null = null;
-  gPositionMetallic: WebGLTexture | null = null;
-  gNormalRoughness: WebGLTexture | null = null;
-  gAlbedo: WebGLTexture | null = null;
-  gEmissive: WebGLTexture | null = null;
+  // Backend-owned resources (opaque to the engine)
+  gBuffer: any | null = null;
+  gPositionMetallic: any | null = null;
+  gNormalRoughness: any | null = null;
+  gAlbedo: any | null = null;
+  gEmissive: any | null = null;
 
   /* Game Loop */
   static #activeInstances = new Map<number, Application>();
@@ -432,15 +357,11 @@ export default class Application {
   }
 
   async #render() {
-    this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+    const { width, height } = this.renderer.getDrawableSize(this);
+    this.renderer.setViewport(this, 0, 0, width, height);
 
-    this.gl.clearColor(0, 0, 0, 0);
-
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer!);
     this.shader.geometry.use();
-    this.gl.depthMask(true);
-    this.gl.disable(this.gl.BLEND);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    this.renderer.beginGeometryPass(this);
 
     await this.forEachActiveComponent(Camera, (camera) => {
       camera.renderCameraToGeometry();
@@ -448,23 +369,18 @@ export default class Application {
     await this.forEachActiveComponent(MeshRenderer, (renderer) => {
       renderer.render();
     });
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+    await this.forEachActiveComponent(SpriteRenderer, (renderer) => {
+      renderer.render();
+    });
+    this.renderer.endGeometryPass(this);
 
     this.shader.lighting.use();
-    this.gl.depthMask(false);
-    this.gl.enable(this.gl.BLEND);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    this.renderer.beginLightingPass(this);
 
-    this.gl.uniform1i(
-      this.shader.lighting.getUniformLocation("gPositionMetallic"),
-      0
-    );
-    this.gl.uniform1i(
-      this.shader.lighting.getUniformLocation("gNormalRoughness"),
-      1
-    );
-    this.gl.uniform1i(this.shader.lighting.getUniformLocation("gAlbedo"), 2);
-    this.gl.uniform1i(this.shader.lighting.getUniformLocation("gEmissive"), 3);
+    this.shader.lighting.setUniform1i("gPositionMetallic", 0);
+    this.shader.lighting.setUniform1i("gNormalRoughness", 1);
+    this.shader.lighting.setUniform1i("gAlbedo", 2);
+    this.shader.lighting.setUniform1i("gEmissive", 3);
 
     await this.forEachActiveComponent(Camera, (camera) => {
       camera.renderCameraToLighting();

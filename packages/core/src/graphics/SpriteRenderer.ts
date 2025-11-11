@@ -5,7 +5,7 @@ import Material from "./Material";
 import type Shader from "./Shader";
 import type GfxVertexArray from "@/gfx/VertexArray";
 
-export default class MeshRenderer extends BaseRenderer {
+export default class SpriteRenderer extends BaseRenderer {
   geometryShader!: Shader;
   material = new Material();
   #vao!: GfxVertexArray;
@@ -14,20 +14,15 @@ export default class MeshRenderer extends BaseRenderer {
     super(gameEntity);
   }
 
-  // No direct GL access; everything goes through the backend
-
   async setup() {
     super.setup();
 
     this.transform = this.getComponent(Transform)!;
     this.geometryShader = this.currentApp.shader.geometry;
 
-    const positionAttribLocation =
-      this.geometryShader.getAttribLocation("aPosition");
-    const normalAttribLocation =
-      this.geometryShader.getAttribLocation("aNormal");
-    const texcoordAttribLocation =
-      this.geometryShader.getAttribLocation("aTexcoord");
+    const positionAttribLocation = this.geometryShader.getAttribLocation("aPosition");
+    const normalAttribLocation = this.geometryShader.getAttribLocation("aNormal");
+    const texcoordAttribLocation = this.geometryShader.getAttribLocation("aTexcoord");
 
     const renderer = this.currentApp.renderer;
     this.#vao = renderer.createVertexArray();
@@ -52,6 +47,7 @@ export default class MeshRenderer extends BaseRenderer {
   }
 
   async render() {
+    // Use same uniforms as MeshRenderer; sprite draws in XY plane
     this.geometryShader.setUniformMat4("uModel", this.transform.modelMatrix);
     this.geometryShader.setUniformVec3("uBaseColor", this.material.baseColor);
     this.geometryShader.setUniform1f("uMetallic", this.material.metallic);
@@ -65,3 +61,4 @@ export default class MeshRenderer extends BaseRenderer {
     });
   }
 }
+

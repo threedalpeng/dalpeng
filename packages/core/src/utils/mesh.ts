@@ -8,6 +8,32 @@ export interface Mesh {
 }
 
 export default class MeshBuilder {
+  static quad(): Mesh {
+    // XY-centered unit quad (z = 0)
+    const positions = new Float32Array([
+      -0.5, -0.5, 0,
+       0.5, -0.5, 0,
+       0.5,  0.5, 0,
+      -0.5,  0.5, 0,
+    ]);
+    const normals = new Float32Array([
+      0, 0, 1,
+      0, 0, 1,
+      0, 0, 1,
+      0, 0, 1,
+    ]);
+    const texcoord = new Float32Array([
+      0, 0,
+      1, 0,
+      1, 1,
+      0, 1,
+    ]);
+    const index = new Uint16Array([0, 1, 2, 0, 2, 3]);
+    return {
+      vertex: { position: positions, normal: normals, texcoord },
+      index,
+    };
+  }
   static box(): Mesh {
     const boxMesh: Mesh = {
       // prettier-ignore

@@ -1,10 +1,11 @@
 import Entity from "@/entity/Entity";
 import { isNil } from "@/utils/basic";
-import { loadProgram, loadShader } from "@/utils/gl";
+import type Program from "@/gfx/Program";
+import type { RendererBackend } from "@/gfx/RendererBackend";
 
 export default class Shader extends Entity {
-  #program: WebGLProgram | null = null;
-  gl!: WebGL2RenderingContext;
+  #program: Program | null = null;
+  #backend!: RendererBackend;
   static #shaderList = new Map<number, Shader>();
 
   constructor(name = "") {
@@ -18,23 +19,27 @@ export default class Shader extends Entity {
     return newShader;
   }
 
+  bindBackend(backend: RendererBackend) {
+    this.#backend = backend;
+    return this;
+  }
+
   async loadFrom(vertexShaderSource: string, fragmentShaderSource: string) {
-    if (isNil(this.#program)) {
+    if (!isNil(this.#program)) {
       this.clear();
     }
 
-    const shaders = await Promise.all([
-      loadShader(this.gl, this.gl.VERTEX_SHADER, vertexShaderSource)!,
-      loadShader(this.gl, this.gl.FRAGMENT_SHADER, fragmentShaderSource)!,
-    ]);
-    this.#program = loadProgram(this.gl, ...shaders);
+    this.#program = await this.#backend.createProgram(
+      vertexShaderSource,
+      fragmentShaderSource
+    );
 
     return this;
   }
 
   clear() {
-    if (isNil(this.#program)) {
-      this.gl.deleteProgram(this.#program);
+    if (this.#program) {
+      this.#program.dispose();
       this.#program = null;
     }
   }
@@ -44,15 +49,30 @@ export default class Shader extends Entity {
   }
 
   getAttribLocation(name: string) {
-    return this.gl.getAttribLocation(this.#program!, name);
+    return this.#program!.getAttribLocation(name);
   }
 
   getUniformLocation(name: string) {
-    return this.gl.getUniformLocation(this.#program!, name);
+    // Deprecated for engine usage; prefer setUniform* helpers
+    return this.#program!.getUniformLocation(name);
   }
 
   use() {
-    this.gl.useProgram(this.#program);
+    this.#program?.use();
+  }
+
+  // Convenience uniform setters to keep Components backend-agnostic
+  setUniformMat4(name: string, data: Float32List) {
+    this.#program?.setUniformMat4(name, data);
+  }
+  setUniformVec3(name: string, data: Float32List) {
+    this.#program?.setUniformVec3(name, data);
+  }
+  setUniform1f(name: string, v: number) {
+    this.#program?.setUniform1f(name, v);
+  }
+  setUniform1i(name: string, v: number) {
+    this.#program?.setUniform1i(name, v);
   }
 
   static find(name: string) {
