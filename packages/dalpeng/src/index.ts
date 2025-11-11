@@ -13,9 +13,12 @@ export {
   Light,
   MeshBuilder,
   MeshRenderer,
+  SpriteRenderer,
   Shader,
+  Script,
   Time,
   Transform,
 } from "@dalpeng/core";
 export * from "./hooks/index";
 export { type Application, type GameEntity, type Scene, createApp };
+export { withCanvasOptions, runApp } from "./hooks/app";

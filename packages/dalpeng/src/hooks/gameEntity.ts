@@ -48,3 +48,9 @@ export function onFixedUpdate(fixedUpdate: () => any) {
   const script = useComponent(Script);
   script.on("fixedUpdate", fixedUpdate);
 }
+
+export function withTag(tag: string) {
+  const entity = getThisEntity();
+  if (!entity) return;
+  entity.tag = tag;
+}

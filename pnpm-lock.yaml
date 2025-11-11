@@ -57,6 +57,22 @@ importers:
         specifier: ^4.0.8
         version: 4.0.8(@types/node@24.10.0)(@vitest/ui@4.0.8)
 
+  demo/pong:
+    dependencies:
+      '@dalpeng/demo-devmode':
+        specifier: workspace:^0.0.1
+        version: link:../devmode
+      '@dalpeng/math':
+        specifier: workspace:^0.2.0
+        version: link:../../packages/math
+      dalpeng:
+        specifier: workspace:^0.1.1
+        version: link:../../packages/dalpeng
+    devDependencies:
+      vite:
+        specifier: ^7.2.2
+        version: 7.2.2(@types/node@24.10.0)
+
   packages/core:
     dependencies:
       '@dalpeng/math':
