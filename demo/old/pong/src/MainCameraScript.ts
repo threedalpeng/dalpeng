@@ -1,4 +1,4 @@
-import { Script, Camera2D } from "dalpeng";
+import { Camera2D, Script } from "dalpeng";
 
 export default class MainCameraScript extends Script {
   setup() {

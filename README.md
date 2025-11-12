@@ -125,7 +125,6 @@ pnpm run dev:basic
 
 This command launches the `basic-3d-objects` demo alongside watch builds for its package dependencies, so editing `packages/*` triggers rebuilds and hot reloads in the demo.
 
-
 ## About subpackages
 
 - dalpeng: Scripting API wrapper of @dalpeng/core.

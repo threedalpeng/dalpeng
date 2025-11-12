@@ -6,4 +6,3 @@ export interface CanvasOptions {
   pixelRatio?: number | "device"; // default: "device"
   autoResize?: boolean; // default: true
 }
-

@@ -1,5 +1,5 @@
-import type GfxVertexArray from "../VertexArray";
 import type GfxBuffer from "../Buffer";
+import type GfxVertexArray from "../VertexArray";
 import WebGL2Buffer from "./WebGL2Buffer";
 
 export default class WebGL2VertexArray implements GfxVertexArray {
@@ -54,4 +54,3 @@ export default class WebGL2VertexArray implements GfxVertexArray {
     this.#vao = null;
   }
 }
-

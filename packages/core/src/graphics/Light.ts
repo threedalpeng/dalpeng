@@ -1,9 +1,9 @@
 import Component from "@/component/Component";
+import type GfxVertexArray from "@/gfx/VertexArray";
 import Transform from "@/Transform";
 import { dummyQuadForLight } from "@/utils/mesh";
 import { Vec3 } from "@dalpeng/math";
 import Shader from "./Shader";
-import type GfxVertexArray from "@/gfx/VertexArray";
 
 export type LightType = "directional" | "point" | "spot";
 const LIGHT_TYPE_CODE = Object.freeze({
@@ -27,8 +27,7 @@ export default class Light extends Component {
 
     this.transform = this.getComponent(Transform)!;
     this.lightingShader = this.currentApp.shader.lighting;
-    const positionAttribLocation =
-      this.lightingShader.getAttribLocation("aPosition");
+    const positionAttribLocation = this.lightingShader.getAttribLocation("aPosition");
 
     const renderer = this.currentApp.renderer;
     this.#vao = renderer.createVertexArray();

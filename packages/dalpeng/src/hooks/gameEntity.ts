@@ -26,12 +26,8 @@ export function defineGameEntity(setup: () => UseGameEntity[] | void) {
   };
 }
 
-type ComponentConstructor<Type extends Component> = new (
-  gameEntity: GameEntity
-) => Type;
-export function useComponent<C extends Component>(
-  type: ComponentConstructor<C>
-) {
+type ComponentConstructor<Type extends Component> = new (gameEntity: GameEntity) => Type;
+export function useComponent<C extends Component>(type: ComponentConstructor<C>) {
   const thisEntity = getThisEntity();
   let c: C | null = thisEntity!.getComponent(type);
   if (!c) {

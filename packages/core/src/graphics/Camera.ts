@@ -50,12 +50,7 @@ export default class Camera extends Component {
         this.dFar
       );
     } else {
-      this.projectionMatrix = Mat4.perspective(
-        this.fovy,
-        this.aspectRatio,
-        this.dNear,
-        this.dFar
-      );
+      this.projectionMatrix = Mat4.perspective(this.fovy, this.aspectRatio, this.dNear, this.dFar);
     }
   }
 

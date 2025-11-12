@@ -12,4 +12,3 @@ export default interface GfxVertexArray {
   setIndexBuffer(buffer: GfxBuffer): void;
   dispose(): void;
 }
-

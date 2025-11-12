@@ -10,24 +10,9 @@ export interface Mesh {
 export default class MeshBuilder {
   static quad(): Mesh {
     // XY-centered unit quad (z = 0)
-    const positions = new Float32Array([
-      -0.5, -0.5, 0,
-       0.5, -0.5, 0,
-       0.5,  0.5, 0,
-      -0.5,  0.5, 0,
-    ]);
-    const normals = new Float32Array([
-      0, 0, 1,
-      0, 0, 1,
-      0, 0, 1,
-      0, 0, 1,
-    ]);
-    const texcoord = new Float32Array([
-      0, 0,
-      1, 0,
-      1, 1,
-      0, 1,
-    ]);
+    const positions = new Float32Array([-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0]);
+    const normals = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1]);
+    const texcoord = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
     const index = new Uint16Array([0, 1, 2, 0, 2, 3]);
     return {
       vertex: { position: positions, normal: normals, texcoord },
@@ -171,16 +156,8 @@ export default class MeshBuilder {
       const sidePrimitiveOffset = sideOffset + i * 2;
       indices.push(0, i + 1, i + 2);
       indices.push(bottomOffset, bottomOffset + i + 2, bottomOffset + i + 1);
-      indices.push(
-        sidePrimitiveOffset,
-        sidePrimitiveOffset + 1,
-        sidePrimitiveOffset + 2
-      );
-      indices.push(
-        sidePrimitiveOffset + 1,
-        sidePrimitiveOffset + 3,
-        sidePrimitiveOffset + 2
-      );
+      indices.push(sidePrimitiveOffset, sidePrimitiveOffset + 1, sidePrimitiveOffset + 2);
+      indices.push(sidePrimitiveOffset + 1, sidePrimitiveOffset + 3, sidePrimitiveOffset + 2);
     }
 
     return {

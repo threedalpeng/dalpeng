@@ -1,5 +1,5 @@
 import type GfxSampler from "../Sampler";
-import type { SamplerDescriptor, AddressMode, FilterMode, MipmapMode } from "../Sampler";
+import type { AddressMode, FilterMode, MipmapMode, SamplerDescriptor } from "../Sampler";
 
 function toDefault(desc?: SamplerDescriptor): Required<SamplerDescriptor> {
   return {

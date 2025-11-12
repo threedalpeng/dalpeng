@@ -1,9 +1,9 @@
 import type GameEntity from "@/entity/GameEntity";
+import type GfxVertexArray from "@/gfx/VertexArray";
 import Transform from "../Transform";
 import BaseRenderer from "./BaseRenderer";
 import Material from "./Material";
 import type Shader from "./Shader";
-import type GfxVertexArray from "@/gfx/VertexArray";
 
 export default class MeshRenderer extends BaseRenderer {
   geometryShader!: Shader;
@@ -22,12 +22,9 @@ export default class MeshRenderer extends BaseRenderer {
     this.transform = this.getComponent(Transform)!;
     this.geometryShader = this.currentApp.shader.geometry;
 
-    const positionAttribLocation =
-      this.geometryShader.getAttribLocation("aPosition");
-    const normalAttribLocation =
-      this.geometryShader.getAttribLocation("aNormal");
-    const texcoordAttribLocation =
-      this.geometryShader.getAttribLocation("aTexcoord");
+    const positionAttribLocation = this.geometryShader.getAttribLocation("aPosition");
+    const normalAttribLocation = this.geometryShader.getAttribLocation("aNormal");
+    const texcoordAttribLocation = this.geometryShader.getAttribLocation("aTexcoord");
 
     const renderer = this.currentApp.renderer;
     this.#vao = renderer.createVertexArray();

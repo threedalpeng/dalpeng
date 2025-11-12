@@ -1,11 +1,6 @@
 export type TextureKind = "2d";
 
-export type TextureFormat =
-  | "rgba8unorm"
-  | "rgba16f"
-  | "rg16f"
-  | "r16f"
-  | "depth16";
+export type TextureFormat = "rgba8unorm" | "rgba16f" | "rg16f" | "r16f" | "depth16";
 
 export interface TextureDescriptor2D {
   kind: "2d";
@@ -28,4 +23,3 @@ export default interface GfxTexture {
 
   dispose(): void;
 }
-

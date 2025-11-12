@@ -1,14 +1,8 @@
+import { Application, GameEntity, MeshRenderer2D, Shader, Transform2D } from "@core/index";
+import mainShaderFrag from "@shaders/main.frag?raw";
+import mainShaderVert from "@shaders/main.vert?raw";
 import MeshBuilder2D from "@utils/mesh";
 import { Vec2 } from "cgd-webgl-math";
-import {
-  Application,
-  GameEntity,
-  MeshRenderer2D,
-  Shader,
-  Transform2D,
-} from "@core/index";
-import mainShaderVert from "@shaders/main.vert?raw";
-import mainShaderFrag from "@shaders/main.frag?raw";
 import BallScript from "./BallScript";
 import PlayerScript from "./PlayerScript";
 
@@ -18,10 +12,7 @@ export default class PongApplication extends Application {
   ball = new GameEntity("Ball");
 
   async _setup() {
-    const mainShader = await Shader.create("main").loadFrom(
-      mainShaderVert,
-      mainShaderFrag
-    );
+    const mainShader = await Shader.create("main").loadFrom(mainShaderVert, mainShaderFrag);
 
     let transform, renderer, script;
 

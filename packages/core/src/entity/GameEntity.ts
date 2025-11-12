@@ -1,8 +1,6 @@
-import Component, {
-  type ComponentConstructor,
-} from "../component/Component.js";
-import Transform from "../Transform";
+import Component, { type ComponentConstructor } from "../component/Component.js";
 import type Scene from "../Scene.js";
+import Transform from "../Transform";
 import Entity from "./Entity.js";
 
 export default class GameEntity extends Entity {
@@ -84,17 +82,11 @@ export default class GameEntity extends Entity {
 
   // ─── Component Lookup ───────────────────────────────────────────────────────
   // Cached component accessors keyed by constructor name.
-  getComponent<Type extends Component>(
-    type: ComponentConstructor<Type>
-  ): Type | null {
-    const components = this.#componentsByType.get(type.name) as
-      | Type[]
-      | undefined;
+  getComponent<Type extends Component>(type: ComponentConstructor<Type>): Type | null {
+    const components = this.#componentsByType.get(type.name) as Type[] | undefined;
     return components?.[0] ?? null;
   }
-  getComponents<Type extends Component>(
-    type: ComponentConstructor<Type>
-  ): Type[] {
+  getComponents<Type extends Component>(type: ComponentConstructor<Type>): Type[] {
     return (this.#componentsByType.get(type.name) as Type[] | undefined) ?? [];
   }
 

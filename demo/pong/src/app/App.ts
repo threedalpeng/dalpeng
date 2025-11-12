@@ -5,4 +5,3 @@ export default defineApp(() => {
   withName("Pong Application");
   return Scene;
 });
-

@@ -14,9 +14,7 @@ export default class WebGL2Buffer implements GfxBuffer {
   }
 
   #target() {
-    return this.kind === "vertex"
-      ? this.#gl.ARRAY_BUFFER
-      : this.#gl.ELEMENT_ARRAY_BUFFER;
+    return this.kind === "vertex" ? this.#gl.ARRAY_BUFFER : this.#gl.ELEMENT_ARRAY_BUFFER;
   }
 
   update(data: ArrayBufferView, usage: BufferUsage = "static"): void {

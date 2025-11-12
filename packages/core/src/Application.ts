@@ -1,9 +1,12 @@
+import type { CanvasOptions } from "./CanvasOptions";
 import Component, { type ComponentConstructor } from "./component/Component";
+import type { RendererBackend } from "./gfx/RendererBackend";
+import WebGL2Renderer from "./gfx/webgl2/WebGL2Renderer";
 import Camera from "./graphics/Camera";
 import Light from "./graphics/Light";
 import MeshRenderer from "./graphics/MeshRenderer";
-import SpriteRenderer from "./graphics/SpriteRenderer";
 import Shader from "./graphics/Shader";
+import SpriteRenderer from "./graphics/SpriteRenderer";
 import View from "./graphics/View";
 import Input from "./Input";
 import type Scene from "./Scene";
@@ -15,9 +18,6 @@ import mainvert from "./shaders/main.vert?raw";
 import Time from "./Time";
 import Transform from "./Transform";
 import { isNil } from "./utils/basic";
-import type { RendererBackend } from "./gfx/RendererBackend";
-import WebGL2Renderer from "./gfx/webgl2/WebGL2Renderer";
-import type { CanvasOptions } from "./CanvasOptions";
 
 export default class Application {
   // ─── App Self-Management ───────────────────────────────────────────────────
@@ -60,9 +60,7 @@ export default class Application {
     type: ComponentConstructor<Type>,
     callback: (component: Type) => void
   ) {
-    const components = this.activeComponents.get(type.name) as
-      | Set<Type>
-      | undefined;
+    const components = this.activeComponents.get(type.name) as Set<Type> | undefined;
     if (components === undefined) {
       return;
     }
@@ -179,9 +177,7 @@ export default class Application {
   }
   async runOn(target: HTMLCanvasElement | string, options?: CanvasOptions) {
     const canvas =
-      typeof target === "string"
-        ? (document.querySelector(target) as HTMLCanvasElement)
-        : target;
+      typeof target === "string" ? (document.querySelector(target) as HTMLCanvasElement) : target;
     return this.run(canvas, options);
   }
   #handleResize = () => {
@@ -195,7 +191,10 @@ export default class Application {
     const parentRect = parent.getBoundingClientRect();
     const parentW = Math.max(1, Math.floor(parentRect.width));
     const parentH = Math.max(1, Math.floor(parentRect.height));
-    const dpr = this.#canvasOptions.pixelRatio === "device" ? Math.min(window.devicePixelRatio || 1, 4) : Math.max(1, this.#canvasOptions.pixelRatio as number);
+    const dpr =
+      this.#canvasOptions.pixelRatio === "device"
+        ? Math.min(window.devicePixelRatio || 1, 4)
+        : Math.max(1, this.#canvasOptions.pixelRatio as number);
 
     let cssW = parentW;
     let cssH = parentH;

@@ -14,11 +14,15 @@
     "build": "turbo run build",
     "build:dev": "turbo run build:dev",
     "test": "turbo run test",
-    "lint": "turbo run lint"
+    "lint": "turbo run lint",
+    "format": "prettier -w .",
+    "format:check": "prettier -c ."
   },
   "devDependencies": {
     "turbo": "^2.6.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "prettier": "^3.3.3",
+    "prettier-plugin-organize-imports": "^4.0.0"
   },
   "pnpm": {
     "overrides": {

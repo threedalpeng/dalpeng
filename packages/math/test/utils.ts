@@ -1,5 +1,5 @@
 import { expect } from "vitest";
-import type { Mat4, Vec2, Vec3, Vec4, Quaternion, AxisAngle } from "../src";
+import type { AxisAngle, Mat4, Quaternion, Vec2, Vec3, Vec4 } from "../src";
 
 export function vec2DeepTest(v: Vec2, t: Vec2) {
   expect(v.x).toBeCloseTo(t.x);
@@ -26,14 +26,9 @@ export const mat4DeepTest = (m: Mat4, t: Mat4) => {
   });
 };
 
-export const axisAngleDeepTest = (
-  [axis, angle]: AxisAngle,
-  [tAxis, tAngle]: AxisAngle
-) => {
+export const axisAngleDeepTest = ([axis, angle]: AxisAngle, [tAxis, tAngle]: AxisAngle) => {
   function isInappropriateRatio(ratio: number) {
-    return (
-      isNaN(ratio) || !isFinite(ratio) || ratio === undefined || ratio === null
-    );
+    return isNaN(ratio) || !isFinite(ratio) || ratio === undefined || ratio === null;
   }
   const ratio = isInappropriateRatio(axis.x / tAxis.x)
     ? isInappropriateRatio(axis.y / tAxis.y)

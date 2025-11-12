@@ -1,6 +1,6 @@
-import { defineGameEntity, Transform, withName, useComponent, onUpdate } from "dalpeng";
-import { vec3 } from "@dalpeng/math";
 import useQuad from "@app/composables/render/useQuad";
+import { vec3 } from "@dalpeng/math";
+import { defineGameEntity, onUpdate, Transform, useComponent, withName } from "dalpeng";
 
 export default defineGameEntity(() => {
   withName("Ball");

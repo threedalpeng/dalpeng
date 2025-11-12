@@ -1,14 +1,8 @@
-import Dalpeng, {
-  MeshBuilder2D,
-  MeshRenderer2D,
-  Shader,
-  Transform2D,
-  Camera2D,
-} from "dalpeng";
 import { Vec2 } from "@dalpeng/math";
-import PlayerScript from "./PlayerScript";
+import Dalpeng, { Camera2D, MeshBuilder2D, MeshRenderer2D, Shader, Transform2D } from "dalpeng";
 import BallScript from "./BallScript";
 import MainCameraScript from "./MainCameraScript";
+import PlayerScript from "./PlayerScript";
 
 const FLAG = {
   RELEASE: true,
@@ -27,18 +21,11 @@ const pongScene = Dalpeng.createScene("hi")
   .addEntity(mainCamera);
 
 const mainShader = await Shader.create("main");
-const pongApp = Dalpeng.createApp()
-  .mount(app)
-  .addScene(pongScene)
-  .registerShader(mainShader);
+const pongApp = Dalpeng.createApp().mount(app).addScene(pongScene).registerShader(mainShader);
 
 await mainShader.loadFrom(
-  (
-    await import("./shaders/main.vert?raw")
-  ).default,
-  (
-    await import("./shaders/main.frag?raw")
-  ).default
+  (await import("./shaders/main.vert?raw")).default,
+  (await import("./shaders/main.frag?raw")).default
 );
 
 async function setup() {
@@ -93,15 +80,10 @@ Dalpeng.run();
 pongApp.start();
 
 if (!FLAG.RELEASE) {
-  const devmodeOverlayTemplate = (
-    await import("./devmode/devmode-overlay.html?raw")
-  ).default;
-  const devmodeOverlayStyle = (
-    await import("./devmode/devmode-overlay.css?raw")
-  ).default;
+  const devmodeOverlayTemplate = (await import("./devmode/devmode-overlay.html?raw")).default;
+  const devmodeOverlayStyle = (await import("./devmode/devmode-overlay.css?raw")).default;
 
-  const devmodeWrapperEl =
-    document.querySelector<HTMLDivElement>("div[devmode]")!;
+  const devmodeWrapperEl = document.querySelector<HTMLDivElement>("div[devmode]")!;
   devmodeWrapperEl.innerHTML = `${devmodeOverlayTemplate}\n\n<style>${devmodeOverlayStyle}</style>`;
 
   const stream = app.captureStream();
@@ -114,8 +96,7 @@ if (!FLAG.RELEASE) {
     recordedChunks.push(e.data);
   };
 
-  const btnStart: HTMLButtonElement =
-    document.querySelector("#btn-record-start")!;
+  const btnStart: HTMLButtonElement = document.querySelector("#btn-record-start")!;
   btnStart.onclick = (e) => {
     if (recorder.state !== "recording") {
       recorder.start();
@@ -123,17 +104,14 @@ if (!FLAG.RELEASE) {
     }
   };
 
-  const btnStop: HTMLButtonElement =
-    document.querySelector("#btn-record-stop")!;
+  const btnStop: HTMLButtonElement = document.querySelector("#btn-record-stop")!;
   btnStop.onclick = (e) => {
     if (recorder.state === "recording") {
       recorder.stop();
     }
   };
 
-  const btnDownload: HTMLButtonElement = document.querySelector(
-    "#btn-record-download"
-  )!;
+  const btnDownload: HTMLButtonElement = document.querySelector("#btn-record-download")!;
   btnDownload.onclick = (e) => {
     if (recorder.state === "inactive") {
       const blob = new Blob(recordedChunks, { type: "video/webm" });

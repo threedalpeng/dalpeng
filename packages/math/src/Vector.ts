@@ -86,10 +86,7 @@ export class Vec2 extends Float32Array {
     return new Vec2([1, 0]);
   }
   static lerp(a: Float32List, b: Float32List, t: number) {
-    return new Vec2([
-      a[0] + (b[0] - a[0]) * t,
-      a[1] + (b[1] - a[1]) * t,
-    ]);
+    return new Vec2([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
   }
 }
 
@@ -225,11 +222,7 @@ export class Vec3 extends Float32Array {
     return new Vec3([0, 0, -1]);
   }
   static lerp(a: Float32List, b: Float32List, t: number) {
-    return new Vec3([
-      a[0] + (b[0] - a[0]) * t,
-      a[1] + (b[1] - a[1]) * t,
-      a[2] + (b[2] - a[2]) * t,
-    ]);
+    return new Vec3([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]);
   }
 }
 export function vec3(): Vec3;
@@ -322,20 +315,10 @@ export class Vec4 extends Float32Array {
   }
 
   add(v: Float32List) {
-    return new Vec4([
-      this[0] + v[0],
-      this[1] + v[1],
-      this[2] + v[2],
-      this[3] + v[3],
-    ]);
+    return new Vec4([this[0] + v[0], this[1] + v[1], this[2] + v[2], this[3] + v[3]]);
   }
   sub(v: Float32List) {
-    return new Vec4([
-      this[0] - v[0],
-      this[1] - v[1],
-      this[2] - v[2],
-      this[3] - v[3],
-    ]);
+    return new Vec4([this[0] - v[0], this[1] - v[1], this[2] - v[2], this[3] - v[3]]);
   }
   muli(i: number) {
     return new Vec4([this[0] * i, this[1] * i, this[2] * i, this[3] * i]);
@@ -345,20 +328,10 @@ export class Vec4 extends Float32Array {
   }
 
   size() {
-    return Math.sqrt(
-      this[0] * this[0] +
-        this[1] * this[1] +
-        this[2] * this[2] +
-        this[3] * this[3]
-    );
+    return Math.sqrt(this[0] * this[0] + this[1] * this[1] + this[2] * this[2] + this[3] * this[3]);
   }
   size2() {
-    return (
-      this[0] * this[0] +
-      this[1] * this[1] +
-      this[2] * this[2] +
-      this[3] * this[3]
-    );
+    return this[0] * this[0] + this[1] * this[1] + this[2] * this[2] + this[3] * this[3];
   }
 
   normalize(epsilon = EPSILON) {
@@ -367,12 +340,7 @@ export class Vec4 extends Float32Array {
       return Vec4.zero();
     }
     const inv = 1 / Math.sqrt(lenSq);
-    return new Vec4([
-      this[0] * inv,
-      this[1] * inv,
-      this[2] * inv,
-      this[3] * inv,
-    ]);
+    return new Vec4([this[0] * inv, this[1] * inv, this[2] * inv, this[3] * inv]);
   }
 
   static zero() {
@@ -395,12 +363,7 @@ export function vec4(): Vec4;
 export function vec4(x: number): Vec4;
 export function vec4(v: Float32List): Vec4;
 export function vec4(x: number, y: number, z: number, w: number): Vec4;
-export function vec4(
-  x?: number | Float32List,
-  y?: number,
-  z?: number,
-  w?: number
-): Vec4 {
+export function vec4(x?: number | Float32List, y?: number, z?: number, w?: number): Vec4 {
   switch (typeof x) {
     case "number":
       return new Vec4([x, y ?? x, z ?? x, w ?? x]);

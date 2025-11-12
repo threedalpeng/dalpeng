@@ -7,4 +7,3 @@ const useQuad = () => {
 };
 
 export default useQuad;
-

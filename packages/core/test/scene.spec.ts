@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
 import { vec3 } from "@dalpeng/math";
-import Scene from "../src/Scene";
+import { describe, expect, it } from "vitest";
 import GameEntity from "../src/entity/GameEntity";
+import Scene from "../src/Scene";
 import Transform from "../src/Transform";
 
 describe("Scene helpers", () => {

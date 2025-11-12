@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { Mat3, Mat4, Vec3, Vec4, Quaternion } from "../src";
+import { Mat3, Mat4, Quaternion, Vec3, Vec4 } from "../src";
 import { vec3DeepTest, vec4DeepTest } from "./utils";
 
 describe("Matrix", () => {
@@ -26,10 +26,7 @@ describe("Matrix", () => {
       const up = new Vec3([0, 1, 0]);
       const viewMatrix = Mat4.view(eye, at, up);
 
-      vec4DeepTest(
-        viewMatrix.mulv(new Vec4([...at, 1])),
-        new Vec4([0, 0, -5, 1])
-      );
+      vec4DeepTest(viewMatrix.mulv(new Vec4([...at, 1])), new Vec4([0, 0, -5, 1]));
     });
     test("inverse returns identity for non-singular matrices", () => {
       const m = Mat4.identity();
@@ -38,12 +35,7 @@ describe("Matrix", () => {
       expect([...inv!]).toEqual([...m]);
     });
     test("inverse returns null for singular matrices", () => {
-      const singular = new Mat4([
-        1, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-      ]);
+      const singular = new Mat4([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
       expect(singular.inverse()).toBeNull();
     });
     test("view identity when looking -Z from origin", () => {
@@ -72,12 +64,7 @@ describe("Matrix", () => {
     });
 
     test("col extracts columns in row-major storage", () => {
-      const m = new Mat4([
-        1, 2, 3, 4,
-        5, 6, 7, 8,
-        9, 10,11,12,
-        13,14,15,16,
-      ]);
+      const m = new Mat4([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
       vec4DeepTest(m.col(0), new Vec4([1, 5, 9, 13]));
       vec4DeepTest(m.col(1), new Vec4([2, 6, 10, 14]));
       vec4DeepTest(m.col(2), new Vec4([3, 7, 11, 15]));

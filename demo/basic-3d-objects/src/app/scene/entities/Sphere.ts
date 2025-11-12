@@ -1,12 +1,6 @@
 import { vec3 } from "@dalpeng/math";
+import { defineGameEntity, Transform, useComponent, withName } from "dalpeng";
 import useSphere from "../../composables/render/useSphere";
-import {
-  defineGameEntity,
-  Transform,
-  withName,
-  useComponent,
-  onUpdate,
-} from "dalpeng";
 
 export default defineGameEntity(() => {
   withName("Sphere");

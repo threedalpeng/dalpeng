@@ -1,8 +1,7 @@
-import { defineGameEntity, Transform, withName, useComponent } from "dalpeng";
-import { vec3 } from "@dalpeng/math";
-import useQuad from "@app/composables/render/useQuad";
 import usePaddle from "@app/composables/logic/usePaddle";
-import { withTag } from "dalpeng";
+import useQuad from "@app/composables/render/useQuad";
+import { vec3 } from "@dalpeng/math";
+import { defineGameEntity, Transform, useComponent, withName, withTag } from "dalpeng";
 
 export default defineGameEntity(() => {
   withName("PaddleRight");

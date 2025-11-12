@@ -1,4 +1,3 @@
-import { attachOverlay } from "@dalpeng/demo-devmode";
 import { runApp } from "dalpeng";
 import App from "./app/App";
 

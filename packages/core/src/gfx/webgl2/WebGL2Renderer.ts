@@ -1,11 +1,11 @@
 import type Application from "@/Application";
+import { loadProgram, loadShader } from "@/utils/gl";
 import type { RendererBackend } from "../RendererBackend";
 import WebGL2Buffer from "./WebGL2Buffer";
-import WebGL2VertexArray from "./WebGL2VertexArray";
-import { loadProgram, loadShader } from "@/utils/gl";
 import WebGL2Program from "./WebGL2Program";
-import WebGL2Texture from "./WebGL2Texture";
 import WebGL2Sampler from "./WebGL2Sampler";
+import WebGL2Texture from "./WebGL2Texture";
+import WebGL2VertexArray from "./WebGL2VertexArray";
 
 export default class WebGL2Renderer implements RendererBackend {
   readonly type = "webgl2" as const;
@@ -101,28 +101,52 @@ export default class WebGL2Renderer implements RendererBackend {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA16F, width, height);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, (app as any).gPositionMetallic!, 0);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      (app as any).gPositionMetallic!,
+      0
+    );
 
     (app as any).gNormalRoughness = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, (app as any).gNormalRoughness!);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA16F, width, height);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, (app as any).gNormalRoughness!, 0);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT1,
+      gl.TEXTURE_2D,
+      (app as any).gNormalRoughness!,
+      0
+    );
 
     (app as any).gAlbedo = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, (app as any).gAlbedo!);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA16F, width, height);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT2, gl.TEXTURE_2D, (app as any).gAlbedo!, 0);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT2,
+      gl.TEXTURE_2D,
+      (app as any).gAlbedo!,
+      0
+    );
 
     (app as any).gEmissive = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, (app as any).gEmissive!);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA16F, width, height);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT3, gl.TEXTURE_2D, (app as any).gEmissive!, 0);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT3,
+      gl.TEXTURE_2D,
+      (app as any).gEmissive!,
+      0
+    );
 
     const depthTexture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, depthTexture);
@@ -162,10 +186,17 @@ export default class WebGL2Renderer implements RendererBackend {
   }
 
   // Optional resources (M1 abstraction surface)
-  createTexture(desc: import("../Texture").TextureDescriptor2D) { return new WebGL2Texture(this.#gl!, desc); }
-  createSampler(desc?: import("../Sampler").SamplerDescriptor) { return new WebGL2Sampler(desc); }
+  createTexture(desc: import("../Texture").TextureDescriptor2D) {
+    return new WebGL2Texture(this.#gl!, desc);
+  }
+  createSampler(desc?: import("../Sampler").SamplerDescriptor) {
+    return new WebGL2Sampler(desc);
+  }
 
-  drawIndexed(vao: WebGL2VertexArray, opts: { count: number; type?: "uint16" | "uint32"; mode?: "triangles" | "lines" }) {
+  drawIndexed(
+    vao: WebGL2VertexArray,
+    opts: { count: number; type?: "uint16" | "uint32"; mode?: "triangles" | "lines" }
+  ) {
     const gl = this.#gl!;
     vao.bind();
     const typeEnum = opts.type === "uint32" ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
@@ -174,10 +205,18 @@ export default class WebGL2Renderer implements RendererBackend {
     vao.unbind();
   }
 
-  drawArrays(vao: WebGL2VertexArray, opts: { mode: "triangle-strip" | "triangles" | "lines"; first?: number; count: number }) {
+  drawArrays(
+    vao: WebGL2VertexArray,
+    opts: { mode: "triangle-strip" | "triangles" | "lines"; first?: number; count: number }
+  ) {
     const gl = this.#gl!;
     vao.bind();
-    const modeEnum = opts.mode === "triangle-strip" ? gl.TRIANGLE_STRIP : opts.mode === "lines" ? gl.LINES : gl.TRIANGLES;
+    const modeEnum =
+      opts.mode === "triangle-strip"
+        ? gl.TRIANGLE_STRIP
+        : opts.mode === "lines"
+          ? gl.LINES
+          : gl.TRIANGLES;
     gl.drawArrays(modeEnum, opts.first ?? 0, opts.count);
     vao.unbind();
   }

@@ -5,8 +5,8 @@ import Camera from "./graphics/Camera";
 import Light from "./graphics/Light";
 import Material from "./graphics/Material";
 import MeshRenderer from "./graphics/MeshRenderer";
-import SpriteRenderer from "./graphics/SpriteRenderer";
 import Shader from "./graphics/Shader";
+import SpriteRenderer from "./graphics/SpriteRenderer";
 import Input, { MOUSE } from "./Input";
 import Scene from "./Scene";
 import Script from "./Script";
@@ -17,19 +17,19 @@ export type { CanvasOptions } from "./CanvasOptions";
 
 export {
   Application,
-  Time,
-  Scene,
-  GameEntity,
-  Shader,
   Camera,
   Component,
-  Script,
+  GameEntity,
   Input,
-  MOUSE,
-  Transform,
-  MeshRenderer,
-  SpriteRenderer,
-  MeshBuilder,
-  Material,
   Light,
+  Material,
+  MeshBuilder,
+  MeshRenderer,
+  MOUSE,
+  Scene,
+  Script,
+  Shader,
+  SpriteRenderer,
+  Time,
+  Transform,
 };

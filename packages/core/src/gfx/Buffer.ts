@@ -7,4 +7,3 @@ export default interface GfxBuffer {
   update(data: ArrayBufferView, usage?: BufferUsage): void;
   dispose(): void;
 }
-

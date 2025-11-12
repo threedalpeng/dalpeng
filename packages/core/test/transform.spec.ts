@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { Vec3, vec3 } from "@dalpeng/math";
+import { describe, expect, it } from "vitest";
 import GameEntity from "../src/entity/GameEntity";
 import Transform from "../src/Transform";
-import { Vec3, vec3 } from "@dalpeng/math";
 
 function nearly(a: number, b: number, eps = 1e-3) {
   return Math.abs(a - b) <= eps;
@@ -92,4 +92,3 @@ describe("Transform", () => {
     });
   });
 });
-

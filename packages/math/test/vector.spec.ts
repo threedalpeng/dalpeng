@@ -48,10 +48,7 @@ describe("Vector", () => {
       vec2DeepTest(new Vec2([0, 0]).normalize(), Vec2.zero());
     });
     test("lerp", () => {
-      vec2DeepTest(
-        Vec2.lerp(new Vec2([0, 0]), new Vec2([2, 4]), 0.5),
-        new Vec2([1, 2])
-      );
+      vec2DeepTest(Vec2.lerp(new Vec2([0, 0]), new Vec2([2, 4]), 0.5), new Vec2([1, 2]));
     });
   });
 
@@ -84,10 +81,7 @@ describe("Vector", () => {
     test("cross", () => {
       vec3DeepTest(vec3_i1.cross(vec3_i2), new Vec3([9, -2, -7]));
       vec3DeepTest(vec3_i1.cross(vec3_f1), new Vec3([-1.6247, -2.2453, 3.87]));
-      vec3DeepTest(
-        vec3_f1.cross(vec3_f2),
-        new Vec3([13.2342738, 6.9086136, -0.072888])
-      );
+      vec3DeepTest(vec3_f1.cross(vec3_f2), new Vec3([13.2342738, 6.9086136, -0.072888]));
     });
     test("size", () => {
       expect(vec3_i1.size()).toBeCloseTo(Math.sqrt(3));
@@ -101,14 +95,8 @@ describe("Vector", () => {
     });
     test("normalize", () => {
       vec3DeepTest(vec3_i1.normalize(), new Vec3([0.57735, 0.57735, 0.57735]));
-      vec3DeepTest(
-        vec3_i2.normalize(),
-        new Vec3([0.424264, -0.565685, 0.707106])
-      );
-      vec3DeepTest(
-        vec3_f1.normalize(),
-        new Vec3([-0.439304, 0.844764, 0.305588])
-      );
+      vec3DeepTest(vec3_i2.normalize(), new Vec3([0.424264, -0.565685, 0.707106]));
+      vec3DeepTest(vec3_f1.normalize(), new Vec3([-0.439304, 0.844764, 0.305588]));
     });
     test("normalize returns zero for zero-length vectors", () => {
       vec3DeepTest(new Vec3([0, 0, 0]).normalize(), Vec3.zero());
@@ -129,33 +117,18 @@ describe("Vector", () => {
 
     test("add", () => {
       vec4DeepTest(vec4_i1.add(vec4_i2), new Vec4([4, -3, 6, 3]));
-      vec4DeepTest(
-        vec4_i1.add(vec4_f1),
-        new Vec4([-0.324, 3.546, 1.921, 4.581])
-      );
-      vec4DeepTest(
-        vec4_f1.add(vec4_f2),
-        new Vec4([2.868, -5.46, 3.222, -0.419])
-      );
+      vec4DeepTest(vec4_i1.add(vec4_f1), new Vec4([-0.324, 3.546, 1.921, 4.581]));
+      vec4DeepTest(vec4_f1.add(vec4_f2), new Vec4([2.868, -5.46, 3.222, -0.419]));
     });
     test("sub", () => {
       vec4DeepTest(vec4_i1.sub(vec4_i2), new Vec4([-2, 5, -4, -1]));
-      vec4DeepTest(
-        vec4_i1.sub(vec4_f1),
-        new Vec4([2.324, -1.546, 0.079, -2.581])
-      );
-      vec4DeepTest(
-        vec4_f1.sub(vec4_f2),
-        new Vec4([-5.516, 10.552, -1.38, 7.581])
-      );
+      vec4DeepTest(vec4_i1.sub(vec4_f1), new Vec4([2.324, -1.546, 0.079, -2.581]));
+      vec4DeepTest(vec4_f1.sub(vec4_f2), new Vec4([-5.516, 10.552, -1.38, 7.581]));
     });
     test("muli", () => {
       vec4DeepTest(vec4_i1.muli(2), new Vec4([2, 2, 2, 2]));
       vec4DeepTest(vec4_i2.muli(5.7), new Vec4([17.1, -22.8, 28.5, 11.4]));
-      vec4DeepTest(
-        vec4_f1.muli(-7.3),
-        new Vec4([9.6652, -18.5858, -6.7233, -26.1413])
-      );
+      vec4DeepTest(vec4_f1.muli(-7.3), new Vec4([9.6652, -18.5858, -6.7233, -26.1413]));
     });
     test.todo("dot", () => {
       expect(vec4_i1.dot(vec4_i2)).toBeCloseTo(4);
@@ -174,14 +147,8 @@ describe("Vector", () => {
     });
     test.todo("normalize", () => {
       vec4DeepTest(vec4_i1.normalize(), new Vec4([0.57735, 0.57735, 0.57735]));
-      vec4DeepTest(
-        vec4_i2.normalize(),
-        new Vec4([0.424264, -0.565685, 0.707106])
-      );
-      vec4DeepTest(
-        vec4_f1.normalize(),
-        new Vec4([-0.439304, 0.844764, 0.305588])
-      );
+      vec4DeepTest(vec4_i2.normalize(), new Vec4([0.424264, -0.565685, 0.707106]));
+      vec4DeepTest(vec4_f1.normalize(), new Vec4([-0.439304, 0.844764, 0.305588]));
     });
     test("normalize returns zero for zero-length vectors", () => {
       vec4DeepTest(new Vec4([0, 0, 0, 0]).normalize(), Vec4.zero());

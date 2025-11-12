@@ -1,0 +1,15 @@
+node_modules
+dist
+.turbo
+pnpm-lock.yaml
+
+# Package outputs
+packages/**/dist
+packages/**/node_modules
+
+# Shaders (keep authoring format)
+packages/core/src/shaders/*.frag
+packages/core/src/shaders/*.vert
+
+# Legacy demo HTML with invalid nesting (skip formatting)
+demo/old/pong/src/devmode/devmode-overlay.html

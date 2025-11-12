@@ -1,5 +1,5 @@
-import { Input, Script, Time, Transform2D } from "dalpeng";
 import { Vec2 } from "@dalpeng/math";
+import { Input, Script, Time, Transform2D } from "dalpeng";
 
 export default class PlayerScript extends Script {
   transform!: Transform2D;

@@ -1,7 +1,7 @@
 import Entity from "@/entity/Entity";
-import { isNil } from "@/utils/basic";
 import type Program from "@/gfx/Program";
 import type { RendererBackend } from "@/gfx/RendererBackend";
+import { isNil } from "@/utils/basic";
 
 export default class Shader extends Entity {
   #program: Program | null = null;
@@ -29,10 +29,7 @@ export default class Shader extends Entity {
       this.clear();
     }
 
-    this.#program = await this.#backend.createProgram(
-      vertexShaderSource,
-      fragmentShaderSource
-    );
+    this.#program = await this.#backend.createProgram(vertexShaderSource, fragmentShaderSource);
 
     return this;
   }

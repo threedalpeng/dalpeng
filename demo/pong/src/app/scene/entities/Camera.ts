@@ -1,5 +1,5 @@
-import { defineGameEntity, Transform, useComponent, withName, Camera } from "dalpeng";
 import { vec3 } from "@dalpeng/math";
+import { Camera, defineGameEntity, Transform, useComponent, withName } from "dalpeng";
 
 export default defineGameEntity(() => {
   withName("Main Camera");
@@ -11,4 +11,3 @@ export default defineGameEntity(() => {
   cam.isOrthographic = true;
   cam.size = 6; // world half-height
 });
-

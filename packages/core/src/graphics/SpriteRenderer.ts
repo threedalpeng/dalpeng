@@ -1,9 +1,9 @@
 import type GameEntity from "@/entity/GameEntity";
+import type GfxVertexArray from "@/gfx/VertexArray";
 import Transform from "../Transform";
 import BaseRenderer from "./BaseRenderer";
 import Material from "./Material";
 import type Shader from "./Shader";
-import type GfxVertexArray from "@/gfx/VertexArray";
 
 export default class SpriteRenderer extends BaseRenderer {
   geometryShader!: Shader;
@@ -61,4 +61,3 @@ export default class SpriteRenderer extends BaseRenderer {
     });
   }
 }
-

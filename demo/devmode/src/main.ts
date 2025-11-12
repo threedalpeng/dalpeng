@@ -1,11 +1,8 @@
 export async function attachOverlay() {
-  const devmodeOverlayTemplate = (await import("./devmode-overlay.html?raw"))
-    .default;
-  const devmodeOverlayStyle = (await import("./devmode-overlay.css?raw"))
-    .default;
+  const devmodeOverlayTemplate = (await import("./devmode-overlay.html?raw")).default;
+  const devmodeOverlayStyle = (await import("./devmode-overlay.css?raw")).default;
 
-  const devmodeWrapperEl =
-    document.querySelector<HTMLDivElement>("div[devmode]")!;
+  const devmodeWrapperEl = document.querySelector<HTMLDivElement>("div[devmode]")!;
   devmodeWrapperEl.innerHTML = `${devmodeOverlayTemplate}\n\n<style>${devmodeOverlayStyle}</style>`;
 
   const editorEl = document.querySelector<HTMLAnchorElement>("#editor")!;

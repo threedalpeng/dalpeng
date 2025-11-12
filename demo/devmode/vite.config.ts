@@ -9,8 +9,7 @@ export default defineConfig({
       entry: path.resolve(__dirname, "src/main.ts"),
       name: "DalpengDemoDevmode",
       formats: ["es", "umd"],
-      fileName: (format) =>
-        format === "es" ? "demo-devmode.js" : "demo-devmode.umd.cjs",
+      fileName: (format) => (format === "es" ? "demo-devmode.js" : "demo-devmode.umd.cjs"),
     },
     rollupOptions: {
       output: { inlineDynamicImports: true },

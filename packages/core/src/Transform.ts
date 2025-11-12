@@ -1,4 +1,4 @@
-import { Mat3, Mat4, Quaternion, Vec3 } from "@dalpeng/math";
+import { Mat4, Quaternion, Vec3 } from "@dalpeng/math";
 import Component from "./component/Component";
 
 export default class Transform extends Component {
@@ -94,9 +94,7 @@ export default class Transform extends Component {
         const parentTransform = parent.getComponent(Transform)!;
         this.updateModelMatrix(parentTransform.modelMatrix);
         this.#worldPosition = this.#modelMatrix.translation();
-        this.#worldRotation = parentTransform.#worldRotation.mul(
-          this.#rotation
-        );
+        this.#worldRotation = parentTransform.#worldRotation.mul(this.#rotation);
       } else {
         this.updateModelMatrix();
         this.#worldPosition = this.#position;
@@ -121,13 +119,23 @@ export default class Transform extends Component {
 
   // ─── Coordinate Conversion ─────────────────────────────────────────────────
   // Converts points between local and world space using the cached matrices.
-  localToWorldPoint(v: Vec3) { return this.#modelMatrix.toMat3().mulv(v); }
+  localToWorldPoint(v: Vec3) {
+    return this.#modelMatrix.toMat3().mulv(v);
+  }
 
-  worldToLocalPoint(v: Vec3) { return this.#modelMatrix.toMat3().transpose().mulv(v); }
+  worldToLocalPoint(v: Vec3) {
+    return this.#modelMatrix.toMat3().transpose().mulv(v);
+  }
 
-  get forward() { return this.#worldRotation.mulv([0, 0, -1]); }
-  get up() { return this.#worldRotation.mulv([0, 1, 0]); }
-  get right() { return this.#worldRotation.mulv([1, 0, 0]); }
+  get forward() {
+    return this.#worldRotation.mulv([0, 0, -1]);
+  }
+  get up() {
+    return this.#worldRotation.mulv([0, 1, 0]);
+  }
+  get right() {
+    return this.#worldRotation.mulv([1, 0, 0]);
+  }
 
   // ─── Dirty Tracking ────────────────────────────────────────────────────────
   // Notifies the owning Application when transform data needs processing.

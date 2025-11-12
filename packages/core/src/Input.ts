@@ -27,9 +27,7 @@ export default class Input {
   static #cursorAxis = { x: 0, y: 0 };
 
   static #eventMap: {
-    [type in keyof HTMLElementEventMap]?: (
-      e: HTMLElementEventMap[type]
-    ) => void;
+    [type in keyof HTMLElementEventMap]?: (e: HTMLElementEventMap[type]) => void;
   } = {
     pointerdown: (e: PointerEvent) => {
       this.#unpolledMouseButtons[e.button as MOUSE] = true;
@@ -76,9 +74,7 @@ export default class Input {
     for (let button in this.#mouseButtons) {
       if (this.#unpolledMouseButtons.hasOwnProperty(button)) {
         this.#mouseButtons[button as unknown as MOUSE] = MOUSESTATE.PRESSED;
-      } else if (
-        this.#mouseButtons[button as unknown as MOUSE] === MOUSESTATE.UP
-      ) {
+      } else if (this.#mouseButtons[button as unknown as MOUSE] === MOUSESTATE.UP) {
         delete this.#mouseButtons[button as unknown as MOUSE];
       } else {
         this.#mouseButtons[button as unknown as MOUSE] = MOUSESTATE.UP;
@@ -139,8 +135,7 @@ export default class Input {
   }
   static mouseReleased(button: MOUSE) {
     return (
-      !this.#mouseButtons.hasOwnProperty(button) ||
-      this.#mouseButtons[button] === MOUSESTATE.UP
+      !this.#mouseButtons.hasOwnProperty(button) || this.#mouseButtons[button] === MOUSESTATE.UP
     );
   }
 

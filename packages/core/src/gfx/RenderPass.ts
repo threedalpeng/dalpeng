@@ -22,4 +22,3 @@ export interface RenderPassDescriptor {
   blend?: { enable: boolean; mode?: BlendMode };
   viewport?: RenderPassViewport;
 }
-

@@ -5,14 +5,9 @@ import { isNil } from "../utils/basic.js";
 // ─── Component Base Class ─────────────────────────────────────────────────────
 // Provides lifecycle, activation, and ECS wiring for concrete components.
 
-export type ComponentConstructor<Type extends Component> = new (
-  gameEntity: GameEntity
-) => Type;
+export type ComponentConstructor<Type extends Component> = new (gameEntity: GameEntity) => Type;
 type ComponentGroup<Type extends Component> = Map<number, Type[]>;
-type ComponentGroups = Map<
-  ComponentConstructor<Component>["name"],
-  ComponentGroup<Component>
->;
+type ComponentGroups = Map<ComponentConstructor<Component>["name"], ComponentGroup<Component>>;
 type ComponentEventCallback = (...data: any[]) => void;
 export default class Component extends Entity {
   // ─── Instance Context ──────────────────────────────────────────────────────
@@ -42,8 +37,9 @@ export default class Component extends Entity {
     isActive = true
   ) {
     const component = new type(gameEntity);
-    let componentGroup: ComponentGroup<Type> | undefined =
-      this.componentGroups.get(type.name) as ComponentGroup<Type>;
+    let componentGroup: ComponentGroup<Type> | undefined = this.componentGroups.get(
+      type.name
+    ) as ComponentGroup<Type>;
     if (componentGroup === undefined) {
       componentGroup = new Map<number, Type[]>();
       this.componentGroups.set(type.name, componentGroup);
@@ -62,9 +58,7 @@ export default class Component extends Entity {
     if (isActive) {
       const app = gameEntity.scene?.app;
       if (app) {
-        let components = app.activeComponents.get(type.name) as
-          | Set<Type>
-          | undefined;
+        let components = app.activeComponents.get(type.name) as Set<Type> | undefined;
         if (components === undefined) {
           components = new Set<Type>();
           app.activeComponents.set(type.name, components);
@@ -95,9 +89,7 @@ export default class Component extends Entity {
     type: ComponentConstructor<Type>,
     gameEntityId?: number
   ): ComponentGroup<Type> | Type[] | null {
-    const componentGroup = this.componentGroups.get(
-      type.name
-    ) as ComponentGroup<Type>;
+    const componentGroup = this.componentGroups.get(type.name) as ComponentGroup<Type>;
     if (isNil(componentGroup)) {
       return null;
     } else {
@@ -134,9 +126,7 @@ export default class Component extends Entity {
         }
         const app = this.gameEntity.scene?.app;
         if (app) {
-          let components = app.activeComponents.get(this.constructor.name) as
-            | Set<this>
-            | undefined;
+          let components = app.activeComponents.get(this.constructor.name) as Set<this> | undefined;
           if (components === undefined) {
             components = new Set<this>();
             app.activeComponents.set(this.constructor.name, components);
@@ -153,9 +143,7 @@ export default class Component extends Entity {
     }
   }
 
-  getComponent<Type extends Component>(
-    type: ComponentConstructor<Type>
-  ): Type | null {
+  getComponent<Type extends Component>(type: ComponentConstructor<Type>): Type | null {
     return this.#gameEntity.getComponent<Type>(type);
   }
 

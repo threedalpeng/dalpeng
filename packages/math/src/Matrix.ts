@@ -286,7 +286,9 @@ export class Mat4 extends Float32Array {
   row(i: number) {
     return new Vec4(this.subarray(i * 4, i * 4 + 4));
   }
-  col(i: number) { return new Vec4([this[i], this[i + 4], this[i + 8], this[i + 12]]); }
+  col(i: number) {
+    return new Vec4([this[i], this[i + 4], this[i + 8], this[i + 12]]);
+  }
 
   add(m: Float32List) {
     // prettier-ignore
@@ -352,9 +354,27 @@ export class Mat4 extends Float32Array {
       this[3], this[7], this[11], this[15],
     ]);
   }
-  toMat3() { return new Mat3([ this[0], this[1], this[2], this[4], this[5], this[6], this[8], this[9], this[10] ]); }
-  translation() { return new Vec3([this[12], this[13], this[14]]); }
-  normalMatrix3() { const m3 = this.toMat3(); const inv = m3.inverse(); return inv ? inv.transpose() : Mat3.identity(); }
+  toMat3() {
+    return new Mat3([
+      this[0],
+      this[1],
+      this[2],
+      this[4],
+      this[5],
+      this[6],
+      this[8],
+      this[9],
+      this[10],
+    ]);
+  }
+  translation() {
+    return new Vec3([this[12], this[13], this[14]]);
+  }
+  normalMatrix3() {
+    const m3 = this.toMat3();
+    const inv = m3.inverse();
+    return inv ? inv.transpose() : Mat3.identity();
+  }
   det() {
     // prettier-ignore
     return (
@@ -511,7 +531,9 @@ export class Mat4 extends Float32Array {
       0,    0,    0,    1
     ]);
   }
-  static compose(translation: Float32List, rotation: Quaternion, scale: Float32List) { return Mat4.translate(translation).mul(Mat4.rotate(rotation)).mul(Mat4.scale(scale)); }
+  static compose(translation: Float32List, rotation: Quaternion, scale: Float32List) {
+    return Mat4.translate(translation).mul(Mat4.rotate(rotation)).mul(Mat4.scale(scale));
+  }
 
   static fromAxisAngle(axis: Float32List, angle: number) {
     const radian = deg2rad(angle);
@@ -554,12 +576,7 @@ export class Mat4 extends Float32Array {
     ]);
   }
 
-  static perspective(
-    fovy: number,
-    aspect: number,
-    dnear: number,
-    dfar: number
-  ) {
+  static perspective(fovy: number, aspect: number, dnear: number, dfar: number) {
     const _11 = 1 / Math.tan(fovy / 2.0);
     const _00 = _11 / aspect;
     const _22 = (dnear + dfar) / (dnear - dfar);

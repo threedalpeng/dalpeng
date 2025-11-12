@@ -35,12 +35,7 @@ export class Quaternion extends Float32Array {
   }
   divi(i: number) {
     const inv = 1 / i;
-    return new Quaternion([
-      this[0] * inv,
-      this[1] * inv,
-      this[2] * inv,
-      this[3] * inv,
-    ]);
+    return new Quaternion([this[0] * inv, this[1] * inv, this[2] * inv, this[3] * inv]);
   }
 
   mulv(v: Float32List) {
@@ -115,24 +110,14 @@ export class Quaternion extends Float32Array {
       return Quaternion.identity();
     }
     const inv = 1 / Math.sqrt(lenSq);
-    return new Quaternion([
-      this[0] * inv,
-      this[1] * inv,
-      this[2] * inv,
-      this[3] * inv,
-    ]);
+    return new Quaternion([this[0] * inv, this[1] * inv, this[2] * inv, this[3] * inv]);
   }
 
   size() {
     return Math.sqrt(this.size2());
   }
   size2() {
-    return (
-      this[0] * this[0] +
-      this[1] * this[1] +
-      this[2] * this[2] +
-      this[3] * this[3]
-    );
+    return this[0] * this[0] + this[1] * this[1] + this[2] * this[2] + this[3] * this[3];
   }
 
   toAxisAngle(): AxisAngle {
@@ -191,12 +176,7 @@ export class Quaternion extends Float32Array {
     axis = axis.normalize();
     angle = (angle * Math.PI) / 180;
     const s = Math.sin(angle * 0.5);
-    return new Quaternion([
-      axis.x * s,
-      axis.y * s,
-      axis.z * s,
-      Math.cos(angle * 0.5),
-    ]);
+    return new Quaternion([axis.x * s, axis.y * s, axis.z * s, Math.cos(angle * 0.5)]);
   }
 
   static identity() {

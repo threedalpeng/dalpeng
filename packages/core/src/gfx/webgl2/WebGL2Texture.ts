@@ -30,7 +30,11 @@ export default class WebGL2Texture implements GfxTexture {
       case "r16f":
         return { internal: gl.R16F as number, format: gl.RED, type: gl.HALF_FLOAT };
       case "depth16":
-        return { internal: gl.DEPTH_COMPONENT16, format: gl.DEPTH_COMPONENT, type: gl.UNSIGNED_SHORT };
+        return {
+          internal: gl.DEPTH_COMPONENT16,
+          format: gl.DEPTH_COMPONENT,
+          type: gl.UNSIGNED_SHORT,
+        };
       default:
         return { internal: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE };
     }
@@ -44,15 +48,38 @@ export default class WebGL2Texture implements GfxTexture {
       try {
         (gl as any).texStorage2D(gl.TEXTURE_2D, 1, info.internal, width, height);
       } catch {
-        gl.texImage2D(gl.TEXTURE_2D, 0, info.internal, width, height, 0, info.format, info.type, null);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          info.internal,
+          width,
+          height,
+          0,
+          info.format,
+          info.type,
+          null
+        );
       }
     } else {
-      gl.texImage2D(gl.TEXTURE_2D, 0, info.internal, width, height, 0, info.format, info.type, null);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        info.internal,
+        width,
+        height,
+        0,
+        info.format,
+        info.type,
+        null
+      );
     }
     gl.bindTexture(gl.TEXTURE_2D, null);
   }
 
-  update2D(data: TexImageSource | ArrayBufferView | null, desc?: Partial<Omit<TextureDescriptor2D, "kind">>): void {
+  update2D(
+    data: TexImageSource | ArrayBufferView | null,
+    desc?: Partial<Omit<TextureDescriptor2D, "kind">>
+  ): void {
     const gl = this.#gl;
     const width = desc?.width ?? this.width;
     const height = desc?.height ?? this.height;
@@ -70,7 +97,17 @@ export default class WebGL2Texture implements GfxTexture {
 
     if (data) {
       if (data instanceof Uint8Array || ArrayBuffer.isView(data as any)) {
-        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, height, info.format, info.type, data as any);
+        gl.texSubImage2D(
+          gl.TEXTURE_2D,
+          0,
+          0,
+          0,
+          width,
+          height,
+          info.format,
+          info.type,
+          data as any
+        );
       } else {
         gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, info.format, info.type, data as any);
       }

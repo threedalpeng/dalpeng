@@ -1,5 +1,5 @@
-import { Input, Script, Time, Transform2D } from "dalpeng";
 import { Vec2 } from "@dalpeng/math";
+import { Input, Script, Time, Transform2D } from "dalpeng";
 
 export default class BallScript extends Script {
   transform!: Transform2D;
@@ -39,9 +39,7 @@ export default class BallScript extends Script {
         if ((angle = this.isCollidedWith(nextPos, this.player1)) !== null) {
           angle = -angle * Math.PI * 0.5;
           this.direction = new Vec2([Math.cos(angle), Math.sin(angle)]);
-        } else if (
-          (angle = this.isCollidedWith(nextPos, this.player2)) !== null
-        ) {
+        } else if ((angle = this.isCollidedWith(nextPos, this.player2)) !== null) {
           angle = (1 + angle * 0.5) * Math.PI;
           this.direction = new Vec2([Math.cos(angle), Math.sin(angle)]);
         }

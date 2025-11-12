@@ -1,8 +1,4 @@
-export function loadShader(
-  gl: WebGL2RenderingContext,
-  type: GLenum,
-  source: string
-) {
+export function loadShader(gl: WebGL2RenderingContext, type: GLenum, source: string) {
   const shader = gl.createShader(type)!;
   gl.shaderSource(shader, source);
   gl.compileShader(shader);

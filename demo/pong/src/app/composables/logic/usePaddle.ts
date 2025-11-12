@@ -1,5 +1,5 @@
-import { Input, Time, Transform, useComponent } from "dalpeng";
 import { vec3 } from "@dalpeng/math";
+import { Input, Time, Transform, useComponent } from "dalpeng";
 
 type UsePaddleConfig = {
   upKey: string;
@@ -34,4 +34,3 @@ export default function usePaddle(cfg: UsePaddleConfig) {
 
   return t;
 }
-

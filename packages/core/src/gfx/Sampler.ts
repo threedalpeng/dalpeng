@@ -15,4 +15,3 @@ export default interface GfxSampler {
   readonly desc: Required<SamplerDescriptor>;
   dispose(): void;
 }
-
