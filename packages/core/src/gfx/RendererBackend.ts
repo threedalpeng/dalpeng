@@ -25,6 +25,10 @@ export interface RendererBackend {
   createBuffer(kind: "vertex" | "index"): import("./Buffer").default;
   createVertexArray(): import("./VertexArray").default;
 
+  // Optional resource creation for textures/samplers
+  createTexture?: (desc: import("./Texture").TextureDescriptor2D) => import("./Texture").default;
+  createSampler?: (desc?: import("./Sampler").SamplerDescriptor) => import("./Sampler").default;
+
   // Draw helpers (keeps Components free of GL enums)
   drawIndexed(
     vao: import("./VertexArray").default,
@@ -43,4 +47,8 @@ export interface RendererBackend {
 
   // Handle canvas resize (reallocate framebuffers/textures, etc.)
   resize(app: any): void;
+
+  // Optional generic pass API
+  beginPass?: (app: any, desc: import("./RenderPass").RenderPassDescriptor) => void;
+  endPass?: (app: any) => void;
 }

@@ -4,6 +4,8 @@ import WebGL2Buffer from "./WebGL2Buffer";
 import WebGL2VertexArray from "./WebGL2VertexArray";
 import { loadProgram, loadShader } from "@/utils/gl";
 import WebGL2Program from "./WebGL2Program";
+import WebGL2Texture from "./WebGL2Texture";
+import WebGL2Sampler from "./WebGL2Sampler";
 
 export default class WebGL2Renderer implements RendererBackend {
   readonly type = "webgl2" as const;
@@ -159,6 +161,10 @@ export default class WebGL2Renderer implements RendererBackend {
     return new WebGL2VertexArray(this.#gl!);
   }
 
+  // Optional resources (M1 abstraction surface)
+  createTexture(desc: import("../Texture").TextureDescriptor2D) { return new WebGL2Texture(this.#gl!, desc); }
+  createSampler(desc?: import("../Sampler").SamplerDescriptor) { return new WebGL2Sampler(desc); }
+
   drawIndexed(vao: WebGL2VertexArray, opts: { count: number; type?: "uint16" | "uint32"; mode?: "triangles" | "lines" }) {
     const gl = this.#gl!;
     vao.bind();
@@ -183,5 +189,46 @@ export default class WebGL2Renderer implements RendererBackend {
   getDrawableSize(_app: Application) {
     const c = this.#gl!.canvas as HTMLCanvasElement;
     return { width: c.width, height: c.height };
+  }
+
+  // Optional: generic pass API (default framebuffer only, for now)
+  beginPass(_app: Application, desc: import("../RenderPass").RenderPassDescriptor) {
+    const gl = this.#gl!;
+    // Default backbuffer target
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    if (desc.viewport) {
+      gl.viewport(desc.viewport.x, desc.viewport.y, desc.viewport.w, desc.viewport.h);
+    }
+
+    if (typeof desc.depthWrite === "boolean") {
+      gl.depthMask(!!desc.depthWrite);
+    }
+
+    if (desc.blend?.enable) {
+      gl.enable(gl.BLEND);
+      const mode = desc.blend.mode ?? "additive";
+      if (mode === "alpha") {
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      } else {
+        gl.blendFunc(gl.ONE, gl.ONE);
+      }
+    } else {
+      gl.disable(gl.BLEND);
+    }
+
+    let clearBits = 0;
+    if (desc.clearColor) {
+      gl.clearColor(desc.clearColor[0], desc.clearColor[1], desc.clearColor[2], desc.clearColor[3]);
+      clearBits |= gl.COLOR_BUFFER_BIT;
+    }
+    if (typeof desc.clearDepth === "number") {
+      gl.clearDepth(desc.clearDepth);
+      clearBits |= gl.DEPTH_BUFFER_BIT;
+    }
+    if (clearBits) gl.clear(clearBits);
+  }
+  endPass(_app: Application) {
+    // No-op for default framebuffer; state is left as configured by beginPass
   }
 }
