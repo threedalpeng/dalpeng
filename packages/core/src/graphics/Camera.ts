@@ -35,7 +35,11 @@ export default class Camera extends Component {
 
   async update() {
     const transform = this.transform;
-    this.eye = transform.position;
+    // Use world-space transform for camera derived vectors
+    this.eye = transform.worldPosition;
+    const forward = transform.worldRotation.mulv([0, 0, -1]);
+    this.at = this.eye.add(forward);
+    this.up = transform.worldRotation.mulv([0, 1, 0]);
 
     const size = this.currentApp.renderer.getDrawableSize(this.currentApp);
     this.aspectRatio = size.width / size.height;

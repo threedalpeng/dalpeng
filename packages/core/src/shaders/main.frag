@@ -72,8 +72,8 @@ vec3 material(vec3 baseColor, float metallic, float roughness, vec3 N, vec3 V, v
   vec3 cDiff = mix(baseColor.rgb, vec3(0.0), metallic);
   vec3 Fd = (cDiff / PI);
 
-  // return 3.0 * NoL * mix(Fd, Fs, F);
-  return NoL * (Fs + Fd);
+  // Energy-conserving: attenuate diffuse by (1 - F)
+  return NoL * (Fs + (1.0 - F) * Fd);
 }
 
 void main() {
@@ -87,7 +87,7 @@ void main() {
   vec3 emissive = texelFetch(gEmissive, fragCoord, 0).rgb;
 
   vec3 N = normalize(normal);
-  vec3 V = normalize(uViewPos);
+  vec3 V = normalize(uViewPos - pos);
   vec3 lightToPoint = uLight.pos - pos;
   if(uLight.type == LIGHT_TYPE_DIRECTIONAL) {
     lightToPoint = -uLight.direction;
