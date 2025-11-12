@@ -74,20 +74,91 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
   if (x === "left") root.style.left = "8px";
   else root.style.right = "8px";
 
+  // Header bar with minimize toggle
+  const header = document.createElement("div");
+  header.style.display = "flex";
+  header.style.alignItems = "center";
+  header.style.justifyContent = "space-between";
+  header.style.gap = "8px";
+  header.style.marginBottom = "6px";
   const title = document.createElement("div");
   title.textContent = "Dalpeng Debug";
   title.style.fontWeight = "600";
-  title.style.marginBottom = "6px";
-  root.appendChild(title);
+  const btnMin = document.createElement("button");
+  btnMin.textContent = "–";
+  btnMin.title = "Minimize";
+  btnMin.style.cursor = "pointer";
+  btnMin.style.width = "22px";
+  btnMin.style.height = "22px";
+  btnMin.style.border = "1px solid rgba(255,255,255,0.2)";
+  btnMin.style.background = "rgba(255,255,255,0.1)";
+  btnMin.style.color = "#fff";
+  btnMin.style.borderRadius = "4px";
+  header.appendChild(title);
+  header.appendChild(btnMin);
+  root.appendChild(header);
+
+  // Content wrapper (hidden when minimized)
+  const contentWrap = document.createElement("div");
+  root.appendChild(contentWrap);
+
+  let minimized = false;
+  const applyMinimized = () => {
+    if (minimized) {
+      contentWrap.style.display = "none";
+      btnMin.textContent = "+";
+      btnMin.title = "Expand";
+    } else {
+      contentWrap.style.display = "block";
+      btnMin.textContent = "–";
+      btnMin.title = "Minimize";
+    }
+  };
+  btnMin.addEventListener("click", () => {
+    minimized = !minimized;
+    applyMinimized();
+  });
+  applyMinimized();
+
+  // Helper: collapsible section
+  const makeSection = (label: string) => {
+    const sec = document.createElement("div");
+    sec.style.marginBottom = "8px";
+    const head = document.createElement("button");
+    head.textContent = `▾ ${label}`;
+    head.style.cursor = "pointer";
+    head.style.width = "100%";
+    head.style.textAlign = "left";
+    head.style.padding = "4px 6px";
+    head.style.border = "1px solid rgba(255,255,255,0.2)";
+    head.style.background = "rgba(255,255,255,0.08)";
+    head.style.color = "#fff";
+    head.style.borderRadius = "4px";
+    head.style.margin = "0 0 4px 0";
+    const body = document.createElement("div");
+    const toggle = () => {
+      const closed = body.style.display === "none";
+      body.style.display = closed ? "block" : "none";
+      head.textContent = `${closed ? "▾" : "▸"} ${label}`;
+    };
+    head.addEventListener("click", toggle);
+    // default open
+    body.style.display = "block";
+    sec.appendChild(head);
+    sec.appendChild(body);
+    contentWrap.appendChild(sec);
+    return { head, body, toggle } as const;
+  };
 
   // Status panel (updated periodically)
+  const secStatus = makeSection("Status");
   const status = document.createElement("div");
   status.style.display = "grid";
   status.style.gridTemplateColumns = "auto 1fr";
   status.style.columnGap = "8px";
   status.style.rowGap = "2px";
   status.style.marginBottom = "6px";
-  root.appendChild(status);
+  secStatus.body.appendChild(status);
   const row = (k: string) => {
     const kEl = document.createElement("div");
     const vEl = document.createElement("div");
@@ -124,8 +195,10 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
     app.features.debugLightingView = parseInt(sel.value) || 0;
   });
   selWrap.appendChild(sel);
-  root.appendChild(selWrap);
+  const secView = makeSection("Views");
+  secView.body.appendChild(selWrap);
 
+  const secControls = makeSection("Controls");
   const mkRow = (label: string, input: HTMLElement) => {
     const row = document.createElement("label");
     row.style.display = "flex";
@@ -136,7 +209,7 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
     span.textContent = label;
     row.appendChild(input);
     row.appendChild(span);
-    root.appendChild(row);
+    secControls.body.appendChild(row);
   };
 
   // Tone mapping toggle
@@ -182,7 +255,7 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
   const btnWrap = document.createElement("div");
   btnWrap.style.marginTop = "6px";
   btnWrap.appendChild(dumpBtn);
-  root.appendChild(btnWrap);
+  secControls.body.appendChild(btnWrap);
 
   document.body.appendChild(root);
 
