@@ -61,6 +61,11 @@ export default class Transform extends Component {
     this.#rotation = q.mul(this.#rotation);
     this.markDirty();
   }
+  lookAt(target: Vec3, up: Vec3 = Vec3.up()) {
+    const dir = target.sub(this.#position);
+    this.#rotation = Quaternion.fromLookRotation(dir, up);
+    this.markDirty();
+  }
 
   // ─── Matrix Computation ────────────────────────────────────────────────────
   // Builds model matrices and propagates updates to child entities.
@@ -69,9 +74,7 @@ export default class Transform extends Component {
     return this.#modelMatrix;
   }
   #calculateModelMatrix(parentMatrix?: Mat4) {
-    this.#modelMatrix = Mat4.translate(this.#position)
-      .mul(Mat4.rotate(this.#rotation))
-      .mul(Mat4.scale(this.#scale));
+    this.#modelMatrix = Mat4.compose(this.#position, this.#rotation, this.#scale);
     if (parentMatrix) {
       this.#modelMatrix = parentMatrix.mul(this.#modelMatrix);
     }
@@ -90,11 +93,7 @@ export default class Transform extends Component {
       if (parent) {
         const parentTransform = parent.getComponent(Transform)!;
         this.updateModelMatrix(parentTransform.modelMatrix);
-        this.#worldPosition = new Vec3([
-          this.#modelMatrix._03,
-          this.#modelMatrix._13,
-          this.#modelMatrix._23,
-        ]);
+        this.#worldPosition = this.#modelMatrix.translation();
         this.#worldRotation = parentTransform.#worldRotation.mul(
           this.#rotation
         );
@@ -104,6 +103,16 @@ export default class Transform extends Component {
         this.#worldRotation = this.#rotation;
       }
     } else {
+      // Parent may have refreshed our model matrix already; refresh world caches.
+      const parent = this.gameEntity.parent;
+      if (parent) {
+        const parentTransform = parent.getComponent(Transform)!;
+        this.#worldPosition = this.#modelMatrix.translation();
+        this.#worldRotation = parentTransform.#worldRotation.mul(this.#rotation);
+      } else {
+        this.#worldPosition = this.#position;
+        this.#worldRotation = this.#rotation;
+      }
       for (let child of this.gameEntity.children) {
         child.getComponent(Transform)?.checkModelMatrixToBeUpdated();
       }
@@ -112,13 +121,13 @@ export default class Transform extends Component {
 
   // ─── Coordinate Conversion ─────────────────────────────────────────────────
   // Converts points between local and world space using the cached matrices.
-  localToWorldPoint(v: Vec3) {
-    return new Mat3(this.#modelMatrix).mulv(v);
-  }
+  localToWorldPoint(v: Vec3) { return this.#modelMatrix.toMat3().mulv(v); }
 
-  worldToLocalPoint(v: Vec3) {
-    return new Mat3(this.#modelMatrix).transpose().mulv(v);
-  }
+  worldToLocalPoint(v: Vec3) { return this.#modelMatrix.toMat3().transpose().mulv(v); }
+
+  get forward() { return this.#worldRotation.mulv([0, 0, -1]); }
+  get up() { return this.#worldRotation.mulv([0, 1, 0]); }
+  get right() { return this.#worldRotation.mulv([1, 0, 0]); }
 
   // ─── Dirty Tracking ────────────────────────────────────────────────────────
   // Notifies the owning Application when transform data needs processing.

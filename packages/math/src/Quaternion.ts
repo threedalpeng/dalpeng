@@ -247,4 +247,33 @@ export class Quaternion extends Float32Array {
       a.w * ratioA + bw * ratioB,
     ]);
   }
+
+  static fromLookRotation(forward: Vec3, up: Vec3) {
+    const f = new Vec3(forward).normalize();
+    const baseF = Vec3.back();
+    let qDir: Quaternion;
+    let dot = baseF.dot(f);
+    dot = Math.max(-1, Math.min(1, dot));
+    if (dot > 1 - 1e-6) {
+      qDir = Quaternion.identity();
+    } else if (dot < -1 + 1e-6) {
+      let axis = up.cross(baseF);
+      if (axis.size2() <= 1e-6) axis = Vec3.right();
+      qDir = Quaternion.fromAxisAngle(axis.normalize(), 180);
+    } else {
+      const axis = baseF.cross(f).normalize();
+      const angle = (Math.acos(dot) * 180) / Math.PI;
+      qDir = Quaternion.fromAxisAngle(axis, angle);
+    }
+
+    const desiredUp = new Vec3(up).normalize();
+    const curUp = qDir.mulv(Vec3.up()).normalize();
+    const axisF = f;
+    const c = curUp.cross(desiredUp);
+    const s = Math.max(-1, Math.min(1, curUp.dot(desiredUp)));
+    let roll = Math.atan2(c.dot(axisF), s);
+    roll = (roll * 180) / Math.PI;
+    const qRoll = Quaternion.fromAxisAngle(axisF, roll);
+    return qRoll.mul(qDir);
+  }
 }

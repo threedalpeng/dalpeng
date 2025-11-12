@@ -14,6 +14,7 @@ export default defineGameEntity(() => {
 
   const transform = useComponent(Transform);
   transform.position = vec3(0, 2, 10);
+  transform.lookAt(vec3(0, 0, 0));
 
   const camera = useComponent(Camera);
   camera.size = 10;

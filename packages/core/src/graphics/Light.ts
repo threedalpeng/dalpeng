@@ -40,10 +40,7 @@ export default class Light extends Component {
   renderLight() {
     const lightingShader = this.lightingShader;
     lightingShader.setUniformVec3("uLight.pos", this.transform.worldPosition);
-    lightingShader.setUniformVec3(
-      "uLight.direction",
-      this.transform.worldRotation.mulv([0, 0, -1])
-    );
+    lightingShader.setUniformVec3("uLight.direction", this.transform.forward);
     lightingShader.setUniformVec3("uLight.color", this.color);
     lightingShader.setUniform1i("uLight.type", LIGHT_TYPE_CODE[this.type]);
     lightingShader.setUniform1f("uLight.intensity", this.intensity);

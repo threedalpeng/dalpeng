@@ -93,4 +93,13 @@ describe("quaternion", () => {
       new Quaternion([0.0391028, -0.11596, 0.2184363, 0.9681476])
     );
   });
+  test("fromLookRotation aims forward and aligns up", () => {
+    const f = new Vec3([0, -1, -1]).normalize();
+    const up = new Vec3([0, 1, 0]);
+    const q = Quaternion.fromLookRotation(f, up);
+    const f3 = q.mulv([0, 0, -1]).normalize();
+    vec3DeepTest(f3, f);
+    const u3 = q.mulv([0, 1, 0]).normalize();
+    expect(u3.dot(up) > 0).toBe(true);
+  });
 });
