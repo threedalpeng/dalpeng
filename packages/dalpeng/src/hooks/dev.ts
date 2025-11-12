@@ -1,4 +1,5 @@
 import type { Application } from "@dalpeng/core";
+import { createOverlayRoot, createPersistStore, makeSection, makeSlider } from "./ui";
 
 type ToggleOptions = {
   key?: string; // KeyboardEvent.code, e.g., 'KeyT'
@@ -56,102 +57,48 @@ type OverlayOptions = {
 export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) {
   const position = opts.position ?? "top-right";
   const hotkeys = opts.hotkeys ?? true;
-
-  // Root container
-  const root = document.createElement("div");
-  root.style.position = "fixed";
-  root.style.zIndex = "9999";
-  root.style.padding = "8px";
-  root.style.minWidth = "200px";
-  root.style.font = "12px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-  root.style.color = "#fff";
-  root.style.background = "rgba(0,0,0,0.5)";
-  root.style.borderRadius = "6px";
-  root.style.backdropFilter = "blur(2px)";
-  const [y, x] = position.split("-");
-  if (y === "top") root.style.top = "8px";
-  else root.style.bottom = "8px";
-  if (x === "left") root.style.left = "8px";
-  else root.style.right = "8px";
-
-  // Header bar with minimize toggle
-  const header = document.createElement("div");
-  header.style.display = "flex";
-  header.style.alignItems = "center";
-  header.style.justifyContent = "space-between";
-  header.style.gap = "8px";
-  header.style.marginBottom = "6px";
-  const title = document.createElement("div");
-  title.textContent = "Dalpeng Debug";
-  title.style.fontWeight = "600";
-  const btnMin = document.createElement("button");
-  btnMin.textContent = "–";
-  btnMin.title = "Minimize";
-  btnMin.style.cursor = "pointer";
-  btnMin.style.width = "22px";
-  btnMin.style.height = "22px";
-  btnMin.style.border = "1px solid rgba(255,255,255,0.2)";
-  btnMin.style.background = "rgba(255,255,255,0.1)";
-  btnMin.style.color = "#fff";
-  btnMin.style.borderRadius = "4px";
-  header.appendChild(title);
-  header.appendChild(btnMin);
-  root.appendChild(header);
-
-  // Content wrapper (hidden when minimized)
-  const contentWrap = document.createElement("div");
-  root.appendChild(contentWrap);
-
-  let minimized = false;
-  const applyMinimized = () => {
-    if (minimized) {
-      contentWrap.style.display = "none";
-      btnMin.textContent = "+";
-      btnMin.title = "Expand";
-    } else {
-      contentWrap.style.display = "block";
-      btnMin.textContent = "–";
-      btnMin.title = "Minimize";
-    }
+  const store = createPersistStore("dalpeng.debug.overlay");
+  const resetDefaults = () => {
+    const def = {
+      minimized: false,
+      postToneMapping: false,
+      debugGL: false,
+      debugGLVerbose: false,
+      debugLightingView: 0,
+      toneExposure: 1.0,
+      toneGamma: 2.2,
+      sections: {},
+    } as any;
+    store.reset(def);
+    return def;
   };
-  btnMin.addEventListener("click", () => {
-    minimized = !minimized;
-    applyMinimized();
-  });
-  applyMinimized();
+  const persisted = store.raw() as any;
 
-  // Helper: collapsible section
-  const makeSection = (label: string) => {
-    const sec = document.createElement("div");
-    sec.style.marginBottom = "8px";
-    const head = document.createElement("button");
-    head.textContent = `▾ ${label}`;
-    head.style.cursor = "pointer";
-    head.style.width = "100%";
-    head.style.textAlign = "left";
-    head.style.padding = "4px 6px";
-    head.style.border = "1px solid rgba(255,255,255,0.2)";
-    head.style.background = "rgba(255,255,255,0.08)";
-    head.style.color = "#fff";
-    head.style.borderRadius = "4px";
-    head.style.margin = "0 0 4px 0";
-    const body = document.createElement("div");
-    const toggle = () => {
-      const closed = body.style.display === "none";
-      body.style.display = closed ? "block" : "none";
-      head.textContent = `${closed ? "▾" : "▸"} ${label}`;
-    };
-    head.addEventListener("click", toggle);
-    // default open
-    body.style.display = "block";
-    sec.appendChild(head);
-    sec.appendChild(body);
-    contentWrap.appendChild(sec);
-    return { head, body, toggle } as const;
+  // Overlay root (with minimize toggle)
+  const overlay = createOverlayRoot({
+    title: "Dalpeng Debug",
+    position,
+    minimized: !!persisted.minimized,
+  });
+  const root = overlay.root;
+  const contentWrap = overlay.content;
+  overlay.onToggle((m) => store.set("minimized", m));
+
+  // Helper: collapsible section with persistence
+  const section = (label: string, parent: HTMLElement, id: string) => {
+    const open =
+      persisted.sections && persisted.sections[id] !== undefined ? !!persisted.sections[id] : true;
+    const sec = makeSection(parent, label, open);
+    sec.head.addEventListener("click", () => {
+      const prev = (store.get<Record<string, boolean>>("sections", {}) as any) || {};
+      const isOpen = sec.body.style.display !== "none";
+      store.set("sections", { ...prev, [id]: isOpen });
+    });
+    return sec;
   };
 
   // Status panel (updated periodically)
-  const secStatus = makeSection("Status");
+  const secStatus = section("Status", contentWrap, "status");
   const status = document.createElement("div");
   status.style.display = "grid";
   status.style.gridTemplateColumns = "auto 1fr";
@@ -190,15 +137,71 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
   addOpt(4, "View: Metallic");
   addOpt(5, "View: Roughness");
   addOpt(6, "View: Position");
-  sel.value = String(app.features.debugLightingView ?? 0);
+  sel.value = String(persisted.debugLightingView ?? app.features.debugLightingView ?? 0);
+  app.features.debugLightingView = parseInt(sel.value) || 0;
   sel.addEventListener("change", () => {
-    app.features.debugLightingView = parseInt(sel.value) || 0;
+    const v = parseInt(sel.value) || 0;
+    app.features.debugLightingView = v;
+    store.set("debugLightingView", v);
   });
   selWrap.appendChild(sel);
-  const secView = makeSection("Views");
+  const secLighting = section("Lighting", contentWrap, "lighting");
+  const secView = section("Views", secLighting.body, "lighting-views");
   secView.body.appendChild(selWrap);
 
-  const secControls = makeSection("Controls");
+  // Tone mapping group
+  const secTone = section("Tone Mapping", secLighting.body, "lighting-tone");
+  // Toggle
+  const toneToggle = document.createElement("input");
+  toneToggle.type = "checkbox";
+  const applyToneToggle = (v: boolean) => {
+    app.features.postToneMapping = v;
+    store.set("postToneMapping", v);
+  };
+  toneToggle.checked = persisted.postToneMapping ?? !!app.features.postToneMapping;
+  applyToneToggle(toneToggle.checked);
+  toneToggle.addEventListener("change", () => applyToneToggle(toneToggle.checked));
+  const toneRow = document.createElement("label");
+  toneRow.style.display = "flex";
+  toneRow.style.alignItems = "center";
+  toneRow.style.gap = "6px";
+  toneRow.style.margin = "4px 0";
+  const toneText = document.createElement("span");
+  toneText.textContent = "Enable Tone Mapping (T)";
+  toneRow.appendChild(toneToggle);
+  toneRow.appendChild(toneText);
+  secTone.body.appendChild(toneRow);
+  // Sliders
+  const expSlider = makeSlider(
+    secTone.body,
+    store,
+    "toneExposure",
+    "Exposure",
+    persisted.toneExposure ?? app.features.toneExposure ?? 1.0,
+    0.0,
+    4.0,
+    0.01,
+    (n) => {
+      app.features.toneExposure = n;
+    }
+  );
+  const gamSlider = makeSlider(
+    secTone.body,
+    store,
+    "toneGamma",
+    "Gamma",
+    persisted.toneGamma ?? app.features.toneGamma ?? 2.2,
+    1.2,
+    3.0,
+    0.01,
+    (n) => {
+      app.features.toneGamma = n;
+    }
+  );
+  // sliders already appended by makeSlider
+
+  // Controls (debug/general)
+  const secControls = section("Controls", contentWrap, "controls");
   const mkRow = (label: string, input: HTMLElement) => {
     const row = document.createElement("label");
     row.style.display = "flex";
@@ -212,34 +215,31 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
     secControls.body.appendChild(row);
   };
 
-  // Tone mapping toggle
-  const tone = document.createElement("input");
-  tone.type = "checkbox";
-  tone.checked = !!app.features.postToneMapping;
-  tone.addEventListener("change", () => {
-    app.features.postToneMapping = tone.checked;
-  });
-  mkRow("Tone Mapping (T)", tone);
-
   // Debug GL toggle
   const dbg = document.createElement("input");
   dbg.type = "checkbox";
-  dbg.checked = !!app.features.debugGL;
-  dbg.addEventListener("change", () => {
-    app.features.debugGL = dbg.checked;
-  });
+  const applyDbg = (v: boolean) => {
+    app.features.debugGL = v;
+    store.set("debugGL", v);
+  };
+  dbg.checked = persisted.debugGL ?? !!app.features.debugGL;
+  applyDbg(dbg.checked);
+  dbg.addEventListener("change", () => applyDbg(dbg.checked));
   mkRow("Debug GL logs", dbg);
 
   // Verbose per-frame logs
   const vdbg = document.createElement("input");
   vdbg.type = "checkbox";
-  vdbg.checked = !!app.features.debugGLVerbose;
-  vdbg.addEventListener("change", () => {
-    app.features.debugGLVerbose = vdbg.checked;
-  });
+  const applyVdbg = (v: boolean) => {
+    app.features.debugGLVerbose = v;
+    store.set("debugGLVerbose", v);
+  };
+  vdbg.checked = persisted.debugGLVerbose ?? !!app.features.debugGLVerbose;
+  applyVdbg(vdbg.checked);
+  vdbg.addEventListener("change", () => applyVdbg(vdbg.checked));
   mkRow("Verbose (per-frame)", vdbg);
 
-  // Manual dump button
+  // Manual dump / reset
   const dumpBtn = document.createElement("button");
   dumpBtn.textContent = "Dump GL State";
   dumpBtn.style.cursor = "pointer";
@@ -252,9 +252,35 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
     (app as any).renderer?.debugDumpState?.(app, "manual dump");
     (app as any).renderer?.debugCheckError?.("manual dump");
   });
+  const resetBtn = document.createElement("button");
+  resetBtn.textContent = "Reset Defaults";
+  resetBtn.style.cursor = "pointer";
+  resetBtn.style.padding = "4px 6px";
+  resetBtn.style.border = "1px solid rgba(255,255,255,0.2)";
+  resetBtn.style.background = "rgba(255,255,255,0.1)";
+  resetBtn.style.color = "#fff";
+  resetBtn.style.borderRadius = "4px";
+  resetBtn.style.marginLeft = "6px";
+  resetBtn.addEventListener("click", () => {
+    const def = resetDefaults();
+    overlay.setMinimized(!!(def as any).minimized);
+    applyToneToggle(!!(def as any).postToneMapping);
+    toneToggle.checked = !!(def as any).postToneMapping;
+    applyDbg(!!(def as any).debugGL);
+    dbg.checked = !!(def as any).debugGL;
+    applyVdbg(!!(def as any).debugGLVerbose);
+    vdbg.checked = !!(def as any).debugGLVerbose;
+    app.features.debugLightingView = (def as any).debugLightingView ?? 0;
+    sel.value = String(app.features.debugLightingView);
+    app.features.toneExposure = (def as any).toneExposure;
+    app.features.toneGamma = (def as any).toneGamma;
+    expSlider.range.value = String(app.features.toneExposure);
+    gamSlider.range.value = String(app.features.toneGamma);
+  });
   const btnWrap = document.createElement("div");
   btnWrap.style.marginTop = "6px";
   btnWrap.appendChild(dumpBtn);
+  btnWrap.appendChild(resetBtn);
   secControls.body.appendChild(btnWrap);
 
   document.body.appendChild(root);
@@ -275,6 +301,9 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
     vFPS.textContent = `${fps}`;
     vPost.textContent = app.features.postToneMapping ? "On" : "Off";
     sel.value = String(app.features.debugLightingView ?? 0);
+    if (app.features.toneExposure != null)
+      expSlider.range.value = String(app.features.toneExposure);
+    if (app.features.toneGamma != null) gamSlider.range.value = String(app.features.toneGamma);
 
     const caps = (app as any).renderer?.debugGetCaps?.() as any;
     vCaps.textContent = caps ? (caps.extFloatBlend ? "Yes" : "No (LDR)") : "?";
@@ -302,8 +331,8 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
   const onKey = (e: KeyboardEvent) => {
     if (!hotkeys) return;
     if (e.code === "KeyT") {
-      tone.checked = !tone.checked;
-      tone.dispatchEvent(new Event("change"));
+      toneToggle.checked = !toneToggle.checked;
+      toneToggle.dispatchEvent(new Event("change"));
     }
   };
   window.addEventListener("keydown", onKey);

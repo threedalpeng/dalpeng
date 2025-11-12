@@ -101,6 +101,9 @@ export default class Application {
     debugGL?: boolean;
     debugGLVerbose?: boolean;
     debugLightingView?: number;
+    toneExposure?: number;
+    toneGamma?: number;
+    shadows?: boolean;
   } = {
     postToneMapping: false,
   };
@@ -409,6 +412,7 @@ export default class Application {
 
     // If post-processing is enabled, keep lighting buffer in linear (no gamma here)
     this.shader.lighting.setUniform1i("uApplyGamma", this.features.postToneMapping ? 0 : 1);
+    this.shader.lighting.setUniform1f("uGamma", this.features.toneGamma ?? 2.2);
 
     this.shader.lighting.setUniform1i("gPositionMetallic", 0);
     this.shader.lighting.setUniform1i("gNormalRoughness", 1);
@@ -464,6 +468,8 @@ export default class Application {
       gl.bindTexture(gl.TEXTURE_2D, lightingTex);
       this.shader.post.setUniform1i("uLighting", 4);
     }
+    this.shader.post.setUniform1f("uExposure", this.features.toneExposure ?? 1.0);
+    this.shader.post.setUniform1f("uGamma", this.features.toneGamma ?? 2.2);
 
     this.renderer.beginPass?.(this, {
       target: "default",

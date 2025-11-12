@@ -10,6 +10,7 @@ uniform sampler2D gNormalRoughness;
 uniform sampler2D gAlbedo;
 uniform sampler2D gEmissive;
 uniform int uApplyGamma;
+uniform float uGamma;
 uniform int uDebugMode; // 0: shaded, 1:N, 2:Albedo, 3:Emissive, 4:Metallic, 5:Roughness, 6:Position
 
 struct Light {
@@ -108,12 +109,10 @@ void main() {
   }
   vec3 L = normalize(lightToPoint);
 
-  float gamma = 2.2;
-
   vec3 lightFactor = getLightFactor(length(lightToPoint));
   vec3 finalColor = (lightFactor * material(baseColor, metallic, roughness, N, V, L)) + emissive;
   if (uApplyGamma != 0) {
-    outColor = vec4(pow(finalColor, vec3(1.0 / gamma)), 1);
+    outColor = vec4(pow(finalColor, vec3(1.0 / max(uGamma, 1e-6))), 1);
   } else {
     outColor = vec4(finalColor, 1);
   }
