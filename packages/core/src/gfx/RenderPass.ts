@@ -10,8 +10,8 @@ export interface RenderPassViewport {
 // Library-neutral pass descriptor for simple cases.
 // For now, only default framebuffer passes are supported in WebGL2Renderer.beginPass.
 export interface RenderPassDescriptor {
-  // Target selection: future backends may accept a RenderTarget; default implies swapchain/backbuffer.
-  target?: "default";
+  // Target selection: default backbuffer or an engine RenderTarget
+  target?: "default" | import("./RenderTarget").RenderTarget;
 
   // Clears (optional)
   clearColor?: [number, number, number, number];
@@ -21,4 +21,8 @@ export interface RenderPassDescriptor {
   depthWrite?: boolean;
   blend?: { enable: boolean; mode?: BlendMode };
   viewport?: RenderPassViewport;
+
+  // Optional: specify color attachment indices for MRT targets (WebGL2)
+  // If omitted, backend keeps existing drawBuffers state.
+  colorAttachments?: number[];
 }

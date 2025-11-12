@@ -1,6 +1,9 @@
 import type { CanvasOptions } from "./CanvasOptions";
 import Component, { type ComponentConstructor } from "./component/Component";
+import type GfxBuffer from "./gfx/Buffer";
 import type { RendererBackend } from "./gfx/RendererBackend";
+import type { RenderTarget } from "./gfx/RenderTarget";
+import type GfxVertexArray from "./gfx/VertexArray";
 import WebGL2Renderer from "./gfx/webgl2/WebGL2Renderer";
 import Camera from "./graphics/Camera";
 import Light from "./graphics/Light";
@@ -89,6 +92,22 @@ export default class Application {
   // Graphics context (backend-specific)
   context!: any;
   renderer: RendererBackend = new WebGL2Renderer();
+  renderTargets: { gbuffer: RenderTarget | null; lighting: RenderTarget | null } = {
+    gbuffer: null,
+    lighting: null,
+  };
+  features: {
+    postToneMapping: boolean;
+    debugGL?: boolean;
+    debugGLVerbose?: boolean;
+    debugLightingView?: number;
+  } = {
+    postToneMapping: false,
+  };
+
+  // Cached resources for post-processing (fullscreen quad)
+  private _postVao: GfxVertexArray | null = null;
+  private _postVbo: GfxBuffer | null = null;
 
   useRenderer(renderer: RendererBackend) {
     this.renderer = renderer;
@@ -129,10 +148,12 @@ export default class Application {
 
     this.registerShader(this.shader.geometry);
     this.registerShader(this.shader.lighting);
+    this.registerShader(this.shader.post);
 
     await Promise.allSettled([
       this.shader.geometry.loadFrom(gbufvert, gbuffrag),
       this.shader.lighting.loadFrom(mainvert, mainfrag),
+      this.shader.post.loadFrom(mainvert, (await import("./shaders/post.frag?raw")).default),
     ]);
 
     canvas.setAttribute("tabindex", "0");
@@ -260,6 +281,7 @@ export default class Application {
   shader = {
     geometry: new Shader(),
     lighting: new Shader(),
+    post: new Shader(),
   };
   // Backend-owned resources (opaque to the engine)
   gBuffer: any | null = null;
@@ -361,6 +383,10 @@ export default class Application {
 
     this.shader.geometry.use();
     this.renderer.beginGeometryPass(this);
+    if (this.features.debugGLVerbose) {
+      this.renderer.debugDumpState?.(this, "after beginGeometryPass");
+      this.renderer.debugCheckError?.("after beginGeometryPass");
+    }
 
     await this.forEachActiveComponent(Camera, (camera) => {
       camera.renderCameraToGeometry();
@@ -372,14 +398,23 @@ export default class Application {
       renderer.render();
     });
     this.renderer.endGeometryPass(this);
+    if (this.features.debugGLVerbose) this.renderer.debugCheckError?.("after endGeometryPass");
 
     this.shader.lighting.use();
     this.renderer.beginLightingPass(this);
+    if (this.features.debugGLVerbose) {
+      this.renderer.debugDumpState?.(this, "after beginLightingPass");
+      this.renderer.debugCheckError?.("after beginLightingPass");
+    }
+
+    // If post-processing is enabled, keep lighting buffer in linear (no gamma here)
+    this.shader.lighting.setUniform1i("uApplyGamma", this.features.postToneMapping ? 0 : 1);
 
     this.shader.lighting.setUniform1i("gPositionMetallic", 0);
     this.shader.lighting.setUniform1i("gNormalRoughness", 1);
     this.shader.lighting.setUniform1i("gAlbedo", 2);
     this.shader.lighting.setUniform1i("gEmissive", 3);
+    this.shader.lighting.setUniform1i("uDebugMode", this.features.debugLightingView ?? 0);
 
     await this.forEachActiveComponent(Camera, (camera) => {
       camera.renderCameraToLighting();
@@ -387,6 +422,69 @@ export default class Application {
     await this.forEachActiveComponent(Light, (light) => {
       light.renderLight();
     });
+    if (this.features.debugGLVerbose) {
+      this.renderer.debugDumpState?.(this, "after lights");
+      this.renderer.debugCheckError?.("after lights");
+    }
+
+    // End lighting pass before any post logic and check errors
+    this.renderer.endLightingPass(this);
+    if (this.features.debugGLVerbose) this.renderer.debugCheckError?.("after endLightingPass");
+
+    // Execute post-processing (tone mapping + gamma) to the default framebuffer
+    if (this.features.postToneMapping) {
+      this.#renderPostPass();
+    } else {
+      // When post is off, end lighting pass here to keep state tidy
+      this.renderer.endLightingPass(this);
+    }
+  }
+
+  #ensurePostQuad() {
+    if (!this._postVao) {
+      this._postVao = this.renderer.createVertexArray();
+    }
+    if (!this._postVbo) {
+      this._postVbo = this.renderer.createBuffer("vertex");
+      const quad = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+      this._postVbo.update(quad);
+      const loc = this.shader.post.getAttribLocation("aPosition");
+      this._postVao.setVertexBuffer(loc, this._postVbo, 2);
+    }
+  }
+
+  #renderPostPass() {
+    const gl = this.gl as WebGL2RenderingContext;
+    const lightingTex = (this as any)._lightingColor as WebGLTexture | undefined;
+    this.shader.post.use();
+    this.#ensurePostQuad();
+
+    if (lightingTex) {
+      gl.activeTexture(gl.TEXTURE4);
+      gl.bindTexture(gl.TEXTURE_2D, lightingTex);
+      this.shader.post.setUniform1i("uLighting", 4);
+    }
+
+    this.renderer.beginPass?.(this, {
+      target: "default",
+      depthWrite: false,
+      blend: { enable: false },
+      clearColor: [0, 0, 0, 1],
+    });
+    if (this.features.debugGLVerbose) {
+      this.renderer.debugDumpState?.(this, "before post draw");
+      this.renderer.debugCheckError?.("before post draw");
+    }
+    this.renderer.drawArrays(this._postVao!, { mode: "triangle-strip", count: 4 });
+    if (this.features.debugGLVerbose) {
+      this.renderer.debugDumpState?.(this, "after post draw");
+      this.renderer.debugCheckError?.("after post draw");
+    }
+    this.renderer.endPass?.(this);
+    if (lightingTex) {
+      gl.activeTexture(gl.TEXTURE4);
+      gl.bindTexture(gl.TEXTURE_2D, null);
+    }
   }
 
   static async forEach(callback: (instance: Application) => void) {

@@ -1,3 +1,12 @@
+import type GfxBuffer from "./Buffer";
+import type Program from "./Program";
+import type { RenderPassDescriptor } from "./RenderPass";
+import type GfxSampler from "./Sampler";
+import type { SamplerDescriptor } from "./Sampler";
+import type GfxTexture from "./Texture";
+import type { TextureDescriptor2D } from "./Texture";
+import type GfxVertexArray from "./VertexArray";
+
 export type BackendType = "webgl2" | "webgpu";
 
 export interface BackendCapabilities {
@@ -12,7 +21,7 @@ export interface RendererBackend {
   init(app: any, canvas: HTMLCanvasElement): Promise<void>;
 
   // Program creation (compilation/linking or pipeline construction)
-  createProgram(vertexSource: string, fragmentSource: string): Promise<import("./Program").default>;
+  createProgram(vertexSource: string, fragmentSource: string): Promise<Program>;
 
   // Frame-pass control (keep narrow for easy swapping).
   beginGeometryPass(app: any): void;
@@ -22,20 +31,20 @@ export interface RendererBackend {
   endLightingPass(app: any): void;
 
   // Resource creation (minimal, for decoupling Components from WebGL)
-  createBuffer(kind: "vertex" | "index"): import("./Buffer").default;
-  createVertexArray(): import("./VertexArray").default;
+  createBuffer(kind: "vertex" | "index"): GfxBuffer;
+  createVertexArray(): GfxVertexArray;
 
   // Optional resource creation for textures/samplers
-  createTexture?: (desc: import("./Texture").TextureDescriptor2D) => import("./Texture").default;
-  createSampler?: (desc?: import("./Sampler").SamplerDescriptor) => import("./Sampler").default;
+  createTexture?: (desc: TextureDescriptor2D) => GfxTexture;
+  createSampler?: (desc?: SamplerDescriptor) => GfxSampler;
 
   // Draw helpers (keeps Components free of GL enums)
   drawIndexed(
-    vao: import("./VertexArray").default,
+    vao: GfxVertexArray,
     opts: { count: number; type?: "uint16" | "uint32"; mode?: "triangles" | "lines" }
   ): void;
   drawArrays(
-    vao: import("./VertexArray").default,
+    vao: GfxVertexArray,
     opts: { mode: "triangle-strip" | "triangles" | "lines"; first?: number; count: number }
   ): void;
 
@@ -49,6 +58,13 @@ export interface RendererBackend {
   resize(app: any): void;
 
   // Optional generic pass API
-  beginPass?: (app: any, desc: import("./RenderPass").RenderPassDescriptor) => void;
+  beginPass?: (app: any, desc: RenderPassDescriptor) => void;
   endPass?: (app: any) => void;
+
+  // Optional runtime debug helpers (backend-specific)
+  debugDumpState?: (app: any, tag?: string) => void;
+  debugCheckError?: (tag?: string) => void;
+  debugCollectState?: (app: any) => unknown;
+  debugGetCaps?: () => unknown;
+  debugGetLastError?: () => unknown;
 }

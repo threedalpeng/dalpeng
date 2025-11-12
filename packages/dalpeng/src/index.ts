@@ -20,5 +20,6 @@ export {
   Transform,
 } from "@dalpeng/core";
 export { runApp, withCanvasOptions } from "./hooks/app";
+export { enableDebugOverlay, enablePostToneMappingToggle } from "./hooks/dev";
 export * from "./hooks/index";
 export { createApp, type Application, type GameEntity, type Scene };

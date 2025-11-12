@@ -9,6 +9,8 @@ uniform sampler2D gPositionMetallic;
 uniform sampler2D gNormalRoughness;
 uniform sampler2D gAlbedo;
 uniform sampler2D gEmissive;
+uniform int uApplyGamma;
+uniform int uDebugMode; // 0: shaded, 1:N, 2:Albedo, 3:Emissive, 4:Metallic, 5:Roughness, 6:Position
 
 struct Light {
   vec3 color;
@@ -87,6 +89,18 @@ void main() {
   vec3 emissive = texelFetch(gEmissive, fragCoord, 0).rgb;
 
   vec3 N = normalize(normal);
+
+  // Debug outputs
+  if (uDebugMode == 1) {
+    outColor = vec4(N * 0.5 + 0.5, 1.0);
+    return;
+  }
+  if (uDebugMode == 2) { outColor = vec4(baseColor, 1.0); return; }
+  if (uDebugMode == 3) { outColor = vec4(emissive, 1.0); return; }
+  if (uDebugMode == 4) { outColor = vec4(vec3(metallic), 1.0); return; }
+  if (uDebugMode == 5) { outColor = vec4(vec3(roughness), 1.0); return; }
+  if (uDebugMode == 6) { outColor = vec4(pos * 0.05 + 0.5, 1.0); return; }
+
   vec3 V = normalize(uViewPos - pos);
   vec3 lightToPoint = uLight.pos - pos;
   if(uLight.type == LIGHT_TYPE_DIRECTIONAL) {
@@ -94,10 +108,13 @@ void main() {
   }
   vec3 L = normalize(lightToPoint);
 
-  // outColor = vec4(vec3(N * 0.5 + 0.5), 1);
-  float gamma = 2.2;//2.2;
+  float gamma = 2.2;
 
   vec3 lightFactor = getLightFactor(length(lightToPoint));
   vec3 finalColor = (lightFactor * material(baseColor, metallic, roughness, N, V, L)) + emissive;
-  outColor = vec4(pow(finalColor, vec3(1.0 / gamma)), 1);
+  if (uApplyGamma != 0) {
+    outColor = vec4(pow(finalColor, vec3(1.0 / gamma)), 1);
+  } else {
+    outColor = vec4(finalColor, 1);
+  }
 }
