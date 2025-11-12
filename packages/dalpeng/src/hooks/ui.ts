@@ -116,7 +116,7 @@ export function createOverlayRoot(opts: {
   } as const;
 }
 
-export function makeSection(parent: HTMLElement, label: string, open = true) {
+export function makeSection(parent: HTMLElement, label: string, open = true, indent = 0) {
   const sec = document.createElement("div");
   sec.style.marginBottom = "8px";
   const head = document.createElement("button");
@@ -132,8 +132,14 @@ export function makeSection(parent: HTMLElement, label: string, open = true) {
     borderRadius: "4px",
     margin: "0 0 4px 0",
   } as CSSStyleDeclaration);
+  if (indent > 0) {
+    head.style.marginLeft = `${indent}px`;
+  }
   const body = document.createElement("div");
   body.style.display = open ? "block" : "none";
+  if (indent > 0) {
+    body.style.marginLeft = `${indent}px`;
+  }
   head.addEventListener("click", () => {
     const isClosed = body.style.display === "none";
     body.style.display = isClosed ? "block" : "none";
@@ -145,7 +151,12 @@ export function makeSection(parent: HTMLElement, label: string, open = true) {
   return { head, body } as const;
 }
 
-export function makeLabeledRow(parent: HTMLElement, label: string, control: HTMLElement) {
+export function makeLabeledRow(
+  parent: HTMLElement,
+  label: string,
+  control: HTMLElement,
+  indent = 0
+) {
   const row = document.createElement("label");
   Object.assign(row.style, {
     display: "flex",
@@ -153,6 +164,11 @@ export function makeLabeledRow(parent: HTMLElement, label: string, control: HTML
     gap: "6px",
     margin: "4px 0",
   } as CSSStyleDeclaration);
+  if (indent > 0) {
+    row.style.marginLeft = `${indent}px`;
+    row.style.paddingLeft = `8px`;
+    row.style.borderLeft = "1px solid rgba(255,255,255,0.12)";
+  }
   const span = document.createElement("span");
   span.textContent = label;
   row.appendChild(control);
@@ -218,7 +234,8 @@ export function makeSlider(
   min: number,
   max: number,
   step: number,
-  onChange: (v: number) => void
+  onChange: (v: number) => void,
+  indent = 0
 ) {
   const wrap = document.createElement("div");
   Object.assign(wrap.style, {
@@ -228,6 +245,11 @@ export function makeSlider(
     rowGap: "4px",
     margin: "6px 0",
   } as CSSStyleDeclaration);
+  if (indent > 0) {
+    wrap.style.marginLeft = `${indent}px`;
+    wrap.style.paddingLeft = `8px`;
+    wrap.style.borderLeft = "1px solid rgba(255,255,255,0.12)";
+  }
   const l = document.createElement("div");
   l.textContent = label;
   const r = document.createElement("input");
@@ -235,6 +257,7 @@ export function makeSlider(
   r.min = String(min);
   r.max = String(max);
   r.step = String(step);
+  if (key) (r as any).dataset.key = key;
   const val = store && key ? Number(store.get<number>(key, init)) : init;
   r.value = String(val);
   const v = document.createElement("div");

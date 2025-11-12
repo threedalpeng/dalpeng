@@ -1,5 +1,6 @@
 import type { Application } from "@dalpeng/core";
-import { createOverlayRoot, createPersistStore, makeSection, makeSlider } from "./ui";
+import { createOverlayBuilder } from "./builder";
+import { createOverlayRoot, createPersistStore, makeSection } from "./ui";
 
 type ToggleOptions = {
   key?: string; // KeyboardEvent.code, e.g., 'KeyT'
@@ -85,10 +86,10 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
   overlay.onToggle((m) => store.set("minimized", m));
 
   // Helper: collapsible section with persistence
-  const section = (label: string, parent: HTMLElement, id: string) => {
+  const section = (label: string, parent: HTMLElement, id: string, indent = 0) => {
     const open =
       persisted.sections && persisted.sections[id] !== undefined ? !!persisted.sections[id] : true;
-    const sec = makeSection(parent, label, open);
+    const sec = makeSection(parent, label, open, indent);
     sec.head.addEventListener("click", () => {
       const prev = (store.get<Record<string, boolean>>("sections", {}) as any) || {};
       const isOpen = sec.body.style.display !== "none";
@@ -97,191 +98,121 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
     return sec;
   };
 
-  // Status panel (updated periodically)
-  const secStatus = section("Status", contentWrap, "status");
-  const status = document.createElement("div");
-  status.style.display = "grid";
-  status.style.gridTemplateColumns = "auto 1fr";
-  status.style.columnGap = "8px";
-  status.style.rowGap = "2px";
-  status.style.marginBottom = "6px";
-  secStatus.body.appendChild(status);
-  const row = (k: string) => {
-    const kEl = document.createElement("div");
-    const vEl = document.createElement("div");
-    kEl.style.opacity = "0.8";
-    kEl.textContent = k;
-    status.appendChild(kEl);
-    status.appendChild(vEl);
-    return vEl;
-  };
-  const vFPS = row("FPS");
-  const vPost = row("ToneMap");
-  const vCaps = row("HDR Blend");
-  const vFBO = row("FBO Status");
-  const vLastErr = row("Last GL Err");
-  // Lighting debug view selector
-  const selWrap = document.createElement("div");
-  selWrap.style.margin = "6px 0";
-  const sel = document.createElement("select");
-  const addOpt = (v: number, label: string) => {
-    const o = document.createElement("option");
-    o.value = String(v);
-    o.textContent = label;
-    sel.appendChild(o);
-  };
-  addOpt(0, "View: Shaded");
-  addOpt(1, "View: Normals");
-  addOpt(2, "View: Albedo");
-  addOpt(3, "View: Emissive");
-  addOpt(4, "View: Metallic");
-  addOpt(5, "View: Roughness");
-  addOpt(6, "View: Position");
-  sel.value = String(persisted.debugLightingView ?? app.features.debugLightingView ?? 0);
-  app.features.debugLightingView = parseInt(sel.value) || 0;
-  sel.addEventListener("change", () => {
-    const v = parseInt(sel.value) || 0;
-    app.features.debugLightingView = v;
-    store.set("debugLightingView", v);
-  });
-  selWrap.appendChild(sel);
-  const secLighting = section("Lighting", contentWrap, "lighting");
-  const secView = section("Views", secLighting.body, "lighting-views");
-  secView.body.appendChild(selWrap);
-
-  // Tone mapping group
-  const secTone = section("Tone Mapping", secLighting.body, "lighting-tone");
-  // Toggle
-  const toneToggle = document.createElement("input");
-  toneToggle.type = "checkbox";
-  const applyToneToggle = (v: boolean) => {
-    app.features.postToneMapping = v;
-    store.set("postToneMapping", v);
-  };
-  toneToggle.checked = persisted.postToneMapping ?? !!app.features.postToneMapping;
-  applyToneToggle(toneToggle.checked);
-  toneToggle.addEventListener("change", () => applyToneToggle(toneToggle.checked));
-  const toneRow = document.createElement("label");
-  toneRow.style.display = "flex";
-  toneRow.style.alignItems = "center";
-  toneRow.style.gap = "6px";
-  toneRow.style.margin = "4px 0";
-  const toneText = document.createElement("span");
-  toneText.textContent = "Enable Tone Mapping (T)";
-  toneRow.appendChild(toneToggle);
-  toneRow.appendChild(toneText);
-  secTone.body.appendChild(toneRow);
-  // Sliders
-  const expSlider = makeSlider(
-    secTone.body,
-    store,
-    "toneExposure",
-    "Exposure",
-    persisted.toneExposure ?? app.features.toneExposure ?? 1.0,
-    0.0,
-    4.0,
-    0.01,
-    (n) => {
-      app.features.toneExposure = n;
+  // Build UI via builder
+  const builder = createOverlayBuilder(
+    contentWrap,
+    {
+      get: (k, f) => store.get(k as any, f as any) as any,
+      set: (k, v) => store.set(k as any, v as any),
+    },
+    persisted.sections ?? {},
+    (id, open) => {
+      const prev = (store.get<Record<string, boolean>>("sections", {}) as any) || {};
+      store.set("sections", { ...prev, [id]: open });
     }
-  );
-  const gamSlider = makeSlider(
-    secTone.body,
-    store,
-    "toneGamma",
-    "Gamma",
-    persisted.toneGamma ?? app.features.toneGamma ?? 2.2,
-    1.2,
-    3.0,
-    0.01,
-    (n) => {
-      app.features.toneGamma = n;
-    }
-  );
-  // sliders already appended by makeSlider
-
-  // Controls (debug/general)
-  const secControls = section("Controls", contentWrap, "controls");
-  const mkRow = (label: string, input: HTMLElement) => {
-    const row = document.createElement("label");
-    row.style.display = "flex";
-    row.style.alignItems = "center";
-    row.style.gap = "6px";
-    row.style.margin = "4px 0";
-    const span = document.createElement("span");
-    span.textContent = label;
-    row.appendChild(input);
-    row.appendChild(span);
-    secControls.body.appendChild(row);
-  };
-
-  // Debug GL toggle
-  const dbg = document.createElement("input");
-  dbg.type = "checkbox";
-  const applyDbg = (v: boolean) => {
-    app.features.debugGL = v;
-    store.set("debugGL", v);
-  };
-  dbg.checked = persisted.debugGL ?? !!app.features.debugGL;
-  applyDbg(dbg.checked);
-  dbg.addEventListener("change", () => applyDbg(dbg.checked));
-  mkRow("Debug GL logs", dbg);
-
-  // Verbose per-frame logs
-  const vdbg = document.createElement("input");
-  vdbg.type = "checkbox";
-  const applyVdbg = (v: boolean) => {
-    app.features.debugGLVerbose = v;
-    store.set("debugGLVerbose", v);
-  };
-  vdbg.checked = persisted.debugGLVerbose ?? !!app.features.debugGLVerbose;
-  applyVdbg(vdbg.checked);
-  vdbg.addEventListener("change", () => applyVdbg(vdbg.checked));
-  mkRow("Verbose (per-frame)", vdbg);
-
-  // Manual dump / reset
-  const dumpBtn = document.createElement("button");
-  dumpBtn.textContent = "Dump GL State";
-  dumpBtn.style.cursor = "pointer";
-  dumpBtn.style.padding = "4px 6px";
-  dumpBtn.style.border = "1px solid rgba(255,255,255,0.2)";
-  dumpBtn.style.background = "rgba(255,255,255,0.1)";
-  dumpBtn.style.color = "#fff";
-  dumpBtn.style.borderRadius = "4px";
-  dumpBtn.addEventListener("click", () => {
-    (app as any).renderer?.debugDumpState?.(app, "manual dump");
-    (app as any).renderer?.debugCheckError?.("manual dump");
-  });
-  const resetBtn = document.createElement("button");
-  resetBtn.textContent = "Reset Defaults";
-  resetBtn.style.cursor = "pointer";
-  resetBtn.style.padding = "4px 6px";
-  resetBtn.style.border = "1px solid rgba(255,255,255,0.2)";
-  resetBtn.style.background = "rgba(255,255,255,0.1)";
-  resetBtn.style.color = "#fff";
-  resetBtn.style.borderRadius = "4px";
-  resetBtn.style.marginLeft = "6px";
-  resetBtn.addEventListener("click", () => {
-    const def = resetDefaults();
-    overlay.setMinimized(!!(def as any).minimized);
-    applyToneToggle(!!(def as any).postToneMapping);
-    toneToggle.checked = !!(def as any).postToneMapping;
-    applyDbg(!!(def as any).debugGL);
-    dbg.checked = !!(def as any).debugGL;
-    applyVdbg(!!(def as any).debugGLVerbose);
-    vdbg.checked = !!(def as any).debugGLVerbose;
-    app.features.debugLightingView = (def as any).debugLightingView ?? 0;
-    sel.value = String(app.features.debugLightingView);
-    app.features.toneExposure = (def as any).toneExposure;
-    app.features.toneGamma = (def as any).toneGamma;
-    expSlider.range.value = String(app.features.toneExposure);
-    gamSlider.range.value = String(app.features.toneGamma);
-  });
-  const btnWrap = document.createElement("div");
-  btnWrap.style.marginTop = "6px";
-  btnWrap.appendChild(dumpBtn);
-  btnWrap.appendChild(resetBtn);
-  secControls.body.appendChild(btnWrap);
+  )
+    .group("Status", "status", (s) => {
+      s.value("status:fps", "FPS", "-")
+        .value("status:post", "ToneMap", "-")
+        .value("status:caps", "HDR Blend", "-")
+        .value("status:fbo", "FBO Status", "-")
+        .value("status:err", "Last GL Err", "-");
+    })
+    .group("Lighting", "lighting", (g) => {
+      g.group("Views", "lighting-views", (v) => {
+        v.select(
+          "debugLightingView",
+          "View",
+          [
+            { value: "0", label: "Shaded" },
+            { value: "1", label: "Normals" },
+            { value: "2", label: "Albedo" },
+            { value: "3", label: "Emissive" },
+            { value: "4", label: "Metallic" },
+            { value: "5", label: "Roughness" },
+            { value: "6", label: "Position" },
+          ],
+          String(persisted.debugLightingView ?? app.features.debugLightingView ?? 0),
+          (val) => (app.features.debugLightingView = parseInt(val) || 0)
+        );
+      });
+      g.group("Tone Mapping", "lighting-tone", (t) => {
+        t.checkbox(
+          "postToneMapping",
+          "Enable (T)",
+          persisted.postToneMapping ?? !!app.features.postToneMapping,
+          (v) => (app.features.postToneMapping = v)
+        )
+          .slider(
+            "toneExposure",
+            "Exposure",
+            persisted.toneExposure ?? app.features.toneExposure ?? 1.0,
+            0.0,
+            4.0,
+            0.01,
+            (n) => (app.features.toneExposure = n)
+          )
+          .slider(
+            "toneGamma",
+            "Gamma",
+            persisted.toneGamma ?? app.features.toneGamma ?? 2.2,
+            1.2,
+            3.0,
+            0.01,
+            (n) => (app.features.toneGamma = n)
+          );
+      });
+    })
+    .group("Controls", "controls", (c) => {
+      c.checkbox(
+        "debugGL",
+        "Debug GL logs",
+        persisted.debugGL ?? !!app.features.debugGL,
+        (v) => (app.features.debugGL = v)
+      ).checkbox(
+        "debugGLVerbose",
+        "Verbose (per-frame)",
+        persisted.debugGLVerbose ?? !!app.features.debugGLVerbose,
+        (v) => (app.features.debugGLVerbose = v)
+      );
+      c.button("Dump GL State", () => {
+        (app as any).renderer?.debugDumpState?.(app, "manual dump");
+        (app as any).renderer?.debugCheckError?.("manual dump");
+      }).button("Reset Defaults", () => {
+        const def = resetDefaults();
+        overlay.setMinimized(!!(def as any).minimized);
+        app.features.postToneMapping = !!(def as any).postToneMapping;
+        app.features.debugGL = !!(def as any).debugGL;
+        app.features.debugGLVerbose = !!(def as any).debugGLVerbose;
+        app.features.debugLightingView = (def as any).debugLightingView ?? 0;
+        app.features.toneExposure = (def as any).toneExposure;
+        app.features.toneGamma = (def as any).toneGamma;
+        const q = (sel: string) =>
+          root.querySelector(sel) as HTMLInputElement | HTMLSelectElement | null;
+        const toneChk = q(
+          'input[type="checkbox"][data-key="postToneMapping"]'
+        ) as HTMLInputElement | null;
+        if (toneChk) {
+          toneChk.checked = !!(def as any).postToneMapping;
+          toneChk.dispatchEvent(new Event("change"));
+        }
+        const selView = q('select[data-key="debugLightingView"]') as HTMLSelectElement | null;
+        if (selView) {
+          selView.value = String((def as any).debugLightingView ?? 0);
+          selView.dispatchEvent(new Event("change"));
+        }
+        const exp = q('input[type="range"][data-key="toneExposure"]') as HTMLInputElement | null;
+        if (exp) {
+          exp.value = String((def as any).toneExposure);
+          exp.dispatchEvent(new Event("input"));
+        }
+        const gam = q('input[type="range"][data-key="toneGamma"]') as HTMLInputElement | null;
+        if (gam) {
+          gam.value = String((def as any).toneGamma);
+          gam.dispatchEvent(new Event("input"));
+        }
+      });
+    });
 
   document.body.appendChild(root);
 
@@ -298,30 +229,33 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
       frames = 0;
       lastT = now;
     }
-    vFPS.textContent = `${fps}`;
-    vPost.textContent = app.features.postToneMapping ? "On" : "Off";
-    sel.value = String(app.features.debugLightingView ?? 0);
-    if (app.features.toneExposure != null)
-      expSlider.range.value = String(app.features.toneExposure);
-    if (app.features.toneGamma != null) gamSlider.range.value = String(app.features.toneGamma);
+    const sFps = root.querySelector('[data-key="status:fps"]') as HTMLElement | null;
+    if (sFps) sFps.textContent = String(fps);
+    const sPost = root.querySelector('[data-key="status:post"]') as HTMLElement | null;
+    if (sPost) sPost.textContent = app.features.postToneMapping ? "On" : "Off";
 
     const caps = (app as any).renderer?.debugGetCaps?.() as any;
-    vCaps.textContent = caps ? (caps.extFloatBlend ? "Yes" : "No (LDR)") : "?";
+    const sCaps = root.querySelector('[data-key="status:caps"]') as HTMLElement | null;
+    if (sCaps) sCaps.textContent = caps ? (caps.extFloatBlend ? "Yes" : "No (LDR)") : "?";
 
     const st = (app as any).renderer?.debugCollectState?.(app) as any;
     if (st && st.rtStatus) {
       const mapStatus = (x: number) => (x === 0x8cd5 ? "OK" : `0x${x.toString(16)}`);
       const gb = st.rtStatus.gbuffer;
       const lt = st.rtStatus.lighting;
-      vFBO.textContent = `G:${gb !== undefined ? mapStatus(gb) : "-"} L:${
-        lt !== undefined ? mapStatus(lt) : "-"
-      }`;
+      const sFbo = root.querySelector('[data-key="status:fbo"]') as HTMLElement | null;
+      if (sFbo)
+        sFbo.textContent = `G:${gb !== undefined ? mapStatus(gb) : "-"} L:${
+          lt !== undefined ? mapStatus(lt) : "-"
+        }`;
     } else {
-      vFBO.textContent = "-";
+      const sFbo = root.querySelector('[data-key="status:fbo"]') as HTMLElement | null;
+      if (sFbo) sFbo.textContent = "-";
     }
 
     const lastErr = (app as any).renderer?.debugGetLastError?.() as any;
-    vLastErr.textContent = lastErr ? `${lastErr.name} (${lastErr.tag ?? ""})` : "-";
+    const sErr = root.querySelector('[data-key="status:err"]') as HTMLElement | null;
+    if (sErr) sErr.textContent = lastErr ? `${lastErr.name} (${lastErr.tag ?? ""})` : "-";
 
     raf = requestAnimationFrame(update);
   };
@@ -331,8 +265,16 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
   const onKey = (e: KeyboardEvent) => {
     if (!hotkeys) return;
     if (e.code === "KeyT") {
-      toneToggle.checked = !toneToggle.checked;
-      toneToggle.dispatchEvent(new Event("change"));
+      const toneChk = root.querySelector(
+        'input[type="checkbox"][data-key="postToneMapping"]'
+      ) as HTMLInputElement | null;
+      if (toneChk) {
+        toneChk.checked = !toneChk.checked;
+        toneChk.dispatchEvent(new Event("change"));
+      } else {
+        app.features.postToneMapping = !app.features.postToneMapping;
+        store.set("postToneMapping", app.features.postToneMapping);
+      }
     }
   };
   window.addEventListener("keydown", onKey);
