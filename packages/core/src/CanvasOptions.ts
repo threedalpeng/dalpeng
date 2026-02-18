@@ -1,8 +1,5 @@
-export type CanvasResizeMode = "fill" | "contain" | "cover" | "none";
-
 export interface CanvasOptions {
-  mode?: CanvasResizeMode;
-  fixedAspect?: number; // width / height when preserving aspect in contain/cover
-  pixelRatio?: number | "device"; // default: "device"
-  autoResize?: boolean; // default: true
+  resolution?: [number, number] | "auto";
+  fit?: "contain" | "cover" | "fill";
+  pixelRatio?: number | "device";
 }

@@ -30,11 +30,11 @@ export class Quaternion extends Float32Array {
     this[3] = val;
   }
 
-  muli(i: number) {
-    return new Quaternion([this[0] * i, this[1] * i, this[2] * i, this[3] * i]);
+  scale(s: number) {
+    return new Quaternion([this[0] * s, this[1] * s, this[2] * s, this[3] * s]);
   }
-  divi(i: number) {
-    const inv = 1 / i;
+  divScalar(s: number) {
+    const inv = 1 / s;
     return new Quaternion([this[0] * inv, this[1] * inv, this[2] * inv, this[3] * inv]);
   }
 
@@ -73,7 +73,7 @@ export class Quaternion extends Float32Array {
       aw * by - ax * bz + ay * bw + az * bx,
       aw * bz + ax * by - ay * bx + az * bw,
       aw * bw - ax * bx - ay * by - az * bz,
-    ]).normalize();
+    ]);
   }
   div(q: Quaternion) {
     const ax = this.x;
@@ -85,7 +85,7 @@ export class Quaternion extends Float32Array {
     const bz = q.z;
     const bw = q.w;
 
-    const lenSq = q.size2();
+    const lenSq = q.sizeSq();
     if (lenSq <= EPSILON * EPSILON) {
       return Quaternion.identity();
     }
@@ -105,7 +105,7 @@ export class Quaternion extends Float32Array {
   }
 
   normalize(epsilon = EPSILON) {
-    const lenSq = this.size2();
+    const lenSq = this.sizeSq();
     if (lenSq <= epsilon * epsilon) {
       return Quaternion.identity();
     }
@@ -114,26 +114,18 @@ export class Quaternion extends Float32Array {
   }
 
   size() {
-    return Math.sqrt(this.size2());
+    return Math.sqrt(this.sizeSq());
   }
-  size2() {
+  sizeSq() {
     return this[0] * this[0] + this[1] * this[1] + this[2] * this[2] + this[3] * this[3];
   }
 
   toAxisAngle(): AxisAngle {
-    let axis = Vec3.one();
-    let angle = 2 * Math.acos(this.w);
+    const angle = 2 * Math.acos(this.w);
     const s = Math.sqrt(1 - this.w * this.w);
-    if (s < 0.00001) {
-      axis.x = this.x;
-      axis.y = this.y;
-      axis.z = this.z;
-    } else {
-      axis.x = this.x / s;
-      axis.y = this.y / s;
-      axis.z = this.z / s;
-    }
-    angle = (angle * 180) / Math.PI;
+    const axis = s < 1e-5
+      ? new Vec3([this.x, this.y, this.z])
+      : new Vec3([this.x / s, this.y / s, this.z / s]);
     return [axis, angle];
   }
   toMat3() {
@@ -174,9 +166,11 @@ export class Quaternion extends Float32Array {
 
   static fromAxisAngle(axis: Vec3, angle: number) {
     axis = axis.normalize();
-    angle = (angle * Math.PI) / 180;
     const s = Math.sin(angle * 0.5);
     return new Quaternion([axis.x * s, axis.y * s, axis.z * s, Math.cos(angle * 0.5)]);
+  }
+  static fromAxisAngleDeg(axis: Vec3, angleDeg: number) {
+    return Quaternion.fromAxisAngle(axis, (angleDeg * Math.PI) / 180);
   }
 
   static identity() {
@@ -230,7 +224,7 @@ export class Quaternion extends Float32Array {
 
   static fromLookRotation(forward: Vec3, up: Vec3) {
     const f = new Vec3(forward).normalize();
-    const baseF = Vec3.back();
+    const baseF = Vec3.forward(); // [0, 0, -1] — engine forward direction
     let qDir: Quaternion;
     let dot = baseF.dot(f);
     dot = Math.max(-1, Math.min(1, dot));
@@ -238,11 +232,11 @@ export class Quaternion extends Float32Array {
       qDir = Quaternion.identity();
     } else if (dot < -1 + 1e-6) {
       let axis = up.cross(baseF);
-      if (axis.size2() <= 1e-6) axis = Vec3.right();
-      qDir = Quaternion.fromAxisAngle(axis.normalize(), 180);
+      if (axis.sizeSq() <= 1e-6) axis = Vec3.right();
+      qDir = Quaternion.fromAxisAngle(axis.normalize(), Math.PI);
     } else {
       const axis = baseF.cross(f).normalize();
-      const angle = (Math.acos(dot) * 180) / Math.PI;
+      const angle = Math.acos(dot);
       qDir = Quaternion.fromAxisAngle(axis, angle);
     }
 
@@ -251,8 +245,7 @@ export class Quaternion extends Float32Array {
     const axisF = f;
     const c = curUp.cross(desiredUp);
     const s = Math.max(-1, Math.min(1, curUp.dot(desiredUp)));
-    let roll = Math.atan2(c.dot(axisF), s);
-    roll = (roll * 180) / Math.PI;
+    const roll = Math.atan2(c.dot(axisF), s);
     const qRoll = Quaternion.fromAxisAngle(axisF, roll);
     return qRoll.mul(qDir);
   }

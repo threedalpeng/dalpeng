@@ -13,24 +13,59 @@ export interface BackendCapabilities {
   supportsCompute: boolean;
 }
 
+export interface ShadowPassOptions {
+  offsetFactor?: number;
+  offsetUnits?: number;
+}
+
+export interface LightingPassOptions {
+  postToneMapping: boolean;
+}
+
 export interface RendererBackend {
   readonly type: BackendType;
   readonly capabilities: BackendCapabilities;
 
-  // Initialize graphics context and any per-app state.
-  init(app: any, canvas: HTMLCanvasElement): Promise<void>;
+  // Initialize graphics context. Renderer owns the canvas reference internally.
+  init(canvas: HTMLCanvasElement): Promise<void>;
+
+  // Whether the backend has a valid, ready context.
+  isReady(): boolean;
 
   // Program creation (compilation/linking or pipeline construction)
   createProgram(vertexSource: string, fragmentSource: string): Promise<Program>;
 
-  // Frame-pass control (keep narrow for easy swapping).
-  beginGeometryPass(app: any): void;
-  endGeometryPass(app: any): void;
+  // Frame-pass control
+  beginGeometryPass(): void;
+  endGeometryPass(): void;
 
-  beginLightingPass(app: any): void;
-  endLightingPass(app: any): void;
+  beginLightingPass(opts: LightingPassOptions): void;
+  endLightingPass(): void;
 
-  // Resource creation (minimal, for decoupling Components from WebGL)
+  // Optional shadow map pass (directional depth)
+  beginShadowPass?: (size: number, opts?: ShadowPassOptions) => void;
+  endShadowPass?: () => void;
+  bindShadowMap?: (unit: number) => void;
+  hasShadowMap?: () => boolean;
+
+  // Expose lighting texture for post-processing
+  bindLightingTexture?: (unit: number) => void;
+  hasLightingTexture?: () => boolean;
+
+  // Optional particle forward pass (after lighting, before post)
+  beginParticlePass?: () => void;
+  endParticlePass?: () => void;
+
+  // Optional bloom pass resources
+  allocateBloomResources?: () => void;
+  deallocateBloomResources?: () => void;
+  beginBloomBrightPass?: () => void;
+  beginBloomBlurPass?: (horizontal: boolean) => void;
+  endBloomPass?: () => void;
+  bindBloomTexture?: (unit: number) => void;
+  hasBloomTexture?: () => boolean;
+
+  // Resource creation
   createBuffer(kind: "vertex" | "index"): GfxBuffer;
   createVertexArray(): GfxVertexArray;
 
@@ -47,24 +82,28 @@ export interface RendererBackend {
     vao: GfxVertexArray,
     opts: { mode: "triangle-strip" | "triangles" | "lines"; first?: number; count: number }
   ): void;
+  drawArraysInstanced?: (
+    vao: GfxVertexArray,
+    opts: { mode: "triangle-strip" | "triangles"; count: number; instanceCount: number }
+  ) => void;
 
   // Misc per-frame state
-  setViewport(app: any, x: number, y: number, w: number, h: number): void;
+  setViewport(x: number, y: number, w: number, h: number): void;
 
   // Surface/canvas info helpers
-  getDrawableSize(app: any): { width: number; height: number };
+  getDrawableSize(): { width: number; height: number };
 
-  // Handle canvas resize (reallocate framebuffers/textures, etc.)
-  resize(app: any): void;
+  // Handle canvas resize (reallocate framebuffers/textures)
+  resize(): void;
 
   // Optional generic pass API
-  beginPass?: (app: any, desc: RenderPassDescriptor) => void;
-  endPass?: (app: any) => void;
+  beginPass?: (desc: RenderPassDescriptor) => void;
+  endPass?: () => void;
 
   // Optional runtime debug helpers (backend-specific)
-  debugDumpState?: (app: any, tag?: string) => void;
+  debugDumpState?: (tag?: string) => void;
   debugCheckError?: (tag?: string) => void;
-  debugCollectState?: (app: any) => unknown;
+  debugCollectState?: () => unknown;
   debugGetCaps?: () => unknown;
   debugGetLastError?: () => unknown;
 }

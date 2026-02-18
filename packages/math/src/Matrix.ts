@@ -1,5 +1,5 @@
 import { type Quaternion } from "./Quaternion";
-import { EPSILON, deg2rad } from "./utils";
+import { EPSILON } from "./utils";
 import { Vec3, Vec4, type Vec2 } from "./Vector";
 
 export class Mat3 extends Float32Array {
@@ -74,12 +74,12 @@ export class Mat3 extends Float32Array {
       this[6] - m[6], this[7] - m[7], this[8] - m[8],
     ]);
   }
-  muli(i: number) {
+  scale(s: number) {
     // prettier-ignore
     return new Mat3([
-      this[0] * i, this[1] * i, this[2] * i,
-      this[3] * i, this[4] * i, this[5] * i,
-      this[6] * i, this[7] * i, this[8] * i,
+      this[0] * s, this[1] * s, this[2] * s,
+      this[3] * s, this[4] * s, this[5] * s,
+      this[6] * s, this[7] * s, this[8] * s,
     ]);
   }
   mulv(v: Float32List) {
@@ -149,9 +149,8 @@ export class Mat3 extends Float32Array {
     ]);
   }
   static rotate(angle: number) {
-    const radian = deg2rad(angle);
-    const s = Math.sin(radian);
-    const c = Math.cos(radian);
+    const s = Math.sin(angle);
+    const c = Math.cos(angle);
     // prettier-ignore
     return new Mat3([
       c,  s,  0,
@@ -169,10 +168,12 @@ export class Mat3 extends Float32Array {
   }
 
   static view(center: Vec2, angle: number) {
-    const rMat = Mat3.rotate(angle);
-    rMat._20 = -center.x;
-    rMat._21 = -center.y;
-    return rMat;
+    const r = Mat3.rotate(angle);
+    return new Mat3([
+      r[0], r[1], r[2],
+      r[3], r[4], r[5],
+      -center.x, -center.y, r[8],
+    ]);
   }
   static perspective(size: number, aspectRatio: number) {
     const invSize = 1 / size;
@@ -308,13 +309,13 @@ export class Mat4 extends Float32Array {
       this[12] - m[12], this[13] - m[13], this[14] - m[14], this[15] - m[15],
     ]);
   }
-  muli(i: number) {
+  scale(s: number) {
     // prettier-ignore
     return new Mat4([
-      this[0] * i,  this[1] * i,  this[2] * i,  this[3] * i,
-      this[4] * i,  this[5] * i,  this[6] * i,  this[7] * i,
-      this[8] * i,  this[9] * i,  this[10] * i, this[11] * i,
-      this[12] * i, this[13] * i, this[14] * i, this[15] * i,
+      this[0] * s,  this[1] * s,  this[2] * s,  this[3] * s,
+      this[4] * s,  this[5] * s,  this[6] * s,  this[7] * s,
+      this[8] * s,  this[9] * s,  this[10] * s, this[11] * s,
+      this[12] * s, this[13] * s, this[14] * s, this[15] * s,
     ]);
   }
   mulv(v: Float32List) {
@@ -536,9 +537,8 @@ export class Mat4 extends Float32Array {
   }
 
   static fromAxisAngle(axis: Float32List, angle: number) {
-    const radian = deg2rad(angle);
-    const s = Math.sin(radian);
-    const c = Math.cos(radian);
+    const s = Math.sin(angle);
+    const c = Math.cos(angle);
     const x = axis[0];
     const y = axis[1];
     const z = axis[2];

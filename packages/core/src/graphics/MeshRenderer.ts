@@ -7,8 +7,10 @@ import type Shader from "./Shader";
 
 export default class MeshRenderer extends BaseRenderer {
   geometryShader!: Shader;
+  shadowShader?: Shader;
   material = new Material();
   #vao!: GfxVertexArray;
+  #shadowVao?: GfxVertexArray;
 
   constructor(gameEntity: GameEntity) {
     super(gameEntity);
@@ -21,6 +23,7 @@ export default class MeshRenderer extends BaseRenderer {
 
     this.transform = this.getComponent(Transform)!;
     this.geometryShader = this.currentApp.shader.geometry;
+    this.shadowShader = this.currentApp.shader.shadow;
 
     const positionAttribLocation = this.geometryShader.getAttribLocation("aPosition");
     const normalAttribLocation = this.geometryShader.getAttribLocation("aNormal");
@@ -46,6 +49,19 @@ export default class MeshRenderer extends BaseRenderer {
     const indexBuffer = renderer.createBuffer("index");
     indexBuffer.update(this.mesh.index);
     this.#vao.setIndexBuffer(indexBuffer);
+
+    // Optional second VAO for shadow program (attribute locations may differ)
+    if (this.shadowShader) {
+      const posLocShadow = this.shadowShader.getAttribLocation("aPosition");
+      const vaoS = renderer.createVertexArray();
+      const positionBufferS = renderer.createBuffer("vertex");
+      positionBufferS.update(this.mesh.vertex.position);
+      vaoS.setVertexBuffer(posLocShadow, positionBufferS, 3);
+      const indexBufferS = renderer.createBuffer("index");
+      indexBufferS.update(this.mesh.index);
+      vaoS.setIndexBuffer(indexBufferS);
+      this.#shadowVao = vaoS;
+    }
   }
 
   async render() {
@@ -56,6 +72,17 @@ export default class MeshRenderer extends BaseRenderer {
     this.geometryShader.setUniformVec3("uEmissive", this.material.emissive);
 
     this.currentApp.renderer.drawIndexed(this.#vao, {
+      count: this.mesh.index.length,
+      type: "uint16",
+      mode: "triangles",
+    });
+  }
+
+  renderShadow(lightViewProj: import("@dalpeng/math").Mat4) {
+    if (!this.shadowShader || !this.#shadowVao) return;
+    this.shadowShader.setUniformMat4("uModel", this.transform.modelMatrix);
+    this.shadowShader.setUniformMat4("uLightViewProj", lightViewProj);
+    this.currentApp.renderer.drawIndexed(this.#shadowVao, {
       count: this.mesh.index.length,
       type: "uint16",
       mode: "triangles",

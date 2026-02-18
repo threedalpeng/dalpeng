@@ -48,7 +48,7 @@ describe("Matrix", () => {
     });
     test("compose reproduces translation and normalMatrix3 matches rotation", () => {
       const t = new Vec3([1, 2, 3]);
-      const q = Quaternion.fromAxisAngle(new Vec3([0, 1, 0]), 90);
+      const q = Quaternion.fromAxisAngle(new Vec3([0, 1, 0]), Math.PI / 2);
       const s = new Vec3([1, 1, 1]);
       const m = Mat4.compose(t, q, s);
       const tr = m.translation();

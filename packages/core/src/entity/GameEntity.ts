@@ -89,6 +89,13 @@ export default class GameEntity extends Entity {
   getComponents<Type extends Component>(type: ComponentConstructor<Type>): Type[] {
     return (this.#componentsByType.get(type.name) as Type[] | undefined) ?? [];
   }
+  getAllComponents(): Component[] {
+    const result: Component[] = [];
+    for (const components of this.#componentsByType.values()) {
+      result.push(...components);
+    }
+    return result;
+  }
 
   // ─── Tag State ─────────────────────────────────────────────────────────────
   // Keeps the current tag and syncs with the owning scene's tag map.

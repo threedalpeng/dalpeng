@@ -1,7 +1,15 @@
-import { Mat4, Quaternion, Vec3 } from "@dalpeng/math";
+import { Mat4, Quaternion, Vec3, deg2rad } from "@dalpeng/math";
 import Component from "./component/Component";
+import type GameEntity from "./entity/GameEntity";
 
 export default class Transform extends Component {
+  constructor(gameEntity: GameEntity) {
+    super(gameEntity);
+    // Ensure initial model/world matrices are computed on first setup/update.
+    // markDirty also queues this Transform in the owning Application so
+    // Application.#processDirtyTransforms() updates it before first render.
+    this.markDirty();
+  }
   // ─── Local State ───────────────────────────────────────────────────────────
   // Stores position, rotation, scale and their world-space counterparts.
   #position: Vec3 = new Vec3([0, 0, 0]);
@@ -51,12 +59,18 @@ export default class Transform extends Component {
     this.markDirty();
   }
 
-  rotate(axis: Vec3, angle: number) {
-    this.#rotation = this.#rotation.mul(Quaternion.fromAxisAngle(axis, angle));
+  rotate(axis: Vec3, angle: number, space: "local" | "world" = "local") {
+    const dq = Quaternion.fromAxisAngle(axis, deg2rad(angle));
+    // local: post-multiply (old * delta) → rotate around local axis
+    // world: pre-multiply (delta * old) → rotate around world axis
+    this.#rotation = space === "world" ? dq.mul(this.#rotation) : this.#rotation.mul(dq);
     this.markDirty();
   }
+  rotateWorld(axis: Vec3, angle: number) {
+    return this.rotate(axis, angle, "world");
+  }
   rotateAround(worldPoint: Vec3, axis: Vec3, angle: number) {
-    const q = Quaternion.fromAxisAngle(axis, angle);
+    const q = Quaternion.fromAxisAngle(axis, deg2rad(angle));
     this.#position = q.mulv(this.#position.sub(worldPoint)).add(worldPoint);
     this.#rotation = q.mul(this.#rotation);
     this.markDirty();

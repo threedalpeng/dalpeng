@@ -13,6 +13,10 @@ export function setThisApp(app: Application | null) {
   thisApp = app;
   currentThis = app;
 }
+export function requireApp(hookName: string): Application {
+  if (!thisApp) throw new Error(`${hookName}() requires an active Application context (must be called inside defineApp setup).`);
+  return thisApp;
+}
 
 let thisScene: Scene | null = null;
 export function getThisScene() {
@@ -22,6 +26,10 @@ export function setThisScene(scene: Scene | null) {
   thisScene = scene;
   currentThis = scene;
 }
+export function requireScene(hookName: string): Scene {
+  if (!thisScene) throw new Error(`${hookName}() requires an active Scene context (must be called inside defineScene setup).`);
+  return thisScene;
+}
 
 let thisEntity: GameEntity | null = null;
 export function getThisEntity() {
@@ -30,4 +38,16 @@ export function getThisEntity() {
 export function setThisEntity(entity: GameEntity | null) {
   thisEntity = entity;
   currentThis = entity;
+}
+export function requireEntity(hookName: string): GameEntity {
+  if (!thisEntity) throw new Error(`${hookName}() must be called inside defineGameEntity setup.`);
+  return thisEntity;
+}
+
+let parentEntity: GameEntity | null = null;
+export function getParentEntity() {
+  return parentEntity;
+}
+export function setParentEntity(entity: GameEntity | null) {
+  parentEntity = entity;
 }

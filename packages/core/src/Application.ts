@@ -1,17 +1,24 @@
+import CanvasController from "./CanvasController";
 import type { CanvasOptions } from "./CanvasOptions";
 import Component, { type ComponentConstructor } from "./component/Component";
-import type GfxBuffer from "./gfx/Buffer";
+import type GameEntity from "./entity/GameEntity";
 import type { RendererBackend } from "./gfx/RendererBackend";
-import type { RenderTarget } from "./gfx/RenderTarget";
+import type GfxBuffer from "./gfx/Buffer";
 import type GfxVertexArray from "./gfx/VertexArray";
 import WebGL2Renderer from "./gfx/webgl2/WebGL2Renderer";
 import Camera from "./graphics/Camera";
 import Light from "./graphics/Light";
 import MeshRenderer from "./graphics/MeshRenderer";
+import ParticleEmitter from "./graphics/ParticleEmitter";
 import Shader from "./graphics/Shader";
+import DirectionalShadowSystem from "./graphics/shadows/DirectionalShadow";
 import SpriteRenderer from "./graphics/SpriteRenderer";
 import View from "./graphics/View";
 import Input from "./Input";
+import PostProcessing from "./PostProcessing";
+import TweenManager from "./TweenManager";
+import AudioManager from "./AudioManager";
+import type { RenderConfig } from "./RenderConfig";
 import type Scene from "./Scene";
 import Script from "./Script";
 import gbuffrag from "./shaders/gbuf.frag?raw";
@@ -21,6 +28,7 @@ import mainvert from "./shaders/main.vert?raw";
 import Time from "./Time";
 import Transform from "./Transform";
 import { isNil } from "./utils/basic";
+import { dummyQuadForLight } from "./utils/mesh";
 
 export default class Application {
   // ─── App Self-Management ───────────────────────────────────────────────────
@@ -67,7 +75,8 @@ export default class Application {
     if (components === undefined) {
       return;
     }
-    for (const component of components) {
+    const snapshot = Array.from(components);
+    for (const component of snapshot) {
       callback(component);
     }
   }
@@ -85,49 +94,35 @@ export default class Application {
   // Iterates active scripts for setup, update, and fixed-update phases.
   activeScripts = new Map<number, Script>();
   async forEachActiveScript(callback: (component: Script) => void) {
-    this.activeScripts.forEach(callback);
+    const snapshot = Array.from(this.activeScripts.values());
+    for (const script of snapshot) {
+      callback(script);
+    }
   }
 
   // ─── Graphic Context ───────────────────────────────────────────────────────
   // Graphics context (backend-specific)
-  context!: any;
   renderer: RendererBackend = new WebGL2Renderer();
-  renderTargets: { gbuffer: RenderTarget | null; lighting: RenderTarget | null } = {
-    gbuffer: null,
-    lighting: null,
-  };
-  features: {
-    postToneMapping: boolean;
-    debugGL?: boolean;
-    debugGLVerbose?: boolean;
-    debugLightingView?: number;
-    toneExposure?: number;
-    toneGamma?: number;
-    shadows?: boolean;
-  } = {
+  features: RenderConfig = {
     postToneMapping: false,
   };
 
-  // Cached resources for post-processing (fullscreen quad)
-  private _postVao: GfxVertexArray | null = null;
-  private _postVbo: GfxBuffer | null = null;
+  private _shadowSys: DirectionalShadowSystem | null = null;
+  canvasController = new CanvasController();
+  postProcessing = new PostProcessing();
+  tweens = new TweenManager();
+  audio = new AudioManager();
+  #particleQuadVao: GfxVertexArray | null = null;
+  #particleQuadVbo: GfxBuffer | null = null;
+  #particleInstanceVbo: GfxBuffer | null = null;
 
   useRenderer(renderer: RendererBackend) {
     this.renderer = renderer;
     return this;
   }
 
-  get gl() {
-    return this.context;
-  }
   get isContextReady() {
-    if (isNil(this.context)) {
-      return false;
-    }
-    if (isNil(this.context.canvas)) {
-      return false;
-    }
-    return true;
+    return this.renderer.isReady();
   }
 
   // ─── Mount & Render Loop ───────────────────────────────────────────────────
@@ -138,26 +133,57 @@ export default class Application {
       return this;
     }
 
-    // Initialize renderer backend (creates context and G-Buffer)
-    await this.renderer.init(this, canvas);
+    // Apply canvas sizing FIRST so renderer reads correct buffer dimensions
+    this.canvasController.applyInitialSize(canvas);
 
-    // Setup canvas sizing configuration
-    this.#canvas = canvas;
-    this.setCanvasOptions();
-    this.#applyCanvasSizing();
-    if (this.#canvasOptions.autoResize) {
-      window.addEventListener("resize", this.#handleResize);
-    }
+    // Initialize renderer backend (creates context and G-Buffer at correct size)
+    await this.renderer.init(canvas);
+    this._shadowSys = new DirectionalShadowSystem();
+
+    // Bind CanvasController to renderer for ongoing resize events
+    this.canvasController.mount(canvas, this.renderer);
 
     this.registerShader(this.shader.geometry);
     this.registerShader(this.shader.lighting);
     this.registerShader(this.shader.post);
+    this.registerShader(this.shader.shadow);
+    this.registerShader(this.shader.bloomBright);
+    this.registerShader(this.shader.bloomBlur);
+    this.registerShader(this.shader.particle);
 
     await Promise.allSettled([
       this.shader.geometry.loadFrom(gbufvert, gbuffrag),
       this.shader.lighting.loadFrom(mainvert, mainfrag),
       this.shader.post.loadFrom(mainvert, (await import("./shaders/post.frag?raw")).default),
+      this.shader.shadow.loadFrom(
+        (await import("./shaders/shadow.vert?raw")).default,
+        (await import("./shaders/shadow.frag?raw")).default
+      ),
     ]);
+
+    // Load bloom & particle shaders
+    await Promise.allSettled([
+      this.shader.bloomBright.loadFrom(mainvert, (await import("./shaders/bloom_bright.frag?raw")).default),
+      this.shader.bloomBlur.loadFrom(mainvert, (await import("./shaders/bloom_blur.frag?raw")).default),
+      this.shader.particle.loadFrom(
+        (await import("./shaders/particle.vert?raw")).default,
+        (await import("./shaders/particle.frag?raw")).default
+      ),
+    ]);
+
+    // Set G-Buffer sampler uniforms once (texture units are constant)
+    this.shader.lighting.use();
+    this.shader.lighting.setUniform1i("gPositionMetallic", 0);
+    this.shader.lighting.setUniform1i("gNormalRoughness", 1);
+    this.shader.lighting.setUniform1i("gAlbedo", 2);
+    this.shader.lighting.setUniform1i("gEmissive", 3);
+
+    // Create shared fullscreen quad for lighting pass
+    const lightingPosLoc = this.shader.lighting.getAttribLocation("aPosition");
+    this.lightingQuad = this.renderer.createVertexArray();
+    const lightingQuadBuf = this.renderer.createBuffer("vertex");
+    lightingQuadBuf.update(dummyQuadForLight());
+    this.lightingQuad.setVertexBuffer(lightingPosLoc, lightingQuadBuf, 3);
 
     canvas.setAttribute("tabindex", "0");
     canvas.focus();
@@ -175,22 +201,8 @@ export default class Application {
     return this;
   }
 
-  /* Canvas sizing */
-  #canvas!: HTMLCanvasElement;
-  #canvasOptions: Required<CanvasOptions> = {
-    mode: "fill",
-    fixedAspect: 0,
-    pixelRatio: "device",
-    autoResize: true,
-  };
   setCanvasOptions(options?: CanvasOptions) {
-    if (!options) return this;
-    this.#canvasOptions = {
-      mode: options.mode ?? this.#canvasOptions.mode,
-      fixedAspect: options.fixedAspect ?? this.#canvasOptions.fixedAspect,
-      pixelRatio: options.pixelRatio ?? this.#canvasOptions.pixelRatio,
-      autoResize: options.autoResize ?? this.#canvasOptions.autoResize,
-    } as Required<CanvasOptions>;
+    this.canvasController.setOptions(options);
     return this;
   }
   async run(canvas: HTMLCanvasElement, options?: CanvasOptions) {
@@ -203,63 +215,6 @@ export default class Application {
     const canvas =
       typeof target === "string" ? (document.querySelector(target) as HTMLCanvasElement) : target;
     return this.run(canvas, options);
-  }
-  #handleResize = () => {
-    this.#applyCanvasSizing();
-    this.renderer.resize(this);
-  };
-  #applyCanvasSizing() {
-    const canvas = this.#canvas;
-    if (!canvas) return;
-    const parent = (canvas.parentElement ?? document.body) as HTMLElement;
-    const parentRect = parent.getBoundingClientRect();
-    const parentW = Math.max(1, Math.floor(parentRect.width));
-    const parentH = Math.max(1, Math.floor(parentRect.height));
-    const dpr =
-      this.#canvasOptions.pixelRatio === "device"
-        ? Math.min(window.devicePixelRatio || 1, 4)
-        : Math.max(1, this.#canvasOptions.pixelRatio as number);
-
-    let cssW = parentW;
-    let cssH = parentH;
-    const aspect = this.#canvasOptions.fixedAspect;
-    if (this.#canvasOptions.mode === "contain" && aspect && aspect > 0) {
-      const targetH = Math.floor(parentW / aspect);
-      if (targetH <= parentH) {
-        cssW = parentW;
-        cssH = targetH;
-      } else {
-        cssH = parentH;
-        cssW = Math.floor(parentH * aspect);
-      }
-    } else if (this.#canvasOptions.mode === "cover" && aspect && aspect > 0) {
-      const targetH = Math.floor(parentW / aspect);
-      if (targetH >= parentH) {
-        cssW = parentW;
-        cssH = targetH;
-      } else {
-        cssH = parentH;
-        cssW = Math.floor(parentH * aspect);
-      }
-    } else if (this.#canvasOptions.mode === "none") {
-      // leave cssW/cssH as is (fallback to current style size)
-      const styleW = parseInt(canvas.style.width || "0");
-      const styleH = parseInt(canvas.style.height || "0");
-      cssW = styleW || parentW;
-      cssH = styleH || parentH;
-    }
-
-    const bufferW = Math.max(1, Math.floor(cssW * dpr));
-    const bufferH = Math.max(1, Math.floor(cssH * dpr));
-    if (canvas.width !== bufferW) canvas.width = bufferW;
-    if (canvas.height !== bufferH) canvas.height = bufferH;
-
-    canvas.style.width = cssW + "px";
-    canvas.style.height = cssH + "px";
-    canvas.style.display = "block";
-
-    // Ensure backend resources match new size
-    this.renderer.resize(this);
   }
 
   #viewList = new Map<number, View>();
@@ -285,13 +240,101 @@ export default class Application {
     geometry: new Shader(),
     lighting: new Shader(),
     post: new Shader(),
+    shadow: new Shader(),
+    bloomBright: new Shader(),
+    bloomBlur: new Shader(),
+    particle: new Shader(),
   };
-  // Backend-owned resources (opaque to the engine)
-  gBuffer: any | null = null;
-  gPositionMetallic: any | null = null;
-  gNormalRoughness: any | null = null;
-  gAlbedo: any | null = null;
-  gEmissive: any | null = null;
+  lightingQuad!: GfxVertexArray;
+
+  // ─── Runtime Lifecycle ──────────────────────────────────────────────────────
+  // Deferred spawn/destroy queue, flushed between update and render.
+  #pendingStarts = new Set<Script>();
+  #lifecycleQueue: Array<
+    | { kind: "spawn"; factory: () => GameEntity }
+    | { kind: "destroy"; entity: GameEntity }
+  > = [];
+
+  spawn(factory: () => GameEntity): void {
+    this.#lifecycleQueue.push({ kind: "spawn", factory });
+  }
+
+  destroy(entity: GameEntity): void {
+    this.#lifecycleQueue.push({ kind: "destroy", entity });
+  }
+
+  #flushPendingStarts() {
+    if (this.#pendingStarts.size === 0) return;
+    const pending = Array.from(this.#pendingStarts);
+    this.#pendingStarts.clear();
+    for (const script of pending) {
+      script._markStarted();
+      script.onStart();
+    }
+  }
+
+  #flushLifecycleQueue() {
+    if (this.#lifecycleQueue.length === 0) return;
+    const commands = this.#lifecycleQueue;
+    this.#lifecycleQueue = [];
+
+    for (const cmd of commands) {
+      if (cmd.kind === "destroy") {
+        this.#executeDestroy(cmd.entity);
+      } else {
+        this.#executeSpawn(cmd.factory);
+      }
+    }
+  }
+
+  #executeSpawn(factory: () => GameEntity) {
+    const entity = factory();
+    const stack: GameEntity[] = [entity];
+    while (stack.length) {
+      const current = stack.pop()!;
+      for (const comp of current.getAllComponents()) {
+        comp.setup();
+      }
+      for (const script of current.getComponents(Script)) {
+        this.#pendingStarts.add(script);
+      }
+      stack.push(...current.children);
+    }
+  }
+
+  #executeDestroy(entity: GameEntity) {
+    if (!entity.scene) return;
+
+    const stack: GameEntity[] = [entity];
+    const allEntities: GameEntity[] = [];
+    while (stack.length) {
+      const current = stack.pop()!;
+      allEntities.push(current);
+      stack.push(...current.children);
+    }
+
+    for (const e of allEntities) {
+      for (const script of e.getComponents(Script)) {
+        script.onDestroy();
+      }
+    }
+
+    for (const e of allEntities) {
+      for (const comp of e.getAllComponents()) {
+        comp.isActive = false;
+      }
+    }
+
+    for (const e of allEntities) {
+      const t = e.getComponent(Transform);
+      if (t) this.#dirtyTransforms.delete(t);
+      for (const script of e.getComponents(Script)) {
+        this.#pendingStarts.delete(script);
+      }
+    }
+
+    entity.remove();
+  }
 
   /* Game Loop */
   static #activeInstances = new Map<number, Application>();
@@ -351,10 +394,14 @@ export default class Application {
       Time._updateDelta(t);
       Input.poll();
 
+      await this.forEachActive((app) => app.#flushPendingStarts());
+
       while (Time._needsFixedUpdate()) {
         await this.forEachActive((app) => app.#fixedUpdate());
       }
       await this.forEachActive((app) => app.#update());
+
+      await this.forEachActive((app) => app.#flushLifecycleQueue());
 
       await this.forEachActive((app) => app.#render());
 
@@ -378,16 +425,20 @@ export default class Application {
     this.#processDirtyTransforms();
     await this.forEachActiveComponent(Camera, (camera) => camera.update());
     await this.forEachActiveScript((script) => script.update());
+    this.tweens.update(Time.delta());
   }
 
   async #render() {
-    const { width, height } = this.renderer.getDrawableSize(this);
-    this.renderer.setViewport(this, 0, 0, width, height);
+    const { width, height } = this.renderer.getDrawableSize();
+    this.renderer.setViewport(0, 0, width, height);
+
+    // Directional shadow system
+    await this._shadowSys?.update(this);
 
     this.shader.geometry.use();
-    this.renderer.beginGeometryPass(this);
+    this.renderer.beginGeometryPass();
     if (this.features.debugGLVerbose) {
-      this.renderer.debugDumpState?.(this, "after beginGeometryPass");
+      this.renderer.debugDumpState?.("after beginGeometryPass");
       this.renderer.debugCheckError?.("after beginGeometryPass");
     }
 
@@ -400,13 +451,13 @@ export default class Application {
     await this.forEachActiveComponent(SpriteRenderer, (renderer) => {
       renderer.render();
     });
-    this.renderer.endGeometryPass(this);
+    this.renderer.endGeometryPass();
     if (this.features.debugGLVerbose) this.renderer.debugCheckError?.("after endGeometryPass");
 
     this.shader.lighting.use();
-    this.renderer.beginLightingPass(this);
+    this.renderer.beginLightingPass({ postToneMapping: this.features.postToneMapping });
     if (this.features.debugGLVerbose) {
-      this.renderer.debugDumpState?.(this, "after beginLightingPass");
+      this.renderer.debugDumpState?.("after beginLightingPass");
       this.renderer.debugCheckError?.("after beginLightingPass");
     }
 
@@ -414,82 +465,95 @@ export default class Application {
     this.shader.lighting.setUniform1i("uApplyGamma", this.features.postToneMapping ? 0 : 1);
     this.shader.lighting.setUniform1f("uGamma", this.features.toneGamma ?? 2.2);
 
-    this.shader.lighting.setUniform1i("gPositionMetallic", 0);
-    this.shader.lighting.setUniform1i("gNormalRoughness", 1);
-    this.shader.lighting.setUniform1i("gAlbedo", 2);
-    this.shader.lighting.setUniform1i("gEmissive", 3);
     this.shader.lighting.setUniform1i("uDebugMode", this.features.debugLightingView ?? 0);
-
+    this.shader.lighting.setUniform1i("uShadowDebug", this.features.shadowDebug ?? 0);
     await this.forEachActiveComponent(Camera, (camera) => {
       camera.renderCameraToLighting();
     });
     await this.forEachActiveComponent(Light, (light) => {
+      this._shadowSys?.bindForLight(this, light);
       light.renderLight();
     });
     if (this.features.debugGLVerbose) {
-      this.renderer.debugDumpState?.(this, "after lights");
+      this.renderer.debugDumpState?.("after lights");
       this.renderer.debugCheckError?.("after lights");
     }
 
     // End lighting pass before any post logic and check errors
-    this.renderer.endLightingPass(this);
+    this.renderer.endLightingPass();
     if (this.features.debugGLVerbose) this.renderer.debugCheckError?.("after endLightingPass");
 
-    // Execute post-processing (tone mapping + gamma) to the default framebuffer
+    // Particle forward pass (after lighting, before post)
+    if (this.renderer.beginParticlePass) {
+      let hasParticles = false;
+      await this.forEachActiveComponent(ParticleEmitter, (emitter) => {
+        if (emitter.aliveCount > 0) hasParticles = true;
+      });
+      if (hasParticles) {
+        this.renderer.beginParticlePass();
+        const particleShader = this.shader.particle;
+        particleShader.use();
+        await this.forEachActiveComponent(Camera, (camera) => {
+          particleShader.setUniformMat4("uView", camera.viewMatrix);
+          particleShader.setUniformMat4("uProjection", camera.projectionMatrix);
+        });
+
+        // Lazy-init shared particle quad VAO
+        if (!this.#particleQuadVao) {
+          this.#particleQuadVao = this.renderer.createVertexArray();
+          this.#particleQuadVbo = this.renderer.createBuffer("vertex");
+          this.#particleQuadVbo.update(new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
+          const posLoc = particleShader.getAttribLocation("aPosition");
+          this.#particleQuadVao.setVertexBuffer(posLoc, this.#particleQuadVbo!, 2);
+          this.#particleInstanceVbo = this.renderer.createBuffer("vertex");
+        }
+
+        const identity = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+
+        await this.forEachActiveComponent(ParticleEmitter, (emitter) => {
+          const count = emitter.aliveCount;
+          if (count === 0) return;
+
+          // Upload packed instance data
+          this.#particleInstanceVbo!.update(emitter.instanceData.subarray(0, count * 8));
+
+          // Bind per-instance attributes with divisor=1
+          const posSizeLoc = particleShader.getAttribLocation("aInstancePosSize");
+          const colorLoc = particleShader.getAttribLocation("aInstanceColor");
+          this.#particleQuadVao!.setVertexBufferInstanced?.(
+            posSizeLoc, this.#particleInstanceVbo!, 4, 1, { stride: 32, offset: 0 }
+          );
+          this.#particleQuadVao!.setVertexBufferInstanced?.(
+            colorLoc, this.#particleInstanceVbo!, 4, 1, { stride: 32, offset: 16 }
+          );
+
+          particleShader.setUniformMat4("uModel", identity);
+
+          this.renderer.drawArraysInstanced?.(this.#particleQuadVao!, {
+            mode: "triangle-strip",
+            count: 4,
+            instanceCount: count,
+          });
+        });
+
+        this.renderer.endParticlePass?.();
+      }
+    }
+
+    // Allocate bloom resources lazily when bloom is enabled
+    if (this.features.bloom && this.renderer.allocateBloomResources) {
+      if (!this.renderer.hasBloomTexture?.()) {
+        this.renderer.allocateBloomResources();
+      }
+    }
+
+    // Execute post-processing (tone mapping + bloom + gamma) to the default framebuffer
     if (this.features.postToneMapping) {
-      this.#renderPostPass();
-    } else {
-      // When post is off, end lighting pass here to keep state tidy
-      this.renderer.endLightingPass(this);
-    }
-  }
-
-  #ensurePostQuad() {
-    if (!this._postVao) {
-      this._postVao = this.renderer.createVertexArray();
-    }
-    if (!this._postVbo) {
-      this._postVbo = this.renderer.createBuffer("vertex");
-      const quad = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
-      this._postVbo.update(quad);
-      const loc = this.shader.post.getAttribLocation("aPosition");
-      this._postVao.setVertexBuffer(loc, this._postVbo, 2);
-    }
-  }
-
-  #renderPostPass() {
-    const gl = this.gl as WebGL2RenderingContext;
-    const lightingTex = (this as any)._lightingColor as WebGLTexture | undefined;
-    this.shader.post.use();
-    this.#ensurePostQuad();
-
-    if (lightingTex) {
-      gl.activeTexture(gl.TEXTURE4);
-      gl.bindTexture(gl.TEXTURE_2D, lightingTex);
-      this.shader.post.setUniform1i("uLighting", 4);
-    }
-    this.shader.post.setUniform1f("uExposure", this.features.toneExposure ?? 1.0);
-    this.shader.post.setUniform1f("uGamma", this.features.toneGamma ?? 2.2);
-
-    this.renderer.beginPass?.(this, {
-      target: "default",
-      depthWrite: false,
-      blend: { enable: false },
-      clearColor: [0, 0, 0, 1],
-    });
-    if (this.features.debugGLVerbose) {
-      this.renderer.debugDumpState?.(this, "before post draw");
-      this.renderer.debugCheckError?.("before post draw");
-    }
-    this.renderer.drawArrays(this._postVao!, { mode: "triangle-strip", count: 4 });
-    if (this.features.debugGLVerbose) {
-      this.renderer.debugDumpState?.(this, "after post draw");
-      this.renderer.debugCheckError?.("after post draw");
-    }
-    this.renderer.endPass?.(this);
-    if (lightingTex) {
-      gl.activeTexture(gl.TEXTURE4);
-      gl.bindTexture(gl.TEXTURE_2D, null);
+      this.postProcessing.render(this.renderer, {
+        post: this.shader.post,
+        bloomBright: this.shader.bloomBright,
+        bloomBlur: this.shader.bloomBlur,
+      }, this.features);
     }
   }
 

@@ -18,9 +18,6 @@ export default class Camera extends Component {
   at = new Vec3([0, 0, 0]);
   up = new Vec3([0, 1, 0]);
 
-  get gl() {
-    return this.currentApp.gl;
-  }
   get transform() {
     return this.getComponent(Transform)!;
   }
@@ -28,8 +25,7 @@ export default class Camera extends Component {
   async setup() {
     super.setup();
 
-    this.size = 4;
-    const size = this.currentApp.renderer.getDrawableSize(this.currentApp);
+    const size = this.currentApp.renderer.getDrawableSize();
     this.aspectRatio = size.width / size.height;
   }
 
@@ -39,7 +35,7 @@ export default class Camera extends Component {
     this.at = this.eye.add(transform.forward);
     this.up = transform.up;
 
-    const size = this.currentApp.renderer.getDrawableSize(this.currentApp);
+    const size = this.currentApp.renderer.getDrawableSize();
     this.aspectRatio = size.width / size.height;
     this.viewMatrix = Mat4.view(this.eye, this.at, this.up);
     if (this.isOrthographic) {
@@ -63,5 +59,17 @@ export default class Camera extends Component {
   async renderCameraToLighting() {
     const shader = this.currentApp.shader.lighting;
     shader.setUniformVec3("uViewPos", this.transform.worldPosition);
+  }
+
+  setOrthographic(size: number): this {
+    this.isOrthographic = true;
+    this.size = size;
+    return this;
+  }
+
+  setPerspective(fov: number): this {
+    this.isOrthographic = false;
+    this.fovy = fov;
+    return this;
   }
 }

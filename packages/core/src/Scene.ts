@@ -56,6 +56,13 @@ export default class Scene {
     return Array.from(this.#tagMap.get(tag) ?? []);
   }
 
+  findByName(name: string): GameEntity | null {
+    for (const entity of this.#entities) {
+      if (entity.name === name) return entity;
+    }
+    return null;
+  }
+
   queryRadius(center: Vec3, radius: number) {
     const results: GameEntity[] = [];
     const radiusSq = radius * radius;

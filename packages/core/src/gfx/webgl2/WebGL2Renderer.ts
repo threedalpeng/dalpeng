@@ -1,5 +1,5 @@
-import type Application from "@/Application";
 import { loadProgram, loadShader } from "@/utils/gl";
+import type { ShadowPassOptions, LightingPassOptions } from "../RendererBackend";
 import type { RendererBackend } from "../RendererBackend";
 import type { RenderPassDescriptor } from "../RenderPass";
 import WebGL2Buffer from "./WebGL2Buffer";
@@ -17,16 +17,41 @@ export default class WebGL2Renderer implements RendererBackend {
   #dh = 0;
   #supportsFloatBlend = false;
   #lastError: { name: string; tag?: string; time: number } | null = null;
+  #shadowSize = 0;
+  #shadowFbo: WebGLFramebuffer | null = null;
+  #shadowTex: WebGLTexture | null = null;
+  #savedViewport: Int32Array | null = null;
 
-  async init(app: Application, canvas: HTMLCanvasElement) {
+  // G-Buffer resources (previously stored on Application)
+  #gBufferFbo: WebGLFramebuffer | null = null;
+  #gPositionMetallic: WebGLTexture | null = null;
+  #gNormalRoughness: WebGLTexture | null = null;
+  #gAlbedo: WebGLTexture | null = null;
+  #gEmissive: WebGLTexture | null = null;
+  #depthTexture: WebGLTexture | null = null;
+  #gbufferRT: WebGL2RenderTarget | null = null;
+
+  // Lighting RT resources (previously stored on Application)
+  #lightingColor: WebGLTexture | null = null;
+  #lightingRT: WebGL2RenderTarget | null = null;
+
+  // Bloom RT resources (half-res ping-pong)
+  #bloomColorA: WebGLTexture | null = null;
+  #bloomColorB: WebGLTexture | null = null;
+  #bloomFboA: WebGLFramebuffer | null = null;
+  #bloomFboB: WebGLFramebuffer | null = null;
+  #bloomRtA: WebGL2RenderTarget | null = null;
+  #bloomRtB: WebGL2RenderTarget | null = null;
+  #bloomW = 0;
+  #bloomH = 0;
+
+  async init(canvas: HTMLCanvasElement) {
     const gl = canvas.getContext("webgl2", { alpha: false }) as WebGL2RenderingContext | null;
     if (!gl) {
       console.error("Cannot use WebGL2");
       return;
     }
 
-    // Attach to app for backward compatibility
-    (app as any).context = gl;
     this.#gl = gl;
     (globalThis as any).__dalpeng_last_gl = gl;
 
@@ -43,11 +68,15 @@ export default class WebGL2Renderer implements RendererBackend {
     // Optional: blending to float render targets
     this.#supportsFloatBlend = !!gl.getExtension("EXT_float_blend");
 
-    // Build G-Buffer attachments on app (preserve current fields/usage)
-    (app as any).gBuffer = gl.createFramebuffer();
-    this.#allocateGBuffer(app, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    // Build G-Buffer attachments
+    this.#gBufferFbo = gl.createFramebuffer();
+    this.#allocateGBuffer(gl.drawingBufferWidth, gl.drawingBufferHeight);
 
     // Input hookup remains in app; this class focuses on graphics.
+  }
+
+  isReady() {
+    return this.#gl !== null;
   }
 
   async createProgram(vertexSource: string, fragmentSource: string) {
@@ -58,10 +87,9 @@ export default class WebGL2Renderer implements RendererBackend {
     return new WebGL2Program(gl, prog);
   }
 
-  beginGeometryPass(app: Application) {
-    const rt: WebGL2RenderTarget | null = ((app as any).renderTargets?.gbuffer ??
-      null) as WebGL2RenderTarget | null;
-    this.beginPass?.(app, {
+  beginGeometryPass() {
+    const rt: WebGL2RenderTarget | null = this.#gbufferRT;
+    this.beginPass?.({
       target: rt ?? "default",
       depthWrite: true,
       blend: { enable: false },
@@ -70,14 +98,14 @@ export default class WebGL2Renderer implements RendererBackend {
       colorAttachments: rt ? [0, 1, 2, 3] : undefined,
     });
   }
-  endGeometryPass(app: Application) {
-    this.endPass?.(app);
+  endGeometryPass() {
+    this.endPass?.();
   }
 
-  beginLightingPass(app: Application) {
-    const usePost = !!(app as any).features?.postToneMapping;
+  beginLightingPass(opts: LightingPassOptions) {
+    const usePost = opts.postToneMapping;
     const gl = this.#gl!;
-    if (usePost && !(app as any).renderTargets?.lighting) {
+    if (usePost && !this.#lightingRT) {
       // lazy-allocate lighting RT (prefer RGBA16F if float blending is supported)
       const fbo = gl.createFramebuffer()!;
       gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
@@ -100,9 +128,8 @@ export default class WebGL2Renderer implements RendererBackend {
         gl.drawingBufferHeight
       );
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, color, 0);
-      (app as any)._lightingColor = color;
-      (app as any).renderTargets = (app as any).renderTargets || {};
-      (app as any).renderTargets.lighting = new WebGL2RenderTarget(
+      this.#lightingColor = color;
+      this.#lightingRT = new WebGL2RenderTarget(
         gl,
         fbo,
         gl.drawingBufferWidth,
@@ -112,17 +139,15 @@ export default class WebGL2Renderer implements RendererBackend {
     }
     // Re-attach color texture if it was detached in endLightingPass
     if (usePost) {
-      const rt = (app as any).renderTargets.lighting as WebGL2RenderTarget;
+      const rt = this.#lightingRT!;
       const fbo = rt.fbo;
-      const color = (app as any)._lightingColor as WebGLTexture;
+      const color = this.#lightingColor!;
       gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, color, 0);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
-    const target = usePost
-      ? ((app as any).renderTargets.lighting as WebGL2RenderTarget)
-      : "default";
-    this.beginPass?.(app, {
+    const target = usePost ? this.#lightingRT! : "default";
+    this.beginPass?.({
       target,
       depthWrite: false,
       blend: { enable: true, mode: "additive" },
@@ -133,60 +158,266 @@ export default class WebGL2Renderer implements RendererBackend {
 
     // Bind G-Buffer textures to units 0..3 for lighting shader
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, (app as any).gPositionMetallic ?? null);
+    gl.bindTexture(gl.TEXTURE_2D, this.#gPositionMetallic ?? null);
     gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, (app as any).gNormalRoughness ?? null);
+    gl.bindTexture(gl.TEXTURE_2D, this.#gNormalRoughness ?? null);
     gl.activeTexture(gl.TEXTURE2);
-    gl.bindTexture(gl.TEXTURE_2D, (app as any).gAlbedo ?? null);
+    gl.bindTexture(gl.TEXTURE_2D, this.#gAlbedo ?? null);
     gl.activeTexture(gl.TEXTURE3);
-    gl.bindTexture(gl.TEXTURE_2D, (app as any).gEmissive ?? null);
+    gl.bindTexture(gl.TEXTURE_2D, this.#gEmissive ?? null);
   }
-  endLightingPass(app: Application) {
+  endLightingPass() {
     const gl = this.#gl!;
     // Detach the color target from lighting FBO to avoid any driver feedback detection
-    const rt = (app as any).renderTargets?.lighting as WebGL2RenderTarget | null;
-    if (rt) {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fbo);
+    if (this.#lightingRT) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.#lightingRT.fbo);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, null, 0);
     }
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
-  resize(app: Application) {
+  // Shadow (depth-only) pass --------------------------------------------------
+  beginShadowPass(size: number, opts?: ShadowPassOptions) {
+    const gl = this.#gl!;
+    // Lazy allocate or reallocate on size change
+    if (!this.#shadowFbo || this.#shadowSize !== size) {
+      // Destroy old resources
+      if (this.#shadowTex) gl.deleteTexture(this.#shadowTex);
+      if (this.#shadowFbo) gl.deleteFramebuffer(this.#shadowFbo);
+
+      const fbo = gl.createFramebuffer()!;
+      const depthTex = gl.createTexture()!;
+      gl.bindTexture(gl.TEXTURE_2D, depthTex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT24, size, size);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_MODE, gl.NONE);
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthTex, 0);
+      gl.drawBuffers([gl.NONE]);
+
+      this.#shadowFbo = fbo;
+      this.#shadowTex = depthTex;
+      this.#shadowSize = size;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
+    // Save current viewport and bind shadow target
+    this.#savedViewport = gl.getParameter(gl.VIEWPORT);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.#shadowFbo);
+    gl.viewport(0, 0, this.#shadowSize, this.#shadowSize);
+    // Polygon offset reduces shadow acne
+    const factor = opts?.offsetFactor ?? 1.1;
+    const units = opts?.offsetUnits ?? 4.0;
+    gl.enable(gl.POLYGON_OFFSET_FILL);
+    gl.polygonOffset(factor, units);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
+    gl.colorMask(false, false, false, false);
+    gl.depthMask(true);
+    gl.clearDepth(1);
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+  }
+  endShadowPass() {
+    const gl = this.#gl!;
+    // Restore color writes (default true)
+    gl.colorMask(true, true, true, true);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.disable(gl.POLYGON_OFFSET_FILL);
+    // Restore default culling
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
+    // Restore previous viewport if saved
+    if (this.#savedViewport) {
+      gl.viewport(
+        this.#savedViewport[0],
+        this.#savedViewport[1],
+        this.#savedViewport[2],
+        this.#savedViewport[3]
+      );
+      this.#savedViewport = null;
+    }
+  }
+
+  bindShadowMap(unit: number) {
+    const gl = this.#gl!;
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, this.#shadowTex);
+  }
+
+  hasShadowMap() {
+    return this.#shadowTex !== null;
+  }
+
+  bindLightingTexture(unit: number) {
+    const gl = this.#gl!;
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, this.#lightingColor);
+  }
+
+  hasLightingTexture() {
+    return this.#lightingColor !== null;
+  }
+
+  // Particle forward pass (renders to lighting RT with alpha blending, depth read-only)
+  beginParticlePass() {
+    const gl = this.#gl!;
+    if (!this.#lightingRT) return;
+    const rt = this.#lightingRT;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.#lightingColor, 0);
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+    gl.depthMask(false);       // depth read-only
+    gl.disable(gl.CULL_FACE);  // billboards are double-sided
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE); // premultiplied additive
+  }
+  endParticlePass() {
+    const gl = this.#gl!;
+    gl.depthMask(true);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
+    // Detach lighting color to avoid feedback
+    if (this.#lightingRT) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.#lightingRT.fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, null, 0);
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+
+  // Bloom RT management -------------------------------------------------------
+  allocateBloomResources() {
+    const gl = this.#gl!;
+    const w = Math.max(1, Math.floor(gl.drawingBufferWidth / 2));
+    const h = Math.max(1, Math.floor(gl.drawingBufferHeight / 2));
+    if (this.#bloomRtA && this.#bloomW === w && this.#bloomH === h) return;
+
+    this.deallocateBloomResources();
+    this.#bloomW = w;
+    this.#bloomH = h;
+
+    const createBloomRT = (): [WebGLFramebuffer, WebGLTexture, WebGL2RenderTarget] => {
+      const fbo = gl.createFramebuffer()!;
+      const tex = gl.createTexture()!;
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA16F, w, h);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      return [fbo, tex, new WebGL2RenderTarget(gl, fbo, w, h)];
+    };
+
+    [this.#bloomFboA, this.#bloomColorA, this.#bloomRtA] = createBloomRT();
+    [this.#bloomFboB, this.#bloomColorB, this.#bloomRtB] = createBloomRT();
+  }
+
+  deallocateBloomResources() {
+    const gl = this.#gl;
+    if (!gl) return;
+    if (this.#bloomColorA) { gl.deleteTexture(this.#bloomColorA); this.#bloomColorA = null; }
+    if (this.#bloomColorB) { gl.deleteTexture(this.#bloomColorB); this.#bloomColorB = null; }
+    if (this.#bloomFboA) { gl.deleteFramebuffer(this.#bloomFboA); this.#bloomFboA = null; }
+    if (this.#bloomFboB) { gl.deleteFramebuffer(this.#bloomFboB); this.#bloomFboB = null; }
+    this.#bloomRtA = null;
+    this.#bloomRtB = null;
+    this.#bloomW = 0;
+    this.#bloomH = 0;
+  }
+
+  /** Bright extract pass: renders to bloom RT A at half-res */
+  beginBloomBrightPass() {
+    this.allocateBloomResources();
+    this.beginPass?.({
+      target: this.#bloomRtA!,
+      depthWrite: false,
+      blend: { enable: false },
+      clearColor: [0, 0, 0, 0],
+      viewport: { x: 0, y: 0, w: this.#bloomW, h: this.#bloomH },
+      colorAttachments: [0],
+    });
+  }
+
+  /** Blur pass: ping-pong between bloom RT A and B */
+  beginBloomBlurPass(horizontal: boolean) {
+    const gl = this.#gl!;
+    // Read from A → write to B (horizontal), then B → A (vertical)
+    const target = horizontal ? this.#bloomRtB! : this.#bloomRtA!;
+    const source = horizontal ? this.#bloomColorA! : this.#bloomColorB!;
+    this.beginPass?.({
+      target,
+      depthWrite: false,
+      blend: { enable: false },
+      viewport: { x: 0, y: 0, w: this.#bloomW, h: this.#bloomH },
+      colorAttachments: [0],
+    });
+    // Bind source texture at unit 5 for blur shader
+    gl.activeTexture(gl.TEXTURE5);
+    gl.bindTexture(gl.TEXTURE_2D, source);
+  }
+
+  endBloomPass() {
+    this.endPass?.();
+  }
+
+  /** Bind the final bloom result texture (RT A after vertical blur) */
+  bindBloomTexture(unit: number) {
+    const gl = this.#gl!;
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, this.#bloomColorA);
+  }
+
+  hasBloomTexture() {
+    return this.#bloomColorA !== null;
+  }
+
+  getBloomSize(): [number, number] {
+    return [this.#bloomW, this.#bloomH];
+  }
+
+  resize() {
     const gl = this.#gl!;
     const w = gl.drawingBufferWidth;
     const h = gl.drawingBufferHeight;
     if (w === this.#dw && h === this.#dh) return;
-    this.#allocateGBuffer(app, w, h);
+    this.#allocateGBuffer(w, h);
 
     // If a lighting RT exists, drop it so it can be recreated with new size lazily
-    const rtLighting = (app as any).renderTargets?.lighting as WebGL2RenderTarget | null;
-    if (rtLighting) {
-      if ((app as any)._lightingColor) {
-        gl.deleteTexture((app as any)._lightingColor);
-        (app as any)._lightingColor = null;
+    if (this.#lightingRT) {
+      if (this.#lightingColor) {
+        gl.deleteTexture(this.#lightingColor);
+        this.#lightingColor = null;
       }
-      gl.deleteFramebuffer(rtLighting.fbo);
-      (app as any).renderTargets.lighting = null;
+      gl.deleteFramebuffer(this.#lightingRT.fbo);
+      this.#lightingRT = null;
     }
+
+    // Drop bloom RTs so they can be recreated at new half-res
+    this.deallocateBloomResources();
   }
 
-  #allocateGBuffer(app: Application, width: number, height: number) {
+  #allocateGBuffer(width: number, height: number) {
     const gl = this.#gl!;
     this.#dw = width;
     this.#dh = height;
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, (app as any).gBuffer!);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.#gBufferFbo!);
 
     // delete existing textures if any
-    if ((app as any).gPositionMetallic) gl.deleteTexture((app as any).gPositionMetallic);
-    if ((app as any).gNormalRoughness) gl.deleteTexture((app as any).gNormalRoughness);
-    if ((app as any).gAlbedo) gl.deleteTexture((app as any).gAlbedo);
-    if ((app as any).gEmissive) gl.deleteTexture((app as any).gEmissive);
-    if ((app as any)._depthTexture) gl.deleteTexture((app as any)._depthTexture);
+    if (this.#gPositionMetallic) gl.deleteTexture(this.#gPositionMetallic);
+    if (this.#gNormalRoughness) gl.deleteTexture(this.#gNormalRoughness);
+    if (this.#gAlbedo) gl.deleteTexture(this.#gAlbedo);
+    if (this.#gEmissive) gl.deleteTexture(this.#gEmissive);
+    if (this.#depthTexture) gl.deleteTexture(this.#depthTexture);
 
-    (app as any).gPositionMetallic = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, (app as any).gPositionMetallic!);
+    this.#gPositionMetallic = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.#gPositionMetallic!);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA16F, width, height);
@@ -194,12 +425,12 @@ export default class WebGL2Renderer implements RendererBackend {
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
       gl.TEXTURE_2D,
-      (app as any).gPositionMetallic!,
+      this.#gPositionMetallic!,
       0
     );
 
-    (app as any).gNormalRoughness = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, (app as any).gNormalRoughness!);
+    this.#gNormalRoughness = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.#gNormalRoughness!);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA16F, width, height);
@@ -207,12 +438,12 @@ export default class WebGL2Renderer implements RendererBackend {
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT1,
       gl.TEXTURE_2D,
-      (app as any).gNormalRoughness!,
+      this.#gNormalRoughness!,
       0
     );
 
-    (app as any).gAlbedo = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, (app as any).gAlbedo!);
+    this.#gAlbedo = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.#gAlbedo!);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA16F, width, height);
@@ -220,12 +451,12 @@ export default class WebGL2Renderer implements RendererBackend {
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT2,
       gl.TEXTURE_2D,
-      (app as any).gAlbedo!,
+      this.#gAlbedo!,
       0
     );
 
-    (app as any).gEmissive = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, (app as any).gEmissive!);
+    this.#gEmissive = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.#gEmissive!);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA16F, width, height);
@@ -233,7 +464,7 @@ export default class WebGL2Renderer implements RendererBackend {
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT3,
       gl.TEXTURE_2D,
-      (app as any).gEmissive!,
+      this.#gEmissive!,
       0
     );
 
@@ -245,7 +476,7 @@ export default class WebGL2Renderer implements RendererBackend {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT16, width, height);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthTexture, 0);
-    (app as any)._depthTexture = depthTexture;
+    this.#depthTexture = depthTexture;
 
     gl.drawBuffers([
       gl.COLOR_ATTACHMENT0,
@@ -253,13 +484,7 @@ export default class WebGL2Renderer implements RendererBackend {
       gl.COLOR_ATTACHMENT2,
       gl.COLOR_ATTACHMENT3,
     ]);
-    (app as any).renderTargets = (app as any).renderTargets || {};
-    (app as any).renderTargets.gbuffer = new WebGL2RenderTarget(
-      gl,
-      (app as any).gBuffer!,
-      width,
-      height
-    );
+    this.#gbufferRT = new WebGL2RenderTarget(gl, this.#gBufferFbo!, width, height);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
@@ -307,17 +532,29 @@ export default class WebGL2Renderer implements RendererBackend {
     vao.unbind();
   }
 
-  setViewport(_app: Application, x: number, y: number, w: number, h: number) {
+  drawArraysInstanced(
+    vao: import("../VertexArray").default,
+    opts: { mode: "triangle-strip" | "triangles"; count: number; instanceCount: number }
+  ) {
+    const gl = this.#gl!;
+    const va = vao as WebGL2VertexArray;
+    va.bind();
+    const modeEnum = opts.mode === "triangle-strip" ? gl.TRIANGLE_STRIP : gl.TRIANGLES;
+    gl.drawArraysInstanced(modeEnum, 0, opts.count, opts.instanceCount);
+    va.unbind();
+  }
+
+  setViewport(x: number, y: number, w: number, h: number) {
     this.#gl!.viewport(x, y, w, h);
   }
 
-  getDrawableSize(_app: Application) {
+  getDrawableSize() {
     const c = this.#gl!.canvas as HTMLCanvasElement;
     return { width: c.width, height: c.height };
   }
 
   // Optional: generic pass API (supports default framebuffer and internal RenderTarget)
-  beginPass(_app: Application, desc: RenderPassDescriptor) {
+  beginPass(desc: RenderPassDescriptor) {
     const gl = this.#gl!;
     if (desc.target && desc.target !== "default") {
       const rt = desc.target as WebGL2RenderTarget;
@@ -360,11 +597,11 @@ export default class WebGL2Renderer implements RendererBackend {
     }
     if (clearBits) gl.clear(clearBits);
   }
-  endPass(_app: Application) {
+  endPass() {
     // No-op for default framebuffer; state is left as configured by beginPass
   }
 
-  debugCollectState(app: Application) {
+  debugCollectState() {
     const gl = this.#gl!;
     const cap = {
       extColorBufferFloat: !!gl.getExtension("EXT_color_buffer_float"),
@@ -434,10 +671,10 @@ export default class WebGL2Renderer implements RendererBackend {
       const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
       rtInfo[name] = status;
     };
-    const rtG = (app as any).renderTargets?.gbuffer as WebGL2RenderTarget | undefined;
-    const rtL = (app as any).renderTargets?.lighting as WebGL2RenderTarget | undefined;
-    if (rtG) collectFBO("gbuffer", rtG.fbo);
-    if (rtL) collectFBO("lighting", rtL.fbo);
+    const fboShadow = this.#shadowFbo ?? undefined;
+    if (this.#gbufferRT) collectFBO("gbuffer", this.#gbufferRT.fbo);
+    if (this.#lightingRT) collectFBO("lighting", this.#lightingRT.fbo);
+    if (fboShadow) collectFBO("shadow", fboShadow);
     gl.bindFramebuffer(gl.FRAMEBUFFER, savedFB);
 
     return {
@@ -466,9 +703,9 @@ export default class WebGL2Renderer implements RendererBackend {
     };
   }
 
-  debugDumpState(app: Application, tag = "") {
+  debugDumpState(tag = "") {
     // eslint-disable-next-line no-console
-    console.debug("[WebGL2Renderer.debugDumpState]", tag, this.debugCollectState(app));
+    console.debug("[WebGL2Renderer.debugDumpState]", tag, this.debugCollectState());
   }
 
   debugCheckError(tag = "") {

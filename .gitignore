@@ -137,3 +137,20 @@ packages/renderer/
 # turborepo
 .turbo
 dist/**
+docs/assets.md
+docs/camera.md
+docs/composable-api.md
+docs/demos.md
+docs/g-buffer.md
+docs/lights.md
+docs/math-and-transform.md
+docs/pipeline.md
+docs/post-processing.md
+docs/quality.md
+docs/README.md
+docs/renderer-backend.md
+docs/shaders-pbr.md
+docs/shadows.md
+docs/TODO.md
+docs/ui.md
+docs/webgpu.md

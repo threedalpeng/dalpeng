@@ -65,6 +65,9 @@ export default class Shader extends Entity {
   setUniformVec3(name: string, data: Float32List) {
     this.#program?.setUniformVec3(name, data);
   }
+  setUniformVec2(name: string, data: Float32List) {
+    this.#program?.setUniformVec2(name, data);
+  }
   setUniform1f(name: string, v: number) {
     this.#program?.setUniform1f(name, v);
   }

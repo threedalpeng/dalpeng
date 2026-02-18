@@ -9,6 +9,13 @@ export default interface GfxVertexArray {
     size: number,
     options?: { normalized?: boolean; stride?: number; offset?: number; type?: "float" }
   ): void;
+  setVertexBufferInstanced?(
+    location: number,
+    buffer: GfxBuffer,
+    size: number,
+    divisor: number,
+    options?: { normalized?: boolean; stride?: number; offset?: number; type?: "float" }
+  ): void;
   setIndexBuffer(buffer: GfxBuffer): void;
   dispose(): void;
 }

@@ -1,5 +1,5 @@
 import { Application, type CanvasOptions } from "@dalpeng/core";
-import { getThisApp, setThisApp } from "./context";
+import { requireApp, setThisApp } from "./context";
 import type { UseScene } from "./scene";
 
 export type UseApp = ReturnType<typeof defineApp>;
@@ -7,20 +7,19 @@ export function defineApp(setup: () => UseScene | undefined) {
   return () => {
     const app = new Application();
     setThisApp(app);
-
-    const sceneFn = setup();
-    if (sceneFn) {
-      sceneFn();
+    try {
+      const sceneFn = setup();
+      if (sceneFn) sceneFn();
+    } finally {
+      setThisApp(null);
     }
-    setThisApp(null);
-
     return app;
   };
 }
 
 export function withCanvasOptions(options: CanvasOptions) {
-  const app = getThisApp();
-  app?.setCanvasOptions(options);
+  const app = requireApp("withCanvasOptions");
+  app.setCanvasOptions(options);
 }
 
 export async function runApp(

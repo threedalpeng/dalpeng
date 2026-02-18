@@ -66,7 +66,7 @@ function _makeSlider(
   step: number,
   onChange: (v: number) => void,
   indent = 0
-) {
+): { range: HTMLInputElement; valueDisplay: HTMLElement } {
   const wrap = document.createElement("div");
   Object.assign(wrap.style, {
     display: "grid",
@@ -102,11 +102,18 @@ function _makeSlider(
   wrap.appendChild(v);
   parent.appendChild(wrap);
   onChange(init);
+  return { range: r, valueDisplay: v };
 }
 
 export type PersistStore = {
   get<T>(k: string, fallback: T): T;
   set<T>(k: string, v: T): void;
+};
+
+export type ControlHandle = {
+  type: "checkbox" | "slider" | "select";
+  element: HTMLInputElement | HTMLSelectElement;
+  setValue: (v: any) => void;
 };
 
 export class OverlayBuilder {
@@ -115,7 +122,8 @@ export class OverlayBuilder {
     private store: PersistStore,
     private indent = 0,
     private onSectionToggle?: (id: string, open: boolean) => void,
-    private sectionState?: Record<string, boolean>
+    private sectionState?: Record<string, boolean>,
+    private controls: Map<string, ControlHandle> = new Map()
   ) {}
 
   group(label: string, id: string, build: (b: OverlayBuilder) => void) {
@@ -131,7 +139,8 @@ export class OverlayBuilder {
       this.store,
       this.indent + 12,
       this.onSectionToggle,
-      this.sectionState
+      this.sectionState,
+      this.controls
     );
     build(child);
     return this;
@@ -148,6 +157,15 @@ export class OverlayBuilder {
       onChange(input.checked);
       this.store.set<boolean>(key, input.checked);
     });
+    this.controls.set(key, {
+      type: "checkbox",
+      element: input,
+      setValue: (v: boolean) => {
+        input.checked = !!v;
+        onChange(!!v);
+        this.store.set(key, !!v);
+      },
+    });
     _makeRow(this.parent, label, input, this.indent + 12);
     return this;
   }
@@ -161,17 +179,28 @@ export class OverlayBuilder {
     step: number,
     onChange: (v: number) => void
   ) {
-    _makeSlider(
+    const storedVal = this.store.get<number>(key, init);
+    const { range, valueDisplay } = _makeSlider(
       this.parent,
       key,
       label,
-      this.store.get<number>(key, init),
+      storedVal,
       min,
       max,
       step,
       (n) => onChange(n),
       this.indent + 12
     );
+    this.controls.set(key, {
+      type: "slider",
+      element: range,
+      setValue: (v: number) => {
+        range.value = String(v);
+        valueDisplay.textContent = Number(v).toFixed(2);
+        onChange(v);
+        this.store.set(key, v);
+      },
+    });
     return this;
   }
 
@@ -197,7 +226,15 @@ export class OverlayBuilder {
       this.store.set<string>(key, select.value);
     });
     select.dataset.key = key;
-    (select as any).dataset.key = key;
+    this.controls.set(key, {
+      type: "select",
+      element: select,
+      setValue: (v: string) => {
+        select.value = String(v);
+        onChange(select.value);
+        this.store.set(key, select.value);
+      },
+    });
     _makeRow(this.parent, label, select, this.indent + 12);
     return this;
   }
@@ -246,6 +283,21 @@ export class OverlayBuilder {
     btn.addEventListener("click", onClick);
     _makeRow(this.parent, "", btn, this.indent + 12);
     return this;
+  }
+
+  setControlValue(key: string, value: any) {
+    const handle = this.controls.get(key);
+    if (handle) handle.setValue(value);
+  }
+
+  resetAll(defaults: Record<string, any>) {
+    for (const [key, handle] of this.controls) {
+      if (key in defaults) handle.setValue(defaults[key]);
+    }
+  }
+
+  getControls() {
+    return this.controls;
   }
 }
 

@@ -3,6 +3,8 @@
 #define PI (3.1415926538)
 
 precision highp float;
+// For debug and manual PCF path we sample raw depth
+precision highp sampler2D;
 
 uniform vec3 uViewPos;
 uniform sampler2D gPositionMetallic;
@@ -12,6 +14,14 @@ uniform sampler2D gEmissive;
 uniform int uApplyGamma;
 uniform float uGamma;
 uniform int uDebugMode; // 0: shaded, 1:N, 2:Albedo, 3:Emissive, 4:Metallic, 5:Roughness, 6:Position
+uniform int uShadowDebug; // 0: off, 1: visibility, 2: uv+depth
+
+// Shadows (manual compare PCF)
+uniform sampler2D uShadowMapDepth;
+uniform mat4 uLightViewProj;
+uniform float uShadowBias;        // constant bias (~0.0005 - 0.005)
+uniform float uShadowSlopeScale;  // slope-scale factor (~0.0 - 2.0)
+uniform float uShadowStrength;    // 0..1
 
 struct Light {
   vec3 color;
@@ -110,7 +120,59 @@ void main() {
   vec3 L = normalize(lightToPoint);
 
   vec3 lightFactor = getLightFactor(length(lightToPoint));
-  vec3 finalColor = (lightFactor * material(baseColor, metallic, roughness, N, V, L)) + emissive;
+  vec3 shade = (lightFactor * material(baseColor, metallic, roughness, N, V, L));
+
+  // Shadowing (PCF 3x3).
+  float visibility = 1.0;
+  // Compute light-space coords once
+  vec4 lpos = uLightViewProj * vec4(pos, 1.0);
+  vec3 ndc = lpos.xyz / max(lpos.w, 1e-6);
+  vec3 suv = ndc * 0.5 + 0.5;
+  bool inBounds = all(greaterThanEqual(suv, vec3(0.0))) && all(lessThanEqual(suv, vec3(1.0)));
+  if (inBounds) {
+    vec2 texel = 1.0 / vec2(textureSize(uShadowMapDepth, 0));
+    float NoL = clamp(dot(N, L), 0.001, 1.0);
+    float slopeFactor = sqrt(1.0 - NoL * NoL) / NoL; // tan(acos(NoL))
+    float bias = uShadowBias + uShadowSlopeScale * slopeFactor * 0.001;
+    bias = clamp(bias, 0.0, 0.01);
+    // Manual compare + 3x3 taps
+    float sum = 0.0;
+    float count = 0.0;
+    for (int y = -1; y <= 1; ++y) {
+      for (int x = -1; x <= 1; ++x) {
+        vec2 uv = suv.xy + vec2(x, y) * texel;
+        float sd = texture(uShadowMapDepth, uv).r;
+        float lit = ((suv.z - bias) <= sd) ? 1.0 : 0.0;
+        sum += lit;
+        count += 1.0;
+      }
+    }
+    visibility = sum / max(count, 1.0);
+  }
+  // Apply shadow strength
+  shade *= mix(1.0 - uShadowStrength, 1.0, visibility);
+
+  // Shadow debug views
+  if (uShadowDebug == 1) {
+    outColor = vec4(vec3(visibility), 1.0);
+    return;
+  }
+  if (uShadowDebug == 2) {
+    vec3 dbg = vec3(0.0);
+    dbg.r = inBounds ? 0.0 : 1.0;        // red if out-of-bounds
+    dbg.g = clamp(length(suv.xy - 0.5) * 2.0, 0.0, 1.0); // uv distance from center
+    dbg.b = clamp(suv.z, 0.0, 1.0);      // depth in light clip [0..1]
+    outColor = vec4(dbg, 1.0);
+    return;
+  }
+  // Debug 3: Show sampled depth from shadow map
+  if (uShadowDebug == 3 && inBounds) {
+    float sd = texture(uShadowMapDepth, suv.xy).r;
+    outColor = vec4(vec3(sd), 1.0);
+    return;
+  }
+
+  vec3 finalColor = shade + emissive;
   if (uApplyGamma != 0) {
     outColor = vec4(pow(finalColor, vec3(1.0 / max(uGamma, 1e-6))), 1);
   } else {

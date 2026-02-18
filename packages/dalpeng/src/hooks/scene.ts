@@ -7,17 +7,13 @@ export function defineScene(setup: () => UseGameEntity[] | void) {
   return () => {
     const scene = new Scene();
     setThisScene(scene);
-
-    getThisApp()?.addScene(scene);
-
-    const rootEntites = setup() ?? [];
-
-    rootEntites.forEach((entityFn) => {
-      entityFn();
-    });
-
-    setThisScene(null);
-
+    try {
+      getThisApp()?.addScene(scene);
+      const rootEntities = setup() ?? [];
+      rootEntities.forEach((entityFn) => entityFn());
+    } finally {
+      setThisScene(null);
+    }
     return scene;
   };
 }

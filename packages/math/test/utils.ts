@@ -40,7 +40,8 @@ export const axisAngleDeepTest = ([axis, angle]: AxisAngle, [tAxis, tAngle]: Axi
   expect(axis.x).toBeCloseTo(tAxis.x * ratio);
   expect(axis.y).toBeCloseTo(tAxis.y * ratio);
   expect(axis.z).toBeCloseTo(tAxis.z * ratio);
-  expect(((angle % 360) + 360) % 360).toBeCloseTo(((tAngle % 360) + 360) % 360);
+  const twoPi = 2 * Math.PI;
+  expect(((angle % twoPi) + twoPi) % twoPi).toBeCloseTo(((tAngle % twoPi) + twoPi) % twoPi);
 };
 
 export const quaternionDeepTest = (q: Quaternion, t: Quaternion) => {

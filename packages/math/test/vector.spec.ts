@@ -19,10 +19,10 @@ describe("Vector", () => {
       vec2DeepTest(vec2_i1.sub(vec2_f1), new Vec2([2.324, -1.546]));
       vec2DeepTest(vec2_f1.sub(vec2_f2), new Vec2([-5.516, 10.552]));
     });
-    test("muli", () => {
-      vec2DeepTest(vec2_i1.muli(2), new Vec2([2, 2]));
-      vec2DeepTest(vec2_i2.muli(5.7), new Vec2([17.1, -22.8]));
-      vec2DeepTest(vec2_f1.muli(-7.3), new Vec2([9.6652, -18.5858]));
+    test("scale", () => {
+      vec2DeepTest(vec2_i1.scale(2), new Vec2([2, 2]));
+      vec2DeepTest(vec2_i2.scale(5.7), new Vec2([17.1, -22.8]));
+      vec2DeepTest(vec2_f1.scale(-7.3), new Vec2([9.6652, -18.5858]));
     });
     test("dot", () => {
       expect(vec2_i1.dot(vec2_i2)).toBeCloseTo(-1);
@@ -34,10 +34,10 @@ describe("Vector", () => {
       expect(vec2_i2.size()).toBeCloseTo(5);
       expect(vec2_f1.size()).toBeCloseTo(Math.sqrt(8.235092));
     });
-    test("size2", () => {
-      expect(vec2_i1.size2()).toBeCloseTo(2);
-      expect(vec2_i2.size2()).toBeCloseTo(25);
-      expect(vec2_f1.size2()).toBeCloseTo(8.235092);
+    test("sizeSq", () => {
+      expect(vec2_i1.sizeSq()).toBeCloseTo(2);
+      expect(vec2_i2.sizeSq()).toBeCloseTo(25);
+      expect(vec2_f1.sizeSq()).toBeCloseTo(8.235092);
     });
     test("normalize", () => {
       vec2DeepTest(vec2_i1.normalize(), new Vec2([0.7071067, 0.7071067]));
@@ -68,10 +68,10 @@ describe("Vector", () => {
       vec3DeepTest(vec3_i1.sub(vec3_f1), new Vec3([2.324, -1.546, 0.079]));
       vec3DeepTest(vec3_f1.sub(vec3_f2), new Vec3([-5.516, 10.552, -1.38]));
     });
-    test("muli", () => {
-      vec3DeepTest(vec3_i1.muli(2), new Vec3([2, 2, 2]));
-      vec3DeepTest(vec3_i2.muli(5.7), new Vec3([17.1, -22.8, 28.5]));
-      vec3DeepTest(vec3_f1.muli(-7.3), new Vec3([9.6652, -18.5858, -6.7233]));
+    test("scale", () => {
+      vec3DeepTest(vec3_i1.scale(2), new Vec3([2, 2, 2]));
+      vec3DeepTest(vec3_i2.scale(5.7), new Vec3([17.1, -22.8, 28.5]));
+      vec3DeepTest(vec3_f1.scale(-7.3), new Vec3([9.6652, -18.5858, -6.7233]));
     });
     test("dot", () => {
       expect(vec3_i1.dot(vec3_i2)).toBeCloseTo(4);
@@ -88,10 +88,10 @@ describe("Vector", () => {
       expect(vec3_i2.size()).toBeCloseTo(Math.sqrt(50));
       expect(vec3_f1.size()).toBeCloseTo(Math.sqrt(9.083333));
     });
-    test("size2", () => {
-      expect(vec3_i1.size2()).toBeCloseTo(3);
-      expect(vec3_i2.size2()).toBeCloseTo(50);
-      expect(vec3_f1.size2()).toBeCloseTo(9.083333);
+    test("sizeSq", () => {
+      expect(vec3_i1.sizeSq()).toBeCloseTo(3);
+      expect(vec3_i2.sizeSq()).toBeCloseTo(50);
+      expect(vec3_f1.sizeSq()).toBeCloseTo(9.083333);
     });
     test("normalize", () => {
       vec3DeepTest(vec3_i1.normalize(), new Vec3([0.57735, 0.57735, 0.57735]));
@@ -125,10 +125,10 @@ describe("Vector", () => {
       vec4DeepTest(vec4_i1.sub(vec4_f1), new Vec4([2.324, -1.546, 0.079, -2.581]));
       vec4DeepTest(vec4_f1.sub(vec4_f2), new Vec4([-5.516, 10.552, -1.38, 7.581]));
     });
-    test("muli", () => {
-      vec4DeepTest(vec4_i1.muli(2), new Vec4([2, 2, 2, 2]));
-      vec4DeepTest(vec4_i2.muli(5.7), new Vec4([17.1, -22.8, 28.5, 11.4]));
-      vec4DeepTest(vec4_f1.muli(-7.3), new Vec4([9.6652, -18.5858, -6.7233, -26.1413]));
+    test("scale", () => {
+      vec4DeepTest(vec4_i1.scale(2), new Vec4([2, 2, 2, 2]));
+      vec4DeepTest(vec4_i2.scale(5.7), new Vec4([17.1, -22.8, 28.5, 11.4]));
+      vec4DeepTest(vec4_f1.scale(-7.3), new Vec4([9.6652, -18.5858, -6.7233, -26.1413]));
     });
     test.todo("dot", () => {
       expect(vec4_i1.dot(vec4_i2)).toBeCloseTo(4);
@@ -140,10 +140,10 @@ describe("Vector", () => {
       expect(vec4_i2.size()).toBeCloseTo(Math.sqrt(50));
       expect(vec4_f1.size()).toBeCloseTo(Math.sqrt(9.083333));
     });
-    test.todo("size2", () => {
-      expect(vec4_i1.size2()).toBeCloseTo(3);
-      expect(vec4_i2.size2()).toBeCloseTo(50);
-      expect(vec4_f1.size2()).toBeCloseTo(9.083333);
+    test.todo("sizeSq", () => {
+      expect(vec4_i1.sizeSq()).toBeCloseTo(3);
+      expect(vec4_i2.sizeSq()).toBeCloseTo(50);
+      expect(vec4_f1.sizeSq()).toBeCloseTo(9.083333);
     });
     test.todo("normalize", () => {
       vec4DeepTest(vec4_i1.normalize(), new Vec4([0.57735, 0.57735, 0.57735]));

@@ -1,6 +1,6 @@
 import type { Application } from "@dalpeng/core";
 import { createOverlayBuilder } from "./builder";
-import { createOverlayRoot, createPersistStore, makeSection } from "./ui";
+import { createOverlayRoot, createPersistStore } from "./ui";
 
 type ToggleOptions = {
   key?: string; // KeyboardEvent.code, e.g., 'KeyT'
@@ -68,6 +68,10 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
       debugLightingView: 0,
       toneExposure: 1.0,
       toneGamma: 2.2,
+      bloom: false,
+      bloomThreshold: 1.0,
+      bloomIntensity: 0.5,
+      bloomRadius: 5,
       sections: {},
     } as any;
     store.reset(def);
@@ -85,19 +89,6 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
   const contentWrap = overlay.content;
   overlay.onToggle((m) => store.set("minimized", m));
 
-  // Helper: collapsible section with persistence
-  const section = (label: string, parent: HTMLElement, id: string, indent = 0) => {
-    const open =
-      persisted.sections && persisted.sections[id] !== undefined ? !!persisted.sections[id] : true;
-    const sec = makeSection(parent, label, open, indent);
-    sec.head.addEventListener("click", () => {
-      const prev = (store.get<Record<string, boolean>>("sections", {}) as any) || {};
-      const isOpen = sec.body.style.display !== "none";
-      store.set("sections", { ...prev, [id]: isOpen });
-    });
-    return sec;
-  };
-
   // Build UI via builder
   const builder = createOverlayBuilder(
     contentWrap,
@@ -110,13 +101,15 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
       const prev = (store.get<Record<string, boolean>>("sections", {}) as any) || {};
       store.set("sections", { ...prev, [id]: open });
     }
-  )
+  );
+  builder
     .group("Status", "status", (s) => {
       s.value("status:fps", "FPS", "-")
         .value("status:post", "ToneMap", "-")
         .value("status:caps", "HDR Blend", "-")
         .value("status:fbo", "FBO Status", "-")
-        .value("status:err", "Last GL Err", "-");
+        .value("status:err", "Last GL Err", "-")
+        .value("status:bloom", "Bloom", "-");
     })
     .group("Lighting", "lighting", (g) => {
       g.group("Views", "lighting-views", (v) => {
@@ -162,6 +155,100 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
             (n) => (app.features.toneGamma = n)
           );
       });
+      g.group("Shadows", "lighting-shadows", (s) => {
+        s.checkbox(
+          "shadows",
+          "Enable",
+          !!app.features.shadows,
+          (v) => (app.features.shadows = v)
+        )
+          .slider(
+            "shadowBias",
+            "Bias",
+            persisted.shadowBias ?? 0.005,
+            0.0,
+            0.05,
+            0.001,
+            (n) => (app.features.shadowBias = n)
+          )
+          .slider(
+            "shadowSlopeScale",
+            "Slope Scale",
+            persisted.shadowSlopeScale ?? 1.0,
+            0.0,
+            5.0,
+            0.01,
+            (n) => (app.features.shadowSlopeScale = n)
+          )
+          .slider(
+            "shadowStrength",
+            "Strength",
+            persisted.shadowStrength ?? 1.0,
+            0.0,
+            1.0,
+            0.01,
+            (n) => (app.features.shadowStrength = n)
+          )
+          .slider(
+            "shadowMapSize",
+            "Map Size",
+            persisted.shadowMapSize ?? 1024,
+            128,
+            4096,
+            128,
+            (n) => (app.features.shadowMapSize = Math.max(16, Math.floor(n)))
+          )
+          .slider(
+            "shadowDistance",
+            "Max Dist (0=auto)",
+            persisted.shadowDistance ?? 0,
+            0,
+            200,
+            1,
+            (n) => (app.features.shadowDistance = n)
+          )
+          .select(
+            "shadowDebug",
+            "Debug",
+            [
+              { value: "0", label: "Off" },
+              { value: "1", label: "Visibility" },
+              { value: "2", label: "UV+Depth" },
+            ],
+            String(persisted.shadowDebug ?? app.features.shadowDebug ?? 0),
+            (v) => (app.features.shadowDebug = parseInt(v) || 0)
+          );
+      });
+      g.group("Bloom", "lighting-bloom", (b) => {
+        b.checkbox("bloom", "Enable", !!app.features.bloom, (v) => (app.features.bloom = v))
+          .slider(
+            "bloomThreshold",
+            "Threshold",
+            persisted.bloomThreshold ?? app.features.bloomThreshold ?? 1.0,
+            0.0,
+            3.0,
+            0.01,
+            (n) => (app.features.bloomThreshold = n)
+          )
+          .slider(
+            "bloomIntensity",
+            "Intensity",
+            persisted.bloomIntensity ?? app.features.bloomIntensity ?? 0.5,
+            0.0,
+            2.0,
+            0.01,
+            (n) => (app.features.bloomIntensity = n)
+          )
+          .slider(
+            "bloomRadius",
+            "Radius (iters)",
+            persisted.bloomRadius ?? app.features.bloomRadius ?? 5,
+            1,
+            10,
+            1,
+            (n) => (app.features.bloomRadius = Math.max(1, Math.floor(n)))
+          );
+      });
     })
     .group("Controls", "controls", (c) => {
       c.checkbox(
@@ -176,41 +263,12 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
         (v) => (app.features.debugGLVerbose = v)
       );
       c.button("Dump GL State", () => {
-        (app as any).renderer?.debugDumpState?.(app, "manual dump");
-        (app as any).renderer?.debugCheckError?.("manual dump");
+        app.renderer.debugDumpState?.("manual dump");
+        app.renderer.debugCheckError?.("manual dump");
       }).button("Reset Defaults", () => {
         const def = resetDefaults();
-        overlay.setMinimized(!!(def as any).minimized);
-        app.features.postToneMapping = !!(def as any).postToneMapping;
-        app.features.debugGL = !!(def as any).debugGL;
-        app.features.debugGLVerbose = !!(def as any).debugGLVerbose;
-        app.features.debugLightingView = (def as any).debugLightingView ?? 0;
-        app.features.toneExposure = (def as any).toneExposure;
-        app.features.toneGamma = (def as any).toneGamma;
-        const q = (sel: string) =>
-          root.querySelector(sel) as HTMLInputElement | HTMLSelectElement | null;
-        const toneChk = q(
-          'input[type="checkbox"][data-key="postToneMapping"]'
-        ) as HTMLInputElement | null;
-        if (toneChk) {
-          toneChk.checked = !!(def as any).postToneMapping;
-          toneChk.dispatchEvent(new Event("change"));
-        }
-        const selView = q('select[data-key="debugLightingView"]') as HTMLSelectElement | null;
-        if (selView) {
-          selView.value = String((def as any).debugLightingView ?? 0);
-          selView.dispatchEvent(new Event("change"));
-        }
-        const exp = q('input[type="range"][data-key="toneExposure"]') as HTMLInputElement | null;
-        if (exp) {
-          exp.value = String((def as any).toneExposure);
-          exp.dispatchEvent(new Event("input"));
-        }
-        const gam = q('input[type="range"][data-key="toneGamma"]') as HTMLInputElement | null;
-        if (gam) {
-          gam.value = String((def as any).toneGamma);
-          gam.dispatchEvent(new Event("input"));
-        }
+        overlay.setMinimized(!!def.minimized);
+        builder.resetAll(def);
       });
     });
 
@@ -234,11 +292,11 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
     const sPost = root.querySelector('[data-key="status:post"]') as HTMLElement | null;
     if (sPost) sPost.textContent = app.features.postToneMapping ? "On" : "Off";
 
-    const caps = (app as any).renderer?.debugGetCaps?.() as any;
+    const caps = app.renderer.debugGetCaps?.() as any;
     const sCaps = root.querySelector('[data-key="status:caps"]') as HTMLElement | null;
     if (sCaps) sCaps.textContent = caps ? (caps.extFloatBlend ? "Yes" : "No (LDR)") : "?";
 
-    const st = (app as any).renderer?.debugCollectState?.(app) as any;
+    const st = app.renderer.debugCollectState?.() as any;
     if (st && st.rtStatus) {
       const mapStatus = (x: number) => (x === 0x8cd5 ? "OK" : `0x${x.toString(16)}`);
       const gb = st.rtStatus.gbuffer;
@@ -253,9 +311,12 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
       if (sFbo) sFbo.textContent = "-";
     }
 
-    const lastErr = (app as any).renderer?.debugGetLastError?.() as any;
+    const lastErr = app.renderer.debugGetLastError?.() as any;
     const sErr = root.querySelector('[data-key="status:err"]') as HTMLElement | null;
     if (sErr) sErr.textContent = lastErr ? `${lastErr.name} (${lastErr.tag ?? ""})` : "-";
+
+    const sBloom = root.querySelector('[data-key="status:bloom"]') as HTMLElement | null;
+    if (sBloom) sBloom.textContent = app.features.bloom ? "On" : "Off";
 
     raf = requestAnimationFrame(update);
   };
@@ -265,16 +326,7 @@ export function enableDebugOverlay(app: Application, opts: OverlayOptions = {}) 
   const onKey = (e: KeyboardEvent) => {
     if (!hotkeys) return;
     if (e.code === "KeyT") {
-      const toneChk = root.querySelector(
-        'input[type="checkbox"][data-key="postToneMapping"]'
-      ) as HTMLInputElement | null;
-      if (toneChk) {
-        toneChk.checked = !toneChk.checked;
-        toneChk.dispatchEvent(new Event("change"));
-      } else {
-        app.features.postToneMapping = !app.features.postToneMapping;
-        store.set("postToneMapping", app.features.postToneMapping);
-      }
+      builder.setControlValue("postToneMapping", !app.features.postToneMapping);
     }
   };
   window.addEventListener("keydown", onKey);

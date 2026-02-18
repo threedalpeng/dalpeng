@@ -40,6 +40,10 @@ export default class WebGL2Program implements Program {
     const loc = this.#getLocation(name);
     if (loc) this.gl.uniform3fv(loc, data as unknown as Float32Array);
   }
+  setUniformVec2(name: string, data: Float32List): void {
+    const loc = this.#getLocation(name);
+    if (loc) this.gl.uniform2fv(loc, data as unknown as Float32Array);
+  }
   setUniform1f(name: string, v: number): void {
     const loc = this.#getLocation(name);
     if (loc) this.gl.uniform1f(loc, v);

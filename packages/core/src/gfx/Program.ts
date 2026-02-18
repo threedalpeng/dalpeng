@@ -12,6 +12,7 @@ export default interface Program {
   // Uniform setters (minimal set used by engine today)
   setUniformMat4(name: string, data: Float32List): void;
   setUniformVec3(name: string, data: Float32List): void;
+  setUniformVec2(name: string, data: Float32List): void;
   setUniform1f(name: string, v: number): void;
   setUniform1i(name: string, v: number): void;
 }
