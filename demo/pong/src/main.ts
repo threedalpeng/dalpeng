@@ -4,8 +4,6 @@ import App from "./app/App";
 // attachOverlay();
 
 await runApp(App, "#app", {
-  mode: "contain",
-  fixedAspect: 16 / 9,
-  pixelRatio: "device",
-  autoResize: true,
+  resolution: [1600, 900],
+  fit: "contain",
 });

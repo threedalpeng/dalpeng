@@ -1,9 +1,5 @@
-import { MeshBuilder, MeshRenderer, useComponent } from "dalpeng";
+import { useMesh } from "dalpeng";
 
-const useBox = () => {
-  const renderer = useComponent(MeshRenderer);
-  renderer.mesh = MeshBuilder.box();
-  return renderer;
-};
+const useBox = () => useMesh("box");
 
 export default useBox;

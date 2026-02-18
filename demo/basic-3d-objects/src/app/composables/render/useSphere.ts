@@ -1,9 +1,5 @@
-import { MeshBuilder, MeshRenderer, useComponent } from "dalpeng";
+import { useMesh } from "dalpeng";
 
-const useSphere = () => {
-  const renderer = useComponent(MeshRenderer);
-  renderer.mesh = MeshBuilder.sphere();
-  return renderer;
-};
+const useSphere = () => useMesh("sphere");
 
 export default useSphere;

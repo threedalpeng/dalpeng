@@ -8,10 +8,10 @@ import Sphere from "./Sphere";
 export default defineGameEntity(() => {
   withName("Group");
 
-  const transform = useComponent(Transform);
-  onUpdate(() => {
-    transform.rotate(vec3(0, 1, 0), 0.01 * Time.delta());
-  });
+  // const transform = useComponent(Transform)!;
+  // onUpdate(() => {
+  //   transform.rotate(vec3(0, 1, 0), 0.01 * Time.delta());
+  // });
 
   return [Box, Ground, Cylinder, Sphere];
 });
