@@ -1,6 +1,6 @@
-import type GameEntity from "@/entity/GameEntity";
+import type GameEntity from "@/ecs/GameEntity";
 import type GfxVertexArray from "@/gfx/VertexArray";
-import Transform from "../Transform";
+import Transform from "../ecs/Transform";
 import BaseRenderer from "./BaseRenderer";
 import Material from "./Material";
 import type Shader from "./Shader";

@@ -1,8 +1,8 @@
 import { vec3 } from "@dalpeng/math";
 import { describe, expect, it } from "vitest";
-import GameEntity from "../src/entity/GameEntity";
+import GameEntity from "../src/ecs/GameEntity";
 import Scene from "../src/Scene";
-import Transform from "../src/Transform";
+import Transform from "../src/ecs/Transform";
 
 describe("Scene helpers", () => {
   it("tracks tags across hierarchies and updates on change", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import GameEntity from "../src/entity/GameEntity";
-import Transform from "../src/Transform";
+import GameEntity from "../src/ecs/GameEntity";
+import Transform from "../src/ecs/Transform";
 
 describe("GameEntity component cache", () => {
   it("returns cached components without scanning global registries", () => {

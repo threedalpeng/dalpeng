@@ -1,4 +1,4 @@
-import Entity from "@/entity/Entity";
+import Entity from "@/ecs/Entity";
 import type Program from "@/gfx/Program";
 import type { RendererBackend } from "@/gfx/RendererBackend";
 import { isNil } from "@/utils/basic";
@@ -62,6 +62,9 @@ export default class Shader extends Entity {
   setUniformMat4(name: string, data: Float32List) {
     this.#program?.setUniformMat4(name, data);
   }
+  setUniformMat3(name: string, data: Float32List) {
+    this.#program?.setUniformMat3(name, data);
+  }
   setUniformVec3(name: string, data: Float32List) {
     this.#program?.setUniformVec3(name, data);
   }
@@ -73,6 +76,9 @@ export default class Shader extends Entity {
   }
   setUniform1i(name: string, v: number) {
     this.#program?.setUniform1i(name, v);
+  }
+  setUniformMat4Array(name: string, data: Float32Array, count: number) {
+    this.#program?.setUniformMat4Array(name, data, count);
   }
 
   static find(name: string) {

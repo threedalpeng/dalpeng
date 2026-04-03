@@ -1,3 +1,4 @@
+import type GfxTexture from "../Texture";
 import type { RenderTarget } from "../RenderTarget";
 
 export default class WebGL2RenderTarget implements RenderTarget {
@@ -5,6 +6,8 @@ export default class WebGL2RenderTarget implements RenderTarget {
     readonly gl: WebGL2RenderingContext,
     readonly fbo: WebGLFramebuffer,
     readonly width: number,
-    readonly height: number
+    readonly height: number,
+    readonly colorTextures?: ReadonlyArray<GfxTexture>,
+    readonly depthTexture?: GfxTexture,
   ) {}
 }

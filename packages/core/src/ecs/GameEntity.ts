@@ -1,6 +1,6 @@
-import Component, { type ComponentConstructor } from "../component/Component.js";
+import Component, { type ComponentConstructor } from "./Component.js";
 import type Scene from "../Scene.js";
-import Transform from "../Transform";
+import Transform from "./Transform";
 import Entity from "./Entity.js";
 
 export default class GameEntity extends Entity {

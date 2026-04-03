@@ -5,10 +5,18 @@ import { axisAngleDeepTest, mat4DeepTest, quaternionDeepTest, vec3DeepTest } fro
 const _1_0_0_90 = new Quaternion([0.7071068, 0, 0, 0.7071068]);
 
 describe("quaternion", () => {
-  test.todo("add", () => {});
-  test.todo("sub", () => {});
-  test.todo("scale", () => {});
-  test.todo("divScalar", () => {});
+  test("scale", () => {
+    quaternionDeepTest(
+      new Quaternion([1, 2, 3, 4]).scale(2),
+      new Quaternion([2, 4, 6, 8])
+    );
+  });
+  test("divScalar", () => {
+    quaternionDeepTest(
+      new Quaternion([2, 4, 6, 8]).divScalar(2),
+      new Quaternion([1, 2, 3, 4])
+    );
+  });
   test("mulv rotates vectors without extra allocation", () => {
     const q = Quaternion.fromAxisAngle(new Vec3([0, 1, 0]), Math.PI / 2);
     vec3DeepTest(q.mulv([0, 0, 1]), new Vec3([1, 0, 0]));

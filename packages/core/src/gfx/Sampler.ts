@@ -13,5 +13,7 @@ export interface SamplerDescriptor {
 
 export default interface GfxSampler {
   readonly desc: Required<SamplerDescriptor>;
+  bind?(unit: number): void;
+  unbind?(unit: number): void;
   dispose(): void;
 }

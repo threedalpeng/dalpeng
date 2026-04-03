@@ -1,6 +1,6 @@
-import Component from "@/component/Component";
-import GameEntity from "@/entity/GameEntity";
-import Transform from "@/Transform";
+import Component from "@/ecs/Component";
+import GameEntity from "@/ecs/GameEntity";
+import Transform from "@/ecs/Transform";
 import { type Mesh } from "@/utils/mesh";
 
 export default class BaseRenderer extends Component {

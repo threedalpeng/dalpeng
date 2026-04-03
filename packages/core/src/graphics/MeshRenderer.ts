@@ -1,6 +1,6 @@
-import type GameEntity from "@/entity/GameEntity";
+import type GameEntity from "@/ecs/GameEntity";
 import type GfxVertexArray from "@/gfx/VertexArray";
-import Transform from "../Transform";
+import Transform from "../ecs/Transform";
 import BaseRenderer from "./BaseRenderer";
 import Material from "./Material";
 import type Shader from "./Shader";
@@ -11,6 +11,7 @@ export default class MeshRenderer extends BaseRenderer {
   material = new Material();
   #vao!: GfxVertexArray;
   #shadowVao?: GfxVertexArray;
+  #indexType: "uint16" | "uint32" = "uint16";
 
   constructor(gameEntity: GameEntity) {
     super(gameEntity);
@@ -20,7 +21,6 @@ export default class MeshRenderer extends BaseRenderer {
 
   async setup() {
     super.setup();
-
     this.transform = this.getComponent(Transform)!;
     this.geometryShader = this.currentApp.shader.geometry;
     this.shadowShader = this.currentApp.shader.shadow;
@@ -46,9 +46,19 @@ export default class MeshRenderer extends BaseRenderer {
       this.#vao.setVertexBuffer(texcoordAttribLocation, texcoordBuffer, 2);
     }
 
+    // Optional tangent buffer (vec4: xyz + w handedness)
+    const tangentAttribLocation = this.geometryShader.getAttribLocation("aTangent");
+    if (tangentAttribLocation >= 0 && this.mesh.vertex.tangent) {
+      const tangentBuffer = renderer.createBuffer("vertex");
+      tangentBuffer.update(this.mesh.vertex.tangent);
+      this.#vao.setVertexBuffer(tangentAttribLocation, tangentBuffer, 4);
+      this.material.hasTangent = true;
+    }
+
     const indexBuffer = renderer.createBuffer("index");
     indexBuffer.update(this.mesh.index);
     this.#vao.setIndexBuffer(indexBuffer);
+    this.#indexType = this.mesh.index instanceof Uint32Array ? "uint32" : "uint16";
 
     // Optional second VAO for shadow program (attribute locations may differ)
     if (this.shadowShader) {
@@ -71,11 +81,70 @@ export default class MeshRenderer extends BaseRenderer {
     this.geometryShader.setUniform1f("uRoughness", this.material.roughness);
     this.geometryShader.setUniformVec3("uEmissive", this.material.emissive);
 
+    // Alpha mode
+    this.geometryShader.setUniform1i("uAlphaMode", this.material.alphaMode === "MASK" ? 1 : 0);
+    this.geometryShader.setUniform1f("uAlphaCutoff", this.material.alphaCutoff);
+
+    // Unlit
+    this.geometryShader.setUniform1i("uUnlit", this.material.unlit ? 1 : 0);
+
+    // Occlusion strength
+    this.geometryShader.setUniform1f("uOcclusionStrength", this.material.occlusionStrength);
+
+    // Texture transform (KHR_texture_transform)
+    this.geometryShader.setUniformMat3("uTexTransform", this.material.texTransform);
+
+    // Texture flags: apply texture mask to bits 0-3, preserve HAS_TANGENT (bit 4) and OCCLUSION (bit 5) unconditionally
+    const texMask = this.currentApp.features.textureMask ?? 0xF;
+    const maskedTexBits = this.material.texFlags & texMask & 0xF;
+    const keepBits = this.material.texFlags & ~0xF; // bits 4+ (HAS_TANGENT, OCCLUSION)
+    this.geometryShader.setUniform1i("uTexFlags", maskedTexBits | keepBits);
+
+    // Bind textures (or placeholder if null)
+    const textures = this.currentApp.textures;
+    const placeholder = textures.placeholder;
+    const sampler = textures.defaultSampler;
+
+    const baseColorTex = this.material.baseColorMap ?? placeholder;
+    const normalTex = this.material.normalMap ?? placeholder;
+    const mrTex = this.material.metallicRoughnessMap ?? placeholder;
+    const emissiveTex = this.material.emissiveMap ?? placeholder;
+    const occlusionTex = this.material.occlusionMap ?? placeholder;
+
+    baseColorTex.bind!(0);
+    normalTex.bind!(1);
+    mrTex.bind!(2);
+    emissiveTex.bind!(3);
+    occlusionTex.bind!(4);
+
+    sampler.bind!(0);
+    sampler.bind!(1);
+    sampler.bind!(2);
+    sampler.bind!(3);
+    sampler.bind!(4);
+
+    // doubleSided: disable cull face for this draw call
+    if (this.material.doubleSided) {
+      this.currentApp.renderer.setCullFace?.(false);
+    }
+
     this.currentApp.renderer.drawIndexed(this.#vao, {
       count: this.mesh.index.length,
-      type: "uint16",
+      type: this.#indexType,
       mode: "triangles",
     });
+
+    // Restore cull face
+    if (this.material.doubleSided) {
+      this.currentApp.renderer.setCullFace?.(true);
+    }
+
+    // Unbind samplers to avoid contaminating lighting pass
+    sampler.unbind!(0);
+    sampler.unbind!(1);
+    sampler.unbind!(2);
+    sampler.unbind!(3);
+    sampler.unbind!(4);
   }
 
   renderShadow(lightViewProj: import("@dalpeng/math").Mat4) {
@@ -84,7 +153,7 @@ export default class MeshRenderer extends BaseRenderer {
     this.shadowShader.setUniformMat4("uLightViewProj", lightViewProj);
     this.currentApp.renderer.drawIndexed(this.#shadowVao, {
       count: this.mesh.index.length,
-      type: "uint16",
+      type: this.#indexType,
       mode: "triangles",
     });
   }

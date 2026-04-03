@@ -1,5 +1,5 @@
-import Entity from "../entity/Entity.js";
-import type GameEntity from "../entity/GameEntity.js";
+import Entity from "./Entity.js";
+import type GameEntity from "./GameEntity.js";
 import { isNil } from "../utils/basic.js";
 
 // ─── Component Base Class ─────────────────────────────────────────────────────

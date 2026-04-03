@@ -1,6 +1,8 @@
 import type Application from "@/Application";
+import type FrameResources from "@/rendering/FrameResources";
 import Light from "@/graphics/Light";
 import MeshRenderer from "@/graphics/MeshRenderer";
+import SkinnedMeshRenderer from "@/graphics/SkinnedMeshRenderer";
 import { Mat4, Vec3 } from "@dalpeng/math";
 
 /** Directional shadow system using scene-based auto-fitting. */
@@ -8,7 +10,7 @@ export default class DirectionalShadowSystem {
   private lastLightVP: Mat4 | null = null;
   private shadowCaster: Light | null = null;
 
-  async update(app: Application) {
+  update(app: Application, resources: FrameResources) {
     if (!app.features.shadows) {
       this.shadowCaster = null;
       this.lastLightVP = null;
@@ -16,7 +18,7 @@ export default class DirectionalShadowSystem {
     }
 
     let dirLight: Light | undefined;
-    await app.forEachActiveComponent(Light, (l) => {
+    app.forEachActiveComponent(Light, (l) => {
       if (!dirLight && l.type === "directional") dirLight = l;
     });
     if (!dirLight) {
@@ -28,7 +30,18 @@ export default class DirectionalShadowSystem {
     // --- Compute scene bounds from shadow casters ---
     const positions: Vec3[] = [];
     const extents: number[] = [];
-    await app.forEachActiveComponent(MeshRenderer, (renderer) => {
+    app.forEachActiveComponent(MeshRenderer, (renderer) => {
+      const pos = renderer.transform.worldPosition;
+      // World-space scale extracted from model matrix columns
+      const m = renderer.transform.modelMatrix;
+      const sx = Math.hypot(m[0], m[1], m[2]);
+      const sy = Math.hypot(m[4], m[5], m[6]);
+      const sz = Math.hypot(m[8], m[9], m[10]);
+      // Bounding sphere radius for a transformed unit mesh
+      extents.push(0.5 * Math.sqrt(sx * sx + sy * sy + sz * sz));
+      positions.push(pos);
+    });
+    app.forEachActiveComponent(SkinnedMeshRenderer, (renderer) => {
       const pos = renderer.transform.worldPosition;
       // World-space scale extracted from model matrix columns
       const m = renderer.transform.modelMatrix;
@@ -84,23 +97,41 @@ export default class DirectionalShadowSystem {
 
     // --- Orthographic projection (symmetric, covers bounding sphere) ---
     const ortho = Mat4.orthographic(radius, radius, padding, 2 * radius + padding);
-    const lightVP = ortho.mul(view); // P * V
+    const lightVP = Mat4.toWebGL(ortho).mul(view); // P * V
     this.lastLightVP = lightVP;
 
     // --- Render shadow map ---
+    const renderer = app.renderer;
+    resources.ensureShadow(renderer, mapSize);
+
     app.shader.shadow.use();
     app.shader.shadow.setUniformMat4("uLightViewProj", lightVP);
-    app.renderer.beginShadowPass?.(mapSize, {
-      offsetFactor: app.features.shadowOffsetFactor,
-      offsetUnits: app.features.shadowOffsetUnits,
+
+    renderer.beginPass({
+      target: resources.shadow!.rt,
+      depthTest: true,
+      depthWrite: true,
+      blend: { enable: false },
+      clearDepth: 1,
+      colorWrite: false,
+      polygonOffset: {
+        factor: app.features.shadowOffsetFactor ?? 1.1,
+        units: app.features.shadowOffsetUnits ?? 4.0,
+      },
+      viewport: { x: 0, y: 0, w: mapSize, h: mapSize },
     });
-    await app.forEachActiveComponent(MeshRenderer, (renderer) => {
-      renderer.renderShadow(lightVP);
+
+    app.forEachActiveComponent(MeshRenderer, (meshRenderer) => {
+      meshRenderer.renderShadow(lightVP);
     });
-    app.renderer.endShadowPass?.();
+    app.forEachActiveComponent(SkinnedMeshRenderer, (meshRenderer) => {
+      meshRenderer.renderShadow(lightVP);
+    });
+
+    renderer.endPass();
   }
 
-  bindForLight(app: Application, light: Light) {
+  bindForLight(app: Application, light: Light, resources: FrameResources) {
     const shader = app.shader.lighting;
     const shadowUnit = 4;
 
@@ -108,10 +139,15 @@ export default class DirectionalShadowSystem {
     shader.setUniform1f("uShadowStrength", 0.0);
     shader.setUniform1i("uShadowMapDepth", shadowUnit);
 
-    if (!app.features.shadows || !this.lastLightVP || !app.renderer.hasShadowMap?.()) return;
+    if (!app.features.shadows || !this.lastLightVP || !resources.shadow) {
+      // Bind a valid placeholder texture so the sampler on unit 4 doesn't
+      // cause WebGL to silently drop the lighting draw call.
+      app.textures.placeholder.bind(shadowUnit);
+      return;
+    }
     if (light !== this.shadowCaster) return;
 
-    app.renderer.bindShadowMap?.(shadowUnit);
+    resources.shadow.depth.bind(shadowUnit);
     shader.setUniformMat4("uLightViewProj", this.lastLightVP);
     shader.setUniform1f("uShadowBias", app.features.shadowBias ?? 0.005);
     shader.setUniform1f(

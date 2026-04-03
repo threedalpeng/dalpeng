@@ -1,4 +1,4 @@
-import Component from "./component/Component";
+import Component from "./Component";
 
 export default class Script extends Component {
   #hasStarted = false;
@@ -42,5 +42,8 @@ export default class Script extends Component {
   }
   update() {
     this.emit("update");
+  }
+  lateUpdate() {
+    this.emit("lateUpdate");
   }
 }

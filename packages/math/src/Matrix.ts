@@ -533,7 +533,21 @@ export class Mat4 extends Float32Array {
     ]);
   }
   static compose(translation: Float32List, rotation: Quaternion, scale: Float32List) {
-    return Mat4.translate(translation).mul(Mat4.rotate(rotation)).mul(Mat4.scale(scale));
+    const qx = rotation[0], qy = rotation[1], qz = rotation[2], qw = rotation[3];
+    const sx = scale[0], sy = scale[1], sz = scale[2];
+
+    const x2 = qx * qx, y2 = qy * qy, z2 = qz * qz;
+    const xy = qx * qy, xz = qx * qz, yz = qy * qz;
+    const xw = qx * qw, yw = qy * qw, zw = qz * qw;
+
+    // TRS = T * R * S (column-major): each rotation column scaled by s[j], translation in col 3
+    // prettier-ignore
+    return new Mat4([
+      (1 - 2 * (y2 + z2)) * sx,  (2 * (xy + zw)) * sx,      (2 * (xz - yw)) * sx,      0,
+      (2 * (xy - zw)) * sy,      (1 - 2 * (x2 + z2)) * sy,  (2 * (yz + xw)) * sy,      0,
+      (2 * (xz + yw)) * sz,      (2 * (yz - xw)) * sz,      (1 - 2 * (x2 + y2)) * sz,  0,
+      translation[0],             translation[1],             translation[2],             1,
+    ]);
   }
 
   static fromAxisAngle(axis: Float32List, angle: number) {
@@ -569,18 +583,18 @@ export class Mat4 extends Float32Array {
   static orthographic(xmag: number, ymag: number, znear: number, zfar: number) {
     // prettier-ignore
     return new Mat4([
-      1 / xmag, 0,        0,                                0,
-      0,        1 / ymag, 0,                                0,
-      0,        0,        2 / (znear - zfar),               0,
-      0,        0,        (znear + zfar) / (znear - zfar),  1,
+      1 / xmag, 0,        0,                          0,
+      0,        1 / ymag, 0,                          0,
+      0,        0,        1 / (znear - zfar),         0,
+      0,        0,        znear / (znear - zfar),     1,
     ]);
   }
 
   static perspective(fovy: number, aspect: number, dnear: number, dfar: number) {
     const _11 = 1 / Math.tan(fovy / 2.0);
     const _00 = _11 / aspect;
-    const _22 = (dnear + dfar) / (dnear - dfar);
-    const _23 = (2 * dnear * dfar) / (dnear - dfar);
+    const _22 = dfar / (dnear - dfar);
+    const _23 = (dnear * dfar) / (dnear - dfar);
 
     // prettier-ignore
     return new Mat4([
@@ -589,5 +603,17 @@ export class Mat4 extends Float32Array {
       0,    0,    _22,  -1,
       0,    0,    _23,  0
     ]);
+  }
+
+  /**
+   * Convert a [0,1] NDC-Z projection matrix to OpenGL [-1,1] NDC-Z.
+   * For each column c: out[c*4+2] = 2*p[c*4+2] - p[c*4+3]
+   */
+  static toWebGL(p: Mat4): Mat4 {
+    const m = new Float32Array(p);
+    for (let c = 0; c < 4; c++) {
+      m[c * 4 + 2] = 2 * p[c * 4 + 2] - p[c * 4 + 3];
+    }
+    return new Mat4(m);
   }
 }

@@ -3,8 +3,9 @@ export interface Mesh {
     position: Float32Array;
     normal: Float32Array;
     texcoord: Float32Array;
+    tangent?: Float32Array;           // NEW: vec4 per vertex (optional)
   };
-  index: Uint16Array;
+  index: Uint16Array | Uint32Array;   // CHANGED: was Uint16Array only
 }
 
 export default class MeshBuilder {

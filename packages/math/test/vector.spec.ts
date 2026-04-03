@@ -130,25 +130,25 @@ describe("Vector", () => {
       vec4DeepTest(vec4_i2.scale(5.7), new Vec4([17.1, -22.8, 28.5, 11.4]));
       vec4DeepTest(vec4_f1.scale(-7.3), new Vec4([9.6652, -18.5858, -6.7233, -26.1413]));
     });
-    test.todo("dot", () => {
-      expect(vec4_i1.dot(vec4_i2)).toBeCloseTo(4);
-      expect(vec4_i1.dot(vec4_f1)).toBeCloseTo(2.143);
-      expect(vec4_f1.dot(vec4_f2)).toBeCloseTo(-23.814263);
+    test("dot", () => {
+      expect(vec4_i1.dot(vec4_i2)).toBeCloseTo(6);
+      expect(vec4_i1.dot(vec4_f1)).toBeCloseTo(5.724);
+      expect(vec4_f1.dot(vec4_f2)).toBeCloseTo(-38.138263);
     });
-    test.todo("size", () => {
-      expect(vec4_i1.size()).toBeCloseTo(Math.sqrt(3));
-      expect(vec4_i2.size()).toBeCloseTo(Math.sqrt(50));
-      expect(vec4_f1.size()).toBeCloseTo(Math.sqrt(9.083333));
+    test("size", () => {
+      expect(vec4_i1.size()).toBeCloseTo(Math.sqrt(4));
+      expect(vec4_i2.size()).toBeCloseTo(Math.sqrt(54));
+      expect(vec4_f1.size()).toBeCloseTo(Math.sqrt(21.906894));
     });
-    test.todo("sizeSq", () => {
-      expect(vec4_i1.sizeSq()).toBeCloseTo(3);
-      expect(vec4_i2.sizeSq()).toBeCloseTo(50);
-      expect(vec4_f1.sizeSq()).toBeCloseTo(9.083333);
+    test("sizeSq", () => {
+      expect(vec4_i1.sizeSq()).toBeCloseTo(4);
+      expect(vec4_i2.sizeSq()).toBeCloseTo(54);
+      expect(vec4_f1.sizeSq()).toBeCloseTo(21.906894);
     });
-    test.todo("normalize", () => {
-      vec4DeepTest(vec4_i1.normalize(), new Vec4([0.57735, 0.57735, 0.57735]));
-      vec4DeepTest(vec4_i2.normalize(), new Vec4([0.424264, -0.565685, 0.707106]));
-      vec4DeepTest(vec4_f1.normalize(), new Vec4([-0.439304, 0.844764, 0.305588]));
+    test("normalize", () => {
+      vec4DeepTest(vec4_i1.normalize(), new Vec4([0.5, 0.5, 0.5, 0.5]));
+      vec4DeepTest(vec4_i2.normalize(), new Vec4([0.408248, -0.544331, 0.680414, 0.272166]));
+      vec4DeepTest(vec4_f1.normalize(), new Vec4([-0.282888, 0.543989, 0.196778, 0.765118]));
     });
     test("normalize returns zero for zero-length vectors", () => {
       vec4DeepTest(new Vec4([0, 0, 0, 0]).normalize(), Vec4.zero());

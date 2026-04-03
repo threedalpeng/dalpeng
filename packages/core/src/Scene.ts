@@ -1,7 +1,7 @@
 import { Vec3 } from "@dalpeng/math";
 import type Application from "./Application";
-import Transform from "./Transform";
-import type GameEntity from "./entity/GameEntity";
+import Transform from "./ecs/Transform";
+import type GameEntity from "./ecs/GameEntity";
 
 export default class Scene {
   // ─── Scene Identity ────────────────────────────────────────────────────────

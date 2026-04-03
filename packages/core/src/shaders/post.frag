@@ -4,6 +4,7 @@ precision highp float;
 uniform sampler2D uLighting;
 uniform float uExposure;
 uniform float uGamma;
+uniform int uToneMap;        // 0: gamma only (bypass Reinhard), 1: full tone mapping
 
 // Bloom
 uniform int uEnableBloom;
@@ -18,13 +19,22 @@ void main() {
   ivec2 fragCoord = ivec2(gl_FragCoord.xy);
   vec3 color = texelFetch(uLighting, fragCoord, 0).rgb;
 
-  // Add bloom contribution (bloom texture is half-res, sample with bilinear filtering via UV)
   if (uEnableBloom == 1) {
-    vec2 bloomSize = vec2(textureSize(uBloom, 0));
-    vec2 bloomUV = gl_FragCoord.xy / (bloomSize * 2.0);
-    color += texture(uBloom, bloomUV).rgb * uBloomIntensity;
+    ivec2 bloomSize = textureSize(uBloom, 0);
+    if (bloomSize.x > 0 && bloomSize.y > 0) {
+      vec2 bloomUV = gl_FragCoord.xy / (vec2(bloomSize) * 2.0);
+      color += texture(uBloom, bloomUV).rgb * uBloomIntensity;
+    }
   }
 
-  vec3 mapped = tonemapReinhard(color * max(uExposure, 0.0));
+  // Clamp to non-negative: pow(negative, fractional) is undefined in GLSL → NaN → black
+  color = max(color, vec3(0.0));
+
+  vec3 mapped;
+  if (uToneMap == 1) {
+    mapped = tonemapReinhard(color * max(uExposure, 0.0));
+  } else {
+    mapped = color;
+  }
   outColor = vec4(pow(mapped, vec3(1.0 / max(uGamma, 1e-6))), 1.0);
 }

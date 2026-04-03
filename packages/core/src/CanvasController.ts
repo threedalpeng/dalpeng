@@ -122,6 +122,7 @@ export default class CanvasController {
     canvas.style.width = cssW + "px";
     canvas.style.height = cssH + "px";
     canvas.style.display = "block";
+    canvas.style.outline = "none";
 
     // Center canvas in parent via flexbox
     parent.style.display = "flex";

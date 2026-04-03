@@ -1,7 +1,7 @@
 import { Vec3, vec3 } from "@dalpeng/math";
 import { describe, expect, it } from "vitest";
-import GameEntity from "../src/entity/GameEntity";
-import Transform from "../src/Transform";
+import GameEntity from "../src/ecs/GameEntity";
+import Transform from "../src/ecs/Transform";
 
 function nearly(a: number, b: number, eps = 1e-3) {
   return Math.abs(a - b) <= eps;

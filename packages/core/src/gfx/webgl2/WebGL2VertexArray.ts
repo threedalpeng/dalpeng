@@ -64,6 +64,29 @@ export default class WebGL2VertexArray implements GfxVertexArray {
     this.unbind();
   }
 
+  setVertexBufferInteger(
+    location: number,
+    buffer: GfxBuffer,
+    size: number,
+    componentType: 'ubyte' | 'ushort',
+    options?: { stride?: number; offset?: number }
+  ): void {
+    const gl = this.#gl;
+    const buf = buffer as WebGL2Buffer;
+    this.bind();
+    gl.bindBuffer(gl.ARRAY_BUFFER, (buf as any)._glBuffer);
+    gl.enableVertexAttribArray(location);
+    const glType = componentType === 'ubyte' ? gl.UNSIGNED_BYTE : gl.UNSIGNED_SHORT;
+    gl.vertexAttribIPointer(
+      location,
+      size,
+      glType,
+      options?.stride ?? 0,
+      options?.offset ?? 0
+    );
+    this.unbind();
+  }
+
   setIndexBuffer(buffer: GfxBuffer): void {
     const gl = this.#gl;
     const buf = buffer as WebGL2Buffer;

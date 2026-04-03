@@ -1,34 +1,27 @@
 import CanvasController from "./CanvasController";
 import type { CanvasOptions } from "./CanvasOptions";
-import Component, { type ComponentConstructor } from "./component/Component";
-import type GameEntity from "./entity/GameEntity";
+import Component, { type ComponentConstructor } from "./ecs/Component";
+import type GameEntity from "./ecs/GameEntity";
 import type { RendererBackend } from "./gfx/RendererBackend";
-import type GfxBuffer from "./gfx/Buffer";
-import type GfxVertexArray from "./gfx/VertexArray";
 import WebGL2Renderer from "./gfx/webgl2/WebGL2Renderer";
 import Camera from "./graphics/Camera";
-import Light from "./graphics/Light";
-import MeshRenderer from "./graphics/MeshRenderer";
 import ParticleEmitter from "./graphics/ParticleEmitter";
 import Shader from "./graphics/Shader";
-import DirectionalShadowSystem from "./graphics/shadows/DirectionalShadow";
-import SpriteRenderer from "./graphics/SpriteRenderer";
 import View from "./graphics/View";
-import Input from "./Input";
-import PostProcessing from "./PostProcessing";
-import TweenManager from "./TweenManager";
-import AudioManager from "./AudioManager";
+import InputManager from "./InputManager";
 import type { RenderConfig } from "./RenderConfig";
+import RenderPipeline from "./rendering/RenderPipeline";
 import type Scene from "./Scene";
-import Script from "./Script";
-import gbuffrag from "./shaders/gbuf.frag?raw";
-import gbufvert from "./shaders/gbuf.vert?raw";
-import mainfrag from "./shaders/main.frag?raw";
-import mainvert from "./shaders/main.vert?raw";
+import Script from "./ecs/Script";
 import Time from "./Time";
-import Transform from "./Transform";
+import Transform from "./ecs/Transform";
+import Animator from "./animation/Animator";
+import TweenManager from "./animation/TweenManager";
+import AudioManager from "./audio/AudioManager";
+import TextureManager from "./asset/TextureManager";
+import ModelManager from "./asset/ModelManager";
 import { isNil } from "./utils/basic";
-import { dummyQuadForLight } from "./utils/mesh";
+import { FrameProfiler } from "./debug";
 
 export default class Application {
   // ─── App Self-Management ───────────────────────────────────────────────────
@@ -67,7 +60,7 @@ export default class Application {
   // Tracks active component sets and dirty transforms per frame.
   activeComponents = new Map<string, Set<Component>>();
   #dirtyTransforms = new Set<Transform>();
-  async forEachActiveComponent<Type extends Component>(
+  forEachActiveComponent<Type extends Component>(
     type: ComponentConstructor<Type>,
     callback: (component: Type) => void
   ) {
@@ -75,8 +68,7 @@ export default class Application {
     if (components === undefined) {
       return;
     }
-    const snapshot = Array.from(components);
-    for (const component of snapshot) {
+    for (const component of components) {
       callback(component);
     }
   }
@@ -85,44 +77,68 @@ export default class Application {
   }
   #processDirtyTransforms() {
     if (this.#dirtyTransforms.size === 0) return;
-    const dirty = Array.from(this.#dirtyTransforms);
-    this.#dirtyTransforms.clear();
-    dirty.forEach((transform) => transform.checkModelMatrixToBeUpdated());
+    const batch = this.#dirtyTransforms;
+    this.#dirtyTransforms = new Set<Transform>();
+    for (const transform of batch) transform.checkModelMatrixToBeUpdated();
   }
 
   // ─── Script Management ─────────────────────────────────────────────────────
   // Iterates active scripts for setup, update, and fixed-update phases.
   activeScripts = new Map<number, Script>();
-  async forEachActiveScript(callback: (component: Script) => void) {
-    const snapshot = Array.from(this.activeScripts.values());
-    for (const script of snapshot) {
+  forEachActiveScript(callback: (component: Script) => void) {
+    for (const script of this.activeScripts.values()) {
       callback(script);
     }
   }
 
   // ─── Graphic Context ───────────────────────────────────────────────────────
-  // Graphics context (backend-specific)
   renderer: RendererBackend = new WebGL2Renderer();
   features: RenderConfig = {
     postToneMapping: false,
   };
+  watchFeature?: (key: string, cb: (val: any, old: any) => void) => () => void;
 
-  private _shadowSys: DirectionalShadowSystem | null = null;
+  pipeline = new RenderPipeline();
   canvasController = new CanvasController();
-  postProcessing = new PostProcessing();
   tweens = new TweenManager();
   audio = new AudioManager();
-  #particleQuadVao: GfxVertexArray | null = null;
-  #particleQuadVbo: GfxBuffer | null = null;
-  #particleInstanceVbo: GfxBuffer | null = null;
+  input = new InputManager();
+  textures = new TextureManager();
+  models = new ModelManager();
+
+  /** Proxy — components access shaders via `this.currentApp.shader.geometry` etc. */
+  get shader() {
+    return this.pipeline.shader;
+  }
+  /** Proxy — Light.renderLight() reads the shared lighting quad. */
+  get lightingQuad() {
+    return this.pipeline.lightingQuad;
+  }
 
   useRenderer(renderer: RendererBackend) {
     this.renderer = renderer;
     return this;
   }
 
+  /** Bulk-set render features. Useful for runtime reconfiguration. */
+  configure(features: Partial<RenderConfig>): this {
+    Object.assign(this.features, features);
+    return this;
+  }
+
+  /** Load an HDR environment map for IBL. Can be called after mount(). */
+  async loadIBL(hdrUrl: string): Promise<void> {
+    this.features.iblHdrUrl = hdrUrl;
+    await this.pipeline.initIBL(this.renderer, hdrUrl);
+  }
+
   get isContextReady() {
     return this.renderer.isReady();
+  }
+
+  registerShader(shader: Shader) {
+    shader.bindBackend(this.renderer);
+    return this;
   }
 
   // ─── Mount & Render Loop ───────────────────────────────────────────────────
@@ -138,63 +154,32 @@ export default class Application {
 
     // Initialize renderer backend (creates context and G-Buffer at correct size)
     await this.renderer.init(canvas);
-    this._shadowSys = new DirectionalShadowSystem();
 
     // Bind CanvasController to renderer for ongoing resize events
     this.canvasController.mount(canvas, this.renderer);
 
-    this.registerShader(this.shader.geometry);
-    this.registerShader(this.shader.lighting);
-    this.registerShader(this.shader.post);
-    this.registerShader(this.shader.shadow);
-    this.registerShader(this.shader.bloomBright);
-    this.registerShader(this.shader.bloomBlur);
-    this.registerShader(this.shader.particle);
+    // Initialize render pipeline (shaders, shadow system, GPU resources)
+    await this.pipeline.init(this.renderer);
 
-    await Promise.allSettled([
-      this.shader.geometry.loadFrom(gbufvert, gbuffrag),
-      this.shader.lighting.loadFrom(mainvert, mainfrag),
-      this.shader.post.loadFrom(mainvert, (await import("./shaders/post.frag?raw")).default),
-      this.shader.shadow.loadFrom(
-        (await import("./shaders/shadow.vert?raw")).default,
-        (await import("./shaders/shadow.frag?raw")).default
-      ),
-    ]);
+    // IBL precompute (if HDR URL is configured)
+    if (this.features.iblHdrUrl) {
+      await this.pipeline.initIBL(this.renderer, this.features.iblHdrUrl);
+    }
 
-    // Load bloom & particle shaders
-    await Promise.allSettled([
-      this.shader.bloomBright.loadFrom(mainvert, (await import("./shaders/bloom_bright.frag?raw")).default),
-      this.shader.bloomBlur.loadFrom(mainvert, (await import("./shaders/bloom_blur.frag?raw")).default),
-      this.shader.particle.loadFrom(
-        (await import("./shaders/particle.vert?raw")).default,
-        (await import("./shaders/particle.frag?raw")).default
-      ),
-    ]);
+    // Initialize texture manager (placeholder texture, default sampler)
+    this.textures.init(this.renderer);
 
-    // Set G-Buffer sampler uniforms once (texture units are constant)
-    this.shader.lighting.use();
-    this.shader.lighting.setUniform1i("gPositionMetallic", 0);
-    this.shader.lighting.setUniform1i("gNormalRoughness", 1);
-    this.shader.lighting.setUniform1i("gAlbedo", 2);
-    this.shader.lighting.setUniform1i("gEmissive", 3);
-
-    // Create shared fullscreen quad for lighting pass
-    const lightingPosLoc = this.shader.lighting.getAttribLocation("aPosition");
-    this.lightingQuad = this.renderer.createVertexArray();
-    const lightingQuadBuf = this.renderer.createBuffer("vertex");
-    lightingQuadBuf.update(dummyQuadForLight());
-    this.lightingQuad.setVertexBuffer(lightingPosLoc, lightingQuadBuf, 3);
+    // Initialize model manager
+    this.models.init(this.renderer);
 
     canvas.setAttribute("tabindex", "0");
     canvas.focus();
     canvas.addEventListener("click", () => {
       canvas.focus();
     });
-    Input.supportedEventList.forEach((event) => {
-      canvas.addEventListener(event, Input.handleEvent);
-    });
+    this.input.bind(canvas);
 
-    if (await Application.shouldRun()) {
+    if (Application.shouldRun()) {
       Application.run();
     }
 
@@ -208,7 +193,7 @@ export default class Application {
   async run(canvas: HTMLCanvasElement, options?: CanvasOptions) {
     if (options) this.setCanvasOptions(options);
     await this.mount(canvas);
-    await this.start();
+    this.start();
     return this;
   }
   async runOn(target: HTMLCanvasElement | string, options?: CanvasOptions) {
@@ -231,22 +216,6 @@ export default class Application {
     return this;
   }
 
-  /* Resource Management */
-  registerShader(shader: Shader) {
-    shader.bindBackend(this.renderer);
-    return this;
-  }
-  shader = {
-    geometry: new Shader(),
-    lighting: new Shader(),
-    post: new Shader(),
-    shadow: new Shader(),
-    bloomBright: new Shader(),
-    bloomBlur: new Shader(),
-    particle: new Shader(),
-  };
-  lightingQuad!: GfxVertexArray;
-
   // ─── Runtime Lifecycle ──────────────────────────────────────────────────────
   // Deferred spawn/destroy queue, flushed between update and render.
   #pendingStarts = new Set<Script>();
@@ -265,8 +234,8 @@ export default class Application {
 
   #flushPendingStarts() {
     if (this.#pendingStarts.size === 0) return;
-    const pending = Array.from(this.#pendingStarts);
-    this.#pendingStarts.clear();
+    const pending = this.#pendingStarts;
+    this.#pendingStarts = new Set<Script>();
     for (const script of pending) {
       script._markStarted();
       script.onStart();
@@ -340,33 +309,56 @@ export default class Application {
   static #activeInstances = new Map<number, Application>();
   static #instanceEvents: (() => any)[] = [];
   state: "new" | "ready" | "running" = "new";
-  async start() {
+  start() {
     Application.#activeInstances.set(this.#id, this);
-    Application.#instanceEvents.push(async () => {
+    Application.#instanceEvents.push(() => {
       if (this.state === "new") {
-        await this.#setup();
+        this.#setup();
       }
       this.state = "running";
     });
-    if (await Application.shouldRun()) {
+    if (Application.shouldRun()) {
       Application.run();
     }
   }
-  async stop() {
+  stop() {
     Application.#activeInstances.delete(this.#id);
-    Application.#instanceEvents.push(async () => {
+    Application.#instanceEvents.push(() => {
       if (this.state === "running") {
         this.state = "ready";
       }
     });
   }
-  static async processInstanceEvents() {
+
+  dispose() {
+    this.stop();
+
+    // Destroy all entities in all scenes
+    for (const [, scene] of this.#sceneList) {
+      for (const entityId of Object.keys(scene.rootEntities)) {
+        this.#executeDestroy(scene.rootEntities[Number(entityId)]);
+      }
+    }
+    this.#sceneList.clear();
+    this.activeComponents.clear();
+    this.activeScripts.clear();
+    this.#pendingStarts.clear();
+    this.#lifecycleQueue.length = 0;
+    this.#dirtyTransforms.clear();
+
+    this.input.unbind();
+
+    Application.instanceList.delete(this.#id);
+    Application.#activeInstances.delete(this.#id);
+    this.state = "new";
+  }
+  static processInstanceEvents() {
     this.#instanceEvents.forEach((event) => {
       event();
     });
     this.#instanceEvents = [];
   }
-  static async shouldRun() {
+  static shouldRun() {
     const checkIfActiveInstancesExist = () => {
       return this.#activeInstances.size !== 0;
     };
@@ -387,180 +379,82 @@ export default class Application {
     Time._setFixedUpdateRate(60);
     Time._setup();
 
-    const loop: FrameRequestCallback = async (t) => {
-      await this.processInstanceEvents();
+    const loop: FrameRequestCallback = (t) => {
+      this.processInstanceEvents();
       if (this.shouldQuit()) return;
 
       Time._updateDelta(t);
-      Input.poll();
+      this.forEachActive((app) => app.input.poll());
 
-      await this.forEachActive((app) => app.#flushPendingStarts());
+      // onStart for scripts pending from setup or previous-frame spawns
+      this.forEachActive((app) => app.#flushPendingStarts());
 
+      // Fixed timestep updates (physics, deterministic logic)
       while (Time._needsFixedUpdate()) {
-        await this.forEachActive((app) => app.#fixedUpdate());
+        this.forEachActive((app) => app.#fixedUpdate());
       }
-      await this.forEachActive((app) => app.#update());
 
-      await this.forEachActive((app) => app.#flushLifecycleQueue());
+      // Variable-rate update (game logic, animation, particles)
+      this.forEachActive((app) => app.#update());
 
-      await this.forEachActive((app) => app.#render());
+      // Late update (camera follow, UI tracking — after all movement)
+      this.forEachActive((app) => app.#lateUpdate());
+
+      // Process deferred spawn/destroy
+      this.forEachActive((app) => app.#flushLifecycleQueue());
+      // Immediate onStart for just-spawned entities (render-ready this frame)
+      this.forEachActive((app) => app.#flushPendingStarts());
+
+      // Sync transforms + camera matrices (once per frame, after all movement)
+      this.forEachActive((app) => app.#preRender());
+
+      this.forEachActive((app) => app.#render());
 
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
   }
 
-  async #setup() {
-    this.#processDirtyTransforms();
+  #setup() {
     this.activeComponents.forEach((components) =>
       components.forEach((component) => component.setup())
     );
-    this.forEachActiveScript((script) => script.setup());
+    this.forEachActiveScript((script) => {
+      script.setup();
+      this.#pendingStarts.add(script);
+    });
   }
 
-  async #fixedUpdate() {
+  #fixedUpdate() {
     this.forEachActiveScript((script) => script.fixedUpdate());
   }
-  async #update() {
-    this.#processDirtyTransforms();
-    await this.forEachActiveComponent(Camera, (camera) => camera.update());
-    await this.forEachActiveScript((script) => script.update());
+
+  #update() {
+    this.forEachActiveComponent(Animator, (anim) => anim.tick(Time.delta() / 1000));
+    this.forEachActiveScript((script) => script.update());
     this.tweens.update(Time.delta());
+    this.forEachActiveComponent(ParticleEmitter, (emitter) => emitter.tick(Time.delta()));
   }
 
-  async #render() {
-    const { width, height } = this.renderer.getDrawableSize();
-    this.renderer.setViewport(0, 0, width, height);
-
-    // Directional shadow system
-    await this._shadowSys?.update(this);
-
-    this.shader.geometry.use();
-    this.renderer.beginGeometryPass();
-    if (this.features.debugGLVerbose) {
-      this.renderer.debugDumpState?.("after beginGeometryPass");
-      this.renderer.debugCheckError?.("after beginGeometryPass");
-    }
-
-    await this.forEachActiveComponent(Camera, (camera) => {
-      camera.renderCameraToGeometry();
-    });
-    await this.forEachActiveComponent(MeshRenderer, (renderer) => {
-      renderer.render();
-    });
-    await this.forEachActiveComponent(SpriteRenderer, (renderer) => {
-      renderer.render();
-    });
-    this.renderer.endGeometryPass();
-    if (this.features.debugGLVerbose) this.renderer.debugCheckError?.("after endGeometryPass");
-
-    this.shader.lighting.use();
-    this.renderer.beginLightingPass({ postToneMapping: this.features.postToneMapping });
-    if (this.features.debugGLVerbose) {
-      this.renderer.debugDumpState?.("after beginLightingPass");
-      this.renderer.debugCheckError?.("after beginLightingPass");
-    }
-
-    // If post-processing is enabled, keep lighting buffer in linear (no gamma here)
-    this.shader.lighting.setUniform1i("uApplyGamma", this.features.postToneMapping ? 0 : 1);
-    this.shader.lighting.setUniform1f("uGamma", this.features.toneGamma ?? 2.2);
-
-    this.shader.lighting.setUniform1i("uDebugMode", this.features.debugLightingView ?? 0);
-    this.shader.lighting.setUniform1i("uShadowDebug", this.features.shadowDebug ?? 0);
-    await this.forEachActiveComponent(Camera, (camera) => {
-      camera.renderCameraToLighting();
-    });
-    await this.forEachActiveComponent(Light, (light) => {
-      this._shadowSys?.bindForLight(this, light);
-      light.renderLight();
-    });
-    if (this.features.debugGLVerbose) {
-      this.renderer.debugDumpState?.("after lights");
-      this.renderer.debugCheckError?.("after lights");
-    }
-
-    // End lighting pass before any post logic and check errors
-    this.renderer.endLightingPass();
-    if (this.features.debugGLVerbose) this.renderer.debugCheckError?.("after endLightingPass");
-
-    // Particle forward pass (after lighting, before post)
-    if (this.renderer.beginParticlePass) {
-      let hasParticles = false;
-      await this.forEachActiveComponent(ParticleEmitter, (emitter) => {
-        if (emitter.aliveCount > 0) hasParticles = true;
-      });
-      if (hasParticles) {
-        this.renderer.beginParticlePass();
-        const particleShader = this.shader.particle;
-        particleShader.use();
-        await this.forEachActiveComponent(Camera, (camera) => {
-          particleShader.setUniformMat4("uView", camera.viewMatrix);
-          particleShader.setUniformMat4("uProjection", camera.projectionMatrix);
-        });
-
-        // Lazy-init shared particle quad VAO
-        if (!this.#particleQuadVao) {
-          this.#particleQuadVao = this.renderer.createVertexArray();
-          this.#particleQuadVbo = this.renderer.createBuffer("vertex");
-          this.#particleQuadVbo.update(new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
-          const posLoc = particleShader.getAttribLocation("aPosition");
-          this.#particleQuadVao.setVertexBuffer(posLoc, this.#particleQuadVbo!, 2);
-          this.#particleInstanceVbo = this.renderer.createBuffer("vertex");
-        }
-
-        const identity = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-
-        await this.forEachActiveComponent(ParticleEmitter, (emitter) => {
-          const count = emitter.aliveCount;
-          if (count === 0) return;
-
-          // Upload packed instance data
-          this.#particleInstanceVbo!.update(emitter.instanceData.subarray(0, count * 8));
-
-          // Bind per-instance attributes with divisor=1
-          const posSizeLoc = particleShader.getAttribLocation("aInstancePosSize");
-          const colorLoc = particleShader.getAttribLocation("aInstanceColor");
-          this.#particleQuadVao!.setVertexBufferInstanced?.(
-            posSizeLoc, this.#particleInstanceVbo!, 4, 1, { stride: 32, offset: 0 }
-          );
-          this.#particleQuadVao!.setVertexBufferInstanced?.(
-            colorLoc, this.#particleInstanceVbo!, 4, 1, { stride: 32, offset: 16 }
-          );
-
-          particleShader.setUniformMat4("uModel", identity);
-
-          this.renderer.drawArraysInstanced?.(this.#particleQuadVao!, {
-            mode: "triangle-strip",
-            count: 4,
-            instanceCount: count,
-          });
-        });
-
-        this.renderer.endParticlePass?.();
-      }
-    }
-
-    // Allocate bloom resources lazily when bloom is enabled
-    if (this.features.bloom && this.renderer.allocateBloomResources) {
-      if (!this.renderer.hasBloomTexture?.()) {
-        this.renderer.allocateBloomResources();
-      }
-    }
-
-    // Execute post-processing (tone mapping + bloom + gamma) to the default framebuffer
-    if (this.features.postToneMapping) {
-      this.postProcessing.render(this.renderer, {
-        post: this.shader.post,
-        bloomBright: this.shader.bloomBright,
-        bloomBlur: this.shader.bloomBlur,
-      }, this.features);
-    }
+  #lateUpdate() {
+    this.forEachActiveScript((script) => script.lateUpdate());
   }
 
-  static async forEach(callback: (instance: Application) => void) {
+  #preRender() {
+    this.#processDirtyTransforms();
+    this.forEachActiveComponent(Camera, (camera) => camera.update());
+  }
+
+  #render() {
+    FrameProfiler.beginFrame();
+    this.pipeline.render(this);
+    FrameProfiler.endFrame();
+  }
+
+  static forEach(callback: (instance: Application) => void) {
     Application.instanceList.forEach(callback);
   }
-  static async forEachActive(callback: (instance: Application) => void) {
+  static forEachActive(callback: (instance: Application) => void) {
     Application.#activeInstances.forEach(callback);
   }
 }

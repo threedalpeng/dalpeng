@@ -1,4 +1,4 @@
-export type BlendMode = "additive" | "alpha";
+export type BlendMode = "additive" | "alpha" | "premultiplied-additive";
 
 export interface RenderPassViewport {
   x: number;
@@ -18,6 +18,7 @@ export interface RenderPassDescriptor {
   clearDepth?: number;
 
   // State (optional)
+  depthTest?: boolean;
   depthWrite?: boolean;
   blend?: { enable: boolean; mode?: BlendMode };
   viewport?: RenderPassViewport;
@@ -25,4 +26,10 @@ export interface RenderPassDescriptor {
   // Optional: specify color attachment indices for MRT targets (WebGL2)
   // If omitted, backend keeps existing drawBuffers state.
   colorAttachments?: number[];
+
+  // Color write mask — false disables all color writes (depth-only pass)
+  colorWrite?: boolean;
+
+  // Polygon offset for depth bias (shadow map rendering)
+  polygonOffset?: { factor: number; units: number } | null;
 }

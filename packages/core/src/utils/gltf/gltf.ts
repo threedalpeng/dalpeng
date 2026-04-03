@@ -1,4 +1,23 @@
-interface GLTF {
+export const enum GLTFComponentType {
+  BYTE           = 5120,
+  UNSIGNED_BYTE  = 5121,
+  SHORT          = 5122,
+  UNSIGNED_SHORT = 5123,
+  UNSIGNED_INT   = 5125,
+  FLOAT          = 5126,
+}
+
+export const enum GLTFPrimitiveMode {
+  POINTS         = 0,
+  LINES          = 1,
+  LINE_LOOP      = 2,
+  LINE_STRIP     = 3,
+  TRIANGLES      = 4,
+  TRIANGLE_STRIP = 5,
+  TRIANGLE_FAN   = 6,
+}
+
+export interface GLTF {
   extensionsUsed?: string[];
   extensionsRequired?: string[];
   accessors?: GLTFAccessor[];
@@ -20,67 +39,68 @@ interface GLTF {
   extras?: GLTFExtras[];
 }
 
-interface GLTFAccessor {
+export interface GLTFAccessor {
   bufferView?: number;
   byteOffset?: number;
   componentType: number;
   normalized?: boolean;
   count: number;
   type: string;
-  max?: number;
-  min?: number;
+  max?: number[];
+  min?: number[];
   sparse?: GLTFAccessorSparse;
   name?: string;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFAccessorSparse {
+export interface GLTFAccessorSparse {
   count: number;
   indices: GLTFAccessorSparseIndices;
   values: GLTFAccessorSparseValues;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFAccessorSparseIndices {
+export interface GLTFAccessorSparseIndices {
   bufferView: number;
   byteOffset?: number;
   componentType: number;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFAccessorSparseValues {
+export interface GLTFAccessorSparseValues {
   bufferView: number;
   byteOffset?: number;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
 
-interface GLTFAnimation {
+export interface GLTFAnimation {
   channels: GLTFAnimationChannel[];
   samplers: GLTFAnimationSampler[];
   name?: string;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFAnimationChannel {
+export interface GLTFAnimationChannel {
   sampler: number;
   target: GLTFAnimationChannelTarget;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFAnimationChannelTarget {
+export interface GLTFAnimationChannelTarget {
   node?: number;
   path: string;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFAnimationSampler {
+export interface GLTFAnimationSampler {
+  input: number;
   interpolation?: string;
   output: number;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFAsset {
+export interface GLTFAsset {
   copyright?: string;
   generator?: string;
   version: string;
@@ -88,14 +108,14 @@ interface GLTFAsset {
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFBuffer {
+export interface GLTFBuffer {
   uri?: string;
   byteLength: number;
   name?: string;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFBufferView {
+export interface GLTFBufferView {
   buffer: number;
   byteOffset?: number;
   byteLength: number;
@@ -106,7 +126,7 @@ interface GLTFBufferView {
   extras?: GLTFExtras;
 }
 
-interface GLTFCamera {
+export interface GLTFCamera {
   orthographic?: GLTFCameraOrthographic;
   perspective?: GLTFCameraPerspective;
   type: string;
@@ -114,7 +134,7 @@ interface GLTFCamera {
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFCameraOrthographic {
+export interface GLTFCameraOrthographic {
   xmag: number;
   ymag: number;
   zfar: number;
@@ -122,7 +142,7 @@ interface GLTFCameraOrthographic {
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFCameraPerspective {
+export interface GLTFCameraPerspective {
   aspectRatio?: number;
   yfov: number;
   zfar?: number;
@@ -131,7 +151,7 @@ interface GLTFCameraPerspective {
   extras?: GLTFExtras;
 }
 
-interface GLTFImage {
+export interface GLTFImage {
   uri?: string;
   mimeType?: string;
   bufferView?: number;
@@ -140,7 +160,7 @@ interface GLTFImage {
   extras?: GLTFExtras;
 }
 
-interface GLTFMaterial {
+export interface GLTFMaterial {
   name?: string;
   pbrMetallicRoughness?: GLTFMaterialPBRMetallicRoughness;
   normalTexture?: GLTFMaterialNormalTextureInfo;
@@ -153,48 +173,48 @@ interface GLTFMaterial {
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFMaterialNormalTextureInfo {
+export interface GLTFMaterialNormalTextureInfo {
   index: number;
   texCoord?: number;
   scale?: number;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFMaterialOcclusionTextureInfo {
+export interface GLTFMaterialOcclusionTextureInfo {
   index: number;
   texCoord?: number;
   strength?: number;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFMaterialPBRMetallicRoughness {
+export interface GLTFMaterialPBRMetallicRoughness {
   baseColorFactor?: [number, number, number, number];
   baseColorTexture?: GLTFTextureInfo;
   metallicFactor?: number;
   roughnessFactor?: number;
-  metallicRoughnessTexture?: number;
+  metallicRoughnessTexture?: GLTFTextureInfo;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
 
-interface GLTFMesh {
+export interface GLTFMesh {
   primitives: GLTFMeshPrimitive[];
   weights?: number[];
   name?: string;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFMeshPrimitive {
-  attributes: Object;
+export interface GLTFMeshPrimitive {
+  attributes: Record<string, number>;
   indices?: number;
   material?: number;
   mode?: number;
-  targets?: Object[];
+  targets?: Record<string, number>[];
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
 
-interface GLTFNode {
+export interface GLTFNode {
   camera?: number;
   children?: number[];
   skin?: number;
@@ -205,12 +225,12 @@ interface GLTFNode {
   scale?: [number, number, number];
   translation?: [number, number, number];
   weights?: number[];
-  name?: string[];
+  name?: string;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
 
-interface GLTFSampler {
+export interface GLTFSampler {
   magFilter?: number;
   minFilter?: number;
   wrapS?: number;
@@ -220,13 +240,13 @@ interface GLTFSampler {
   extras?: GLTFExtras;
 }
 
-interface GLTFScene {
+export interface GLTFScene {
   nodes?: number[];
   name?: string;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFSkin {
+export interface GLTFSkin {
   inverseBindMatrices?: number;
   skeleton?: number;
   joints: number[];
@@ -235,19 +255,19 @@ interface GLTFSkin {
   extras?: GLTFExtras;
 }
 
-interface GLTFTexture {
+export interface GLTFTexture {
   sampler?: number;
   source?: number;
   name?: string;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
-interface GLTFTextureInfo {
+export interface GLTFTextureInfo {
   index: number;
   texCoord?: number;
   extensions?: GLTFExtension;
   extras?: GLTFExtras;
 }
 
-type GLTFExtension = Object;
-type GLTFExtras = Object;
+export type GLTFExtension = Record<string, unknown>;
+export type GLTFExtras = unknown;

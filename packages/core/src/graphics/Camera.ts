@@ -1,5 +1,5 @@
-import Component from "@/component/Component";
-import Transform from "@/Transform";
+import Component from "@/ecs/Component";
+import Transform from "@/ecs/Transform";
 import { Mat4, Vec3 } from "@dalpeng/math";
 
 export default class Camera extends Component {
@@ -50,10 +50,14 @@ export default class Camera extends Component {
     }
   }
 
+  get glProjectionMatrix(): Mat4 {
+    return Mat4.toWebGL(this.projectionMatrix);
+  }
+
   async renderCameraToGeometry() {
     const shader = this.currentApp.shader.geometry;
     shader.setUniformMat4("uView", this.viewMatrix);
-    shader.setUniformMat4("uProjection", this.projectionMatrix);
+    shader.setUniformMat4("uProjection", this.glProjectionMatrix);
   }
 
   async renderCameraToLighting() {

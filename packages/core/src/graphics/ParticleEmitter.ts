@@ -1,6 +1,6 @@
-import Component from "../component/Component";
-import type GameEntity from "../entity/GameEntity";
-import Transform from "../Transform";
+import Component from "../ecs/Component";
+import type GameEntity from "../ecs/GameEntity";
+import Transform from "../ecs/Transform";
 import Particle from "./Particle";
 
 export interface ParticleEmitterConfig {

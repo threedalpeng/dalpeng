@@ -6,6 +6,7 @@ export default class WebGL2Texture implements GfxTexture {
   readonly format: TextureFormat;
   #gl: WebGL2RenderingContext;
   #tex: WebGLTexture;
+  #mipLevels: number;
   width: number;
   height: number;
 
@@ -14,8 +15,37 @@ export default class WebGL2Texture implements GfxTexture {
     this.format = desc.format;
     this.width = desc.width;
     this.height = desc.height;
+    this.#mipLevels =
+      desc.mipLevels === 0
+        ? Math.floor(Math.log2(Math.max(desc.width, desc.height))) + 1
+        : (desc.mipLevels ?? 1);
     this.#tex = gl.createTexture()!;
     this.#allocate(desc.width, desc.height, desc.format);
+
+    // Apply sampler parameters based on hint
+    const hint = desc.samplerHint ?? "nearest";
+    gl.bindTexture(gl.TEXTURE_2D, this.#tex);
+    switch (hint) {
+      case "linear":
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        break;
+      case "depth":
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_MODE, gl.NONE);
+        break;
+      case "nearest":
+      default:
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        break;
+    }
+    gl.bindTexture(gl.TEXTURE_2D, null);
   }
 
   #toInternalFormat(format: TextureFormat) {
@@ -23,6 +53,8 @@ export default class WebGL2Texture implements GfxTexture {
     switch (format) {
       case "rgba8unorm":
         return { internal: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE };
+      case "srgba8unorm":
+        return { internal: gl.SRGB8_ALPHA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE };
       case "rgba16f":
         return { internal: gl.RGBA16F, format: gl.RGBA, type: gl.HALF_FLOAT }; // EXT_color_buffer_float required
       case "rg16f":
@@ -35,6 +67,12 @@ export default class WebGL2Texture implements GfxTexture {
           format: gl.DEPTH_COMPONENT,
           type: gl.UNSIGNED_SHORT,
         };
+      case "depth24unorm":
+        return {
+          internal: gl.DEPTH_COMPONENT24,
+          format: gl.DEPTH_COMPONENT,
+          type: gl.UNSIGNED_INT,
+        };
       default:
         return { internal: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE };
     }
@@ -44,9 +82,9 @@ export default class WebGL2Texture implements GfxTexture {
     const gl = this.#gl;
     const info = this.#toInternalFormat(format);
     gl.bindTexture(gl.TEXTURE_2D, this.#tex);
-    if ((gl as any).texStorage2D && info.internal !== gl.DEPTH_COMPONENT16) {
+    if ((gl as any).texStorage2D && info.format !== gl.DEPTH_COMPONENT) {
       try {
-        (gl as any).texStorage2D(gl.TEXTURE_2D, 1, info.internal, width, height);
+        (gl as any).texStorage2D(gl.TEXTURE_2D, this.#mipLevels, info.internal, width, height);
       } catch {
         gl.texImage2D(
           gl.TEXTURE_2D,
@@ -113,6 +151,19 @@ export default class WebGL2Texture implements GfxTexture {
       }
     }
     gl.bindTexture(gl.TEXTURE_2D, null);
+  }
+
+  generateMipmaps(): void {
+    const gl = this.#gl;
+    gl.bindTexture(gl.TEXTURE_2D, this.#tex);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  }
+
+  bind(unit: number): void {
+    const gl = this.#gl;
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, this.#tex);
   }
 
   get _glTexture() {

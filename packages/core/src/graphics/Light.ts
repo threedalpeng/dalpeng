@@ -1,5 +1,5 @@
-import Component from "@/component/Component";
-import Transform from "@/Transform";
+import Component from "@/ecs/Component";
+import Transform from "@/ecs/Transform";
 import { Vec3 } from "@dalpeng/math";
 import Shader from "./Shader";
 
@@ -15,6 +15,8 @@ export default class Light extends Component {
   type: LightType = "directional";
   intensity: number = 1;
   range: number = Infinity;
+  innerConeAngle: number = 0;
+  outerConeAngle: number = Math.PI / 4;
   transform!: Transform;
   lightingShader!: Shader;
 
@@ -33,6 +35,8 @@ export default class Light extends Component {
     lightingShader.setUniformVec3("uLight.color", this.color);
     lightingShader.setUniform1i("uLight.type", LIGHT_TYPE_CODE[this.type]);
     lightingShader.setUniform1f("uLight.intensity", this.intensity);
+    lightingShader.setUniform1f("uLight.cosInnerAngle", Math.cos(this.innerConeAngle));
+    lightingShader.setUniform1f("uLight.cosOuterAngle", Math.cos(this.outerConeAngle));
 
     this.currentApp.renderer.drawArrays(quad, {
       mode: "triangle-strip",

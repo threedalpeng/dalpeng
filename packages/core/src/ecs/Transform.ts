@@ -1,6 +1,6 @@
 import { Mat4, Quaternion, Vec3, deg2rad } from "@dalpeng/math";
-import Component from "./component/Component";
-import type GameEntity from "./entity/GameEntity";
+import Component from "./Component";
+import type GameEntity from "./GameEntity";
 
 export default class Transform extends Component {
   constructor(gameEntity: GameEntity) {

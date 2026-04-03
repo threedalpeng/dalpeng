@@ -11,17 +11,23 @@ uniform float uSoftKnee;
 out vec4 outColor;
 
 void main() {
-  // Bloom RT is half-resolution, so each bloom fragment covers a 2x2 block
-  // in the full-resolution lighting texture.
-  ivec2 fragCoord = ivec2(gl_FragCoord.xy);
-  ivec2 srcCoord = fragCoord * 2;
+  // Bloom RT is half-resolution — use bilinear-filtered 13-tap tent downsample
+  // for stable results during camera motion (avoids texelFetch aliasing).
+  vec2 texSize = vec2(textureSize(uLighting, 0));
+  vec2 texel = 1.0 / texSize;
+  vec2 uv = (gl_FragCoord.xy * 2.0 + 1.0) / texSize; // center of 2x2 source block
 
-  // Downsample: average a 2x2 block for better quality and fewer aliasing artifacts
-  vec3 c00 = texelFetch(uLighting, srcCoord,                    0).rgb;
-  vec3 c10 = texelFetch(uLighting, srcCoord + ivec2(1, 0),     0).rgb;
-  vec3 c01 = texelFetch(uLighting, srcCoord + ivec2(0, 1),     0).rgb;
-  vec3 c11 = texelFetch(uLighting, srcCoord + ivec2(1, 1),     0).rgb;
-  vec3 color = (c00 + c10 + c01 + c11) * 0.25;
+  // 9-tap tent filter: center(4) + edges(2) + corners(1) = 16 weights
+  vec3 a = texture(uLighting, uv).rgb * 4.0;
+  vec3 b = texture(uLighting, uv + vec2(-texel.x,  0.0)).rgb * 2.0;
+  vec3 c = texture(uLighting, uv + vec2( texel.x,  0.0)).rgb * 2.0;
+  vec3 d = texture(uLighting, uv + vec2( 0.0, -texel.y)).rgb * 2.0;
+  vec3 e = texture(uLighting, uv + vec2( 0.0,  texel.y)).rgb * 2.0;
+  vec3 f = texture(uLighting, uv + vec2(-texel.x, -texel.y)).rgb;
+  vec3 g = texture(uLighting, uv + vec2( texel.x, -texel.y)).rgb;
+  vec3 h = texture(uLighting, uv + vec2(-texel.x,  texel.y)).rgb;
+  vec3 i = texture(uLighting, uv + vec2( texel.x,  texel.y)).rgb;
+  vec3 color = (a + b + c + d + e + f + g + h + i) / 16.0;
 
   // Perceptual luminance (BT.709 coefficients)
   float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));
