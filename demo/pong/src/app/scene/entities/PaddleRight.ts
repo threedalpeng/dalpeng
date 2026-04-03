@@ -6,12 +6,12 @@ import { defineGameEntity, Transform, useComponent, withName, withTag } from "da
 export default defineGameEntity(() => {
   withName("PaddleRight");
 
-  const t = useComponent(Transform);
-  t.position = vec3(7, 0, 0);
-  t.scale = vec3(0.5, 2, 1);
+  useComponent(Transform, (t) => {
+    t.position = vec3(7, 0, 0);
+    t.scale = vec3(0.5, 2, 1);
+  });
 
-  const r = useQuad();
-  r.material.baseColor = vec3(0.9, 0.9, 0.9);
+  useQuad().material.baseColor = vec3(0.9, 0.9, 0.9);
 
   usePaddle({ upKey: "ArrowUp", downKey: "ArrowDown", speed: 6, boundsY: 5.5 });
 

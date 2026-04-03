@@ -6,14 +6,16 @@ export default defineGameEntity(() => {
   withName("Paddle");
   withTag("paddle");
 
-  const transform = useComponent(Transform);
-  transform.position = vec3(0, -5, 0);
-  transform.scale = vec3(1.0, 0.15, 0.25);
+  useComponent(Transform, (t) => {
+    t.position = vec3(0, -5, 0);
+    t.scale = vec3(1.0, 0.15, 0.25);
+  });
 
-  const renderer = useMesh("box");
-  renderer.material.baseColor = vec3(0.8, 0.8, 0.9);
-  renderer.material.metallic = 0.6;
-  renderer.material.roughness = 0.3;
+  useMesh("box", (r) => {
+    r.material.baseColor = vec3(0.8, 0.8, 0.9);
+    r.material.metallic = 0.6;
+    r.material.roughness = 0.3;
+  });
 
   usePaddleControl();
 });

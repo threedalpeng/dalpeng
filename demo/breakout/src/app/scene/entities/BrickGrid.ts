@@ -25,7 +25,8 @@ export default defineGameEntity(() => {
       const x = START_X + col * BRICK_W;
       const y = START_Y - row * BRICK_H;
       const color = ROW_COLORS[row];
-      bricks.push(createBrick(x, y, color));
+      const hp = row < 2 ? 2 : 1;
+      bricks.push(createBrick(x, y, color, hp));
     }
   }
   return bricks;

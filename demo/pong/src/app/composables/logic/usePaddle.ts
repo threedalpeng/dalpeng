@@ -1,5 +1,5 @@
 import { vec3 } from "@dalpeng/math";
-import { Input, Time, Transform, useComponent } from "dalpeng";
+import { Time, Transform, useComponent, useInput } from "dalpeng";
 
 type UsePaddleConfig = {
   upKey: string;
@@ -16,14 +16,15 @@ const DEFAULT_BOUNDS_Y = 5.5;
 
 export default function usePaddle(cfg: UsePaddleConfig) {
   const t = useComponent(Transform);
+  const input = useInput();
   const speed = cfg.speed ?? DEFAULT_SPEED;
   const boundsY = cfg.boundsY ?? DEFAULT_BOUNDS_Y;
 
   onUpdate(() => {
     const dt = Time.delta() * 0.001;
     let dy = 0;
-    if (Input.keyPressed(cfg.upKey)) dy += speed * dt;
-    if (Input.keyPressed(cfg.downKey)) dy -= speed * dt;
+    if (input.keyPressed(cfg.upKey)) dy += speed * dt;
+    if (input.keyPressed(cfg.downKey)) dy -= speed * dt;
     if (dy !== 0) {
       const p = t.position;
       const ny = Math.max(-boundsY, Math.min(boundsY, p.y + dy));

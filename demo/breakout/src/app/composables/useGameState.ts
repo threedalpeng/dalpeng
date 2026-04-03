@@ -1,58 +1,42 @@
-let _score = 0;
-let _lives = 3;
-let _gameOver = false;
-let _cleared = false;
+import { ref } from "dalpeng";
 
-let _onScoreChange: ((score: number) => void) | null = null;
-let _onLivesChange: ((lives: number) => void) | null = null;
-let _onGameEnd: ((type: "gameover" | "clear") => void) | null = null;
-
-export function onScoreChange(cb: (score: number) => void) { _onScoreChange = cb; }
-export function onLivesChange(cb: (lives: number) => void) { _onLivesChange = cb; }
-export function onGameEnd(cb: (type: "gameover" | "clear") => void) { _onGameEnd = cb; }
-
-export function getScore() {
-  return _score;
-}
-
-export function getLives() {
-  return _lives;
-}
-
-export function isGameOver() {
-  return _gameOver;
-}
-
-export function isCleared() {
-  return _cleared;
-}
+export const score = ref(0);
+export const lives = ref(3);
+export const gameOver = ref(false);
+export const cleared = ref(false);
+export const speedMultiplier = ref(1);
+export const message = ref("");
 
 export function addScore(points: number) {
-  _score += points;
-  console.log(`[Breakout] Score: ${_score}`);
-  _onScoreChange?.(_score);
+  score.value += points;
+}
+
+export function addLife() {
+  lives.value++;
 }
 
 export function loseLife() {
-  _lives--;
-  console.log(`[Breakout] Lives: ${_lives}`);
-  if (_lives <= 0) {
-    _gameOver = true;
-    console.log("[Breakout] GAME OVER");
-    _onGameEnd?.("gameover");
+  lives.value--;
+  if (lives.value <= 0) {
+    gameOver.value = true;
+    message.value = "GAME OVER";
   }
-  _onLivesChange?.(_lives);
 }
 
 export function setCleared() {
-  _cleared = true;
-  console.log("[Breakout] STAGE CLEAR!");
-  _onGameEnd?.("clear");
+  cleared.value = true;
+  message.value = "STAGE CLEAR!";
+}
+
+export function setSpeedMultiplier(m: number) {
+  speedMultiplier.value = Math.max(0.5, Math.min(2.0, m));
 }
 
 export function resetGame() {
-  _score = 0;
-  _lives = 3;
-  _gameOver = false;
-  _cleared = false;
+  score.value = 0;
+  lives.value = 3;
+  gameOver.value = false;
+  cleared.value = false;
+  speedMultiplier.value = 1;
+  message.value = "";
 }

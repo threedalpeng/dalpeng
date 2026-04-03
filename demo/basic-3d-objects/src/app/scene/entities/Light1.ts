@@ -4,17 +4,19 @@ import { Light, Transform, defineGameEntity, useComponent, useMesh, withName } f
 export default defineGameEntity(() => {
   withName("Light1");
 
-  const transform = useComponent(Transform);
-  const light = useComponent(Light);
+  useComponent(Transform, (t) => {
+    t.position = vec3(1, 3, 1);
+    t.scale = vec3(0.15, 0.15, 0.15);
+  });
 
-  transform.position = vec3(1, 3, 1);
-  transform.scale = vec3(0.15, 0.15, 0.15);
+  const light = useComponent(Light, (l) => {
+    l.intensity = 30;
+    l.color = vec3(1, 0.2, 0.6);
+    l.type = "point";
+  });
 
-  light.intensity = 30;
-  light.color = vec3(1, 0.2, 0.6);
-  light.type = "point";
-
-  const renderer = useMesh("sphere");
-  renderer.material.emissive = light.color;
-  renderer.material.baseColor = vec3(0, 0, 0);
+  useMesh("sphere", (r) => {
+    r.material.emissive = light.color;
+    r.material.baseColor = vec3(0, 0, 0);
+  });
 });

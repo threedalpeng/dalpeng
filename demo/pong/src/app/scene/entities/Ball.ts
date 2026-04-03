@@ -1,16 +1,16 @@
 import useQuad from "@app/composables/render/useQuad";
 import { vec3 } from "@dalpeng/math";
-import { defineGameEntity, onUpdate, Transform, useComponent, withName } from "dalpeng";
+import { defineGameEntity, onUpdate, Time, Transform, useComponent, withName } from "dalpeng";
 
 export default defineGameEntity(() => {
   withName("Ball");
 
-  const t = useComponent(Transform);
-  t.position = vec3(0, 0, 0);
-  t.scale = vec3(0.4, 0.4, 1);
+  const t = useComponent(Transform, (transform) => {
+    transform.position = vec3(0, 0, 0);
+    transform.scale = vec3(0.4, 0.4, 1);
+  });
 
-  const r = useQuad();
-  r.material.baseColor = vec3(0.2, 0.9, 0.2);
+  useQuad().material.baseColor = vec3(0.2, 0.9, 0.2);
 
   // simple ball movement and collision using closure state
   let velocity = vec3(4, 3, 0);
@@ -21,7 +21,7 @@ export default defineGameEntity(() => {
   onUpdate(() => {
     const p = t.position;
     // integrate with fixed step (uses Time.delta under the hood in engine)
-    const dt = (window as any).__dalpeng_dt ? (window as any).__dalpeng_dt : 16.67;
+    const dt = Time.delta();
     const sec = dt * 0.001;
     const np = vec3(p.x + velocity.x * sec, p.y + velocity.y * sec, p.z);
 

@@ -1,35 +1,45 @@
-import { createGameOverlay, enableDebugOverlay, runApp } from "dalpeng";
+import { enableDebugPanel, BLOOM_GROUP, TONE_MAPPING_GROUP, runApp, mountOverlay, defineUI, defineText, useLayout } from "dalpeng";
 import App from "./app/App";
-import { onGameEnd, onLivesChange, onScoreChange } from "./app/composables/useGameState";
+import { score, lives, message } from "./app/composables/useGameState";
 
 const app = await runApp(App, "#app", {
   resolution: [1280, 720],
   fit: "contain",
+  features: {
+    shadows: true,
+    postToneMapping: true,
+    bloom: true,
+    bloomThreshold: 0.8,
+    bloomIntensity: 0.4,
+    bloomRadius: 4,
+    toneExposure: 1.2,
+  },
 });
 
-app.features.shadows = true;
-app.features.postToneMapping = true;
-app.features.bloom = true;
-app.features.bloomThreshold = 0.8;
-app.features.bloomIntensity = 0.4;
-app.features.bloomRadius = 4;
-app.features.toneExposure = 1.2;
-enableDebugOverlay(app, { position: "top-right", hotkeys: true });
+// Action map
+app.input.defineAction("move-left", ["ArrowLeft", "KeyA"]);
+app.input.defineAction("move-right", ["ArrowRight", "KeyD"]);
+app.input.defineAction("launch", ["Space"]);
+app.input.defineAction("restart", ["KeyR"]);
 
-// HUD overlay
-const hud = createGameOverlay(app, (b) => {
-  b.slot("score", "top-left", "<div style='font-size:24px'>Score: 0</div>")
-   .slot("lives", "top-right", "<div style='font-size:24px'>♥♥♥</div>")
-   .slot("message", "center");
+enableDebugPanel(app, {
+  position: "top-right",
+  controls: [BLOOM_GROUP, TONE_MAPPING_GROUP],
 });
-hud.slot("message")?.hide();
 
-onScoreChange((s) => hud.slot("score")?.update(`<div style="font-size:24px">Score: ${s}</div>`));
-onLivesChange((l) => hud.slot("lives")?.update(`<div style="font-size:24px">${"♥".repeat(Math.max(0, l))}</div>`));
-onGameEnd((type) => {
-  const msg = type === "gameover" ? "GAME OVER" : "STAGE CLEAR!";
-  hud.slot("message")?.update(
-    `<div style="font-size:48px;text-align:center">${msg}<br><span style="font-size:18px">Press R to restart</span></div>`
-  );
-  hud.slot("message")?.show();
-});
+// HUD — reactive refs drive DOM updates automatically
+mountOverlay(app, defineUI(() => [
+  defineText(score, (v) => `Score: ${v}`, { size: 24 }),
+]), { anchor: "top-left" });
+
+mountOverlay(app, defineUI(() => [
+  defineText(lives, (v) => "♥".repeat(Math.max(0, v)), { size: 24 }),
+]), { anchor: "top-right" });
+
+mountOverlay(app, defineUI(() => {
+  useLayout("column", { gap: 4, align: "center" });
+  return [
+    defineText(message, (v) => v, { size: 48, bold: true }),
+    defineText(message, (v) => v ? "Press R to restart" : "", { size: 18 }),
+  ];
+}), { anchor: "center" });

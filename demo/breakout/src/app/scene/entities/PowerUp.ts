@@ -1,7 +1,6 @@
 import { vec3, type Vec3 } from "@dalpeng/math";
 import {
   defineGameEntity,
-  destroy,
   Light,
   onUpdate,
   Time,
@@ -11,37 +10,61 @@ import {
   withName,
   withTag,
 } from "dalpeng";
+import { addLife, speedMultiplier, setSpeedMultiplier } from "@app/composables/useGameState";
 
 const FALL_SPEED = 3;
 const BOUNDS_Y_BOTTOM = -7;
 
-export type PowerUpEffect = "wide-paddle" | "fast-ball";
+export type PowerUpEffect = "wide-paddle" | "fast-ball" | "slow-ball" | "extra-life" | "shrink-paddle";
 
-export function createPowerUp(x: number, y: number, color: Vec3, effect: PowerUpEffect) {
+type PowerUpVisual = {
+  color: Vec3;
+  mesh: "box" | "sphere" | "cylinder";
+  scale: Vec3;
+};
+
+const EFFECT_VISUALS: Record<PowerUpEffect, PowerUpVisual> = {
+  "wide-paddle":    { color: vec3(0.2, 0.6, 1.0),  mesh: "box",      scale: vec3(0.3, 0.15, 0.15) },
+  "shrink-paddle":  { color: vec3(0.8, 0.2, 0.8),  mesh: "box",      scale: vec3(0.12, 0.25, 0.12) },
+  "fast-ball":      { color: vec3(1.0, 0.3, 0.1),  mesh: "cylinder", scale: vec3(0.15, 0.25, 0.15) },
+  "slow-ball":      { color: vec3(0.3, 1.0, 0.4),  mesh: "sphere",   scale: vec3(0.2, 0.2, 0.2) },
+  "extra-life":     { color: vec3(1.0, 0.9, 0.2),  mesh: "sphere",   scale: vec3(0.25, 0.25, 0.25) },
+};
+
+export function createPowerUp(x: number, y: number, effect: PowerUpEffect) {
+  const visual = EFFECT_VISUALS[effect];
   return defineGameEntity(() => {
     withName("PowerUp");
     withTag("powerup");
 
-    const transform = useComponent(Transform);
-    transform.position = vec3(x, y, 0);
-    transform.scale = vec3(0.2, 0.2, 0.2);
+    const transform = useComponent(Transform, (t) => {
+      t.position = vec3(x, y, 0);
+      t.scale = visual.scale;
+    });
 
-    const renderer = useMesh("sphere");
-    renderer.material.baseColor = vec3(0, 0, 0);
-    renderer.material.emissive = color;
+    useMesh(visual.mesh, (r) => {
+      r.material.baseColor = vec3(0, 0, 0);
+      r.material.emissive = visual.color;
+    });
 
-    const light = useComponent(Light);
-    light.type = "point";
-    light.intensity = 8;
-    light.color = color;
+    useComponent(Light, (l) => {
+      l.type = "point";
+      l.intensity = 8;
+      l.color = visual.color;
+    });
+
+    const self = transform.gameEntity;
 
     onUpdate(() => {
       const dt = Time.delta() * 0.001;
       const p = transform.position;
       const ny = p.y - FALL_SPEED * dt;
 
+      // Spin animation
+      transform.rotate(vec3(0, 1, 0), dt * 180);
+
       // Check paddle collision
-      const scene = transform.gameEntity.scene;
+      const scene = self.scene;
       const paddles = scene.findByTag("paddle");
       if (paddles.length > 0) {
         const pt = paddles[0].getComponent(Transform)!;
@@ -54,25 +77,40 @@ export function createPowerUp(x: number, y: number, color: Vec3, effect: PowerUp
           ny < pp.y + ps.y &&
           ny > pp.y - ps.y
         ) {
-          // Apply effect
-          if (effect === "wide-paddle") {
-            pt.scale = vec3(Math.min(ps.x + 0.25, 2.0), ps.y, ps.z);
-            console.log("[Breakout] Power-up: Wide Paddle!");
-          } else if (effect === "fast-ball") {
-            console.log("[Breakout] Power-up: Fast Ball!");
-          }
-          destroy();
+          applyEffect(effect, pt);
+          self.currentApp.destroy(self);
           return;
         }
       }
 
       // Out of bounds
       if (ny < BOUNDS_Y_BOTTOM) {
-        destroy();
+        self.currentApp.destroy(self);
         return;
       }
 
       transform.position = vec3(p.x, ny, p.z);
     });
   });
+}
+
+function applyEffect(effect: PowerUpEffect, paddleTransform: Transform) {
+  const ps = paddleTransform.scale;
+  switch (effect) {
+    case "wide-paddle":
+      paddleTransform.scale = vec3(Math.min(ps.x + 0.3, 2.0), ps.y, ps.z);
+      break;
+    case "shrink-paddle":
+      paddleTransform.scale = vec3(Math.max(ps.x - 0.3, 0.5), ps.y, ps.z);
+      break;
+    case "fast-ball":
+      setSpeedMultiplier(speedMultiplier.value + 0.25);
+      break;
+    case "slow-ball":
+      setSpeedMultiplier(speedMultiplier.value - 0.25);
+      break;
+    case "extra-life":
+      addLife();
+      break;
+  }
 }

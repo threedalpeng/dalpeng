@@ -4,11 +4,13 @@ import { Camera, defineGameEntity, Transform, useComponent, withName } from "dal
 export default defineGameEntity(() => {
   withName("Camera");
 
-  const transform = useComponent(Transform);
-  transform.position = vec3(0, 0, 15);
-  transform.lookAt(vec3(0, 0, 0));
+  useComponent(Transform, (t) => {
+    t.position = vec3(0, 0, 15);
+    t.lookAt(vec3(0, 0, 0));
+  });
 
-  const camera = useComponent(Camera);
-  camera.isOrthographic = true;
-  camera.size = 7;
+  useComponent(Camera, (c) => {
+    c.isOrthographic = true;
+    c.size = 7;
+  });
 });
