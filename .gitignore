@@ -139,6 +139,10 @@ demo/textured-scene/public/textures/
 
 # Downloaded models (run download-models.sh to fetch)
 demo/gltf-viewer/public/models/
+demo/mini-adventure/public/models/
+
+# Downloaded HDRIs
+demo/mini-adventure/public/hdri/
 
 # Local assistant / scratch files
 .claude/
