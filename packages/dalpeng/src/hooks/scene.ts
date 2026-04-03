@@ -1,5 +1,5 @@
 import { Scene } from "@dalpeng/core";
-import { getThisApp, setThisScene } from "./context";
+import { getThisApp, setThisScene } from "../context";
 import type { UseGameEntity } from "./gameEntity";
 
 export type UseScene = ReturnType<typeof defineScene>;

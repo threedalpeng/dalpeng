@@ -1,11 +1,13 @@
-import { getThis } from "./context";
+import { getThis } from "../context";
 
 export * from "./app";
 export * from "./gameEntity";
 export * from "./scene";
 export * from "./tween";
 export * from "./audio";
-export * from "./hud";
+export * from "./input";
+export * from "./texture";
+export * from "./model";
 
 export function withName(name: string) {
   const current = getThis();

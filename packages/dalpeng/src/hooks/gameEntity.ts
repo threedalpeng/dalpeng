@@ -1,16 +1,24 @@
 import { GameEntity, MeshBuilder, MeshRenderer, Script, Transform, type Component } from "@dalpeng/core";
 import {
   getParentEntity,
+  getThisEntity,
   getThisScene,
   requireEntity,
   setParentEntity,
   setThisEntity,
   setThisScene,
-} from "./context";
+  beginCleanupScope,
+  endCleanupScope,
+  registerCleanup,
+  hasActiveCleanupScope,
+} from "../context";
 
-export type UseGameEntity = ReturnType<typeof defineGameEntity>;
-export function defineGameEntity(setup: () => UseGameEntity[] | void) {
-  return () => {
+export type UseGameEntity = () => GameEntity;
+
+export function defineGameEntity(setup: () => UseGameEntity[] | void): UseGameEntity;
+export function defineGameEntity<P>(setup: (props: P) => UseGameEntity[] | void): (props: P) => UseGameEntity;
+export function defineGameEntity<P = void>(setup: (props?: P) => UseGameEntity[] | void) {
+  const factory = (props?: P): UseGameEntity => () => {
     const entity = new GameEntity();
     setThisEntity(entity);
 
@@ -22,27 +30,51 @@ export function defineGameEntity(setup: () => UseGameEntity[] | void) {
     }
     entity.addComponent(Transform);
 
+    const cleanups = beginCleanupScope();
     const prevParent = parent;
     try {
-      const children = setup() ?? [];
+      const children = setup(props as P) ?? [];
       setParentEntity(entity);
       children.forEach((child) => child());
     } finally {
+      endCleanupScope();
       setParentEntity(prevParent);
     }
+
+    // Auto-register cleanup handlers on entity destroy
+    if (cleanups.size > 0) {
+      const script = entity.getComponent(Script) ?? entity.addComponent(Script);
+      script.on("destroy", () => {
+        cleanups.forEach((fn) => fn());
+        cleanups.clear();
+      });
+    }
+
     return entity;
   };
+
+  // Props overload detection: setup.length === 0 means no-props variant
+  return (setup.length === 0 ? factory() : factory) as any;
 }
 
 type ComponentConstructor<Type extends Component> = new (gameEntity: GameEntity) => Type;
-export function useComponent<C extends Component>(type: ComponentConstructor<C>): C {
+export function useComponent<C extends Component>(
+  type: ComponentConstructor<C>,
+  init?: (component: C) => void
+): C {
   const entity = requireEntity("useComponent");
-  return entity.getComponent(type) ?? entity.addComponent(type);
+  const comp = entity.getComponent(type) ?? entity.addComponent(type);
+  init?.(comp);
+  return comp;
 }
 
-export function useMesh(type: "box" | "sphere" | "cylinder" | "quad"): MeshRenderer {
+export function useMesh(
+  type: "box" | "sphere" | "cylinder" | "quad",
+  init?: (renderer: MeshRenderer) => void
+): MeshRenderer {
   const renderer = useComponent(MeshRenderer);
   renderer.mesh = MeshBuilder[type]();
+  init?.(renderer);
   return renderer;
 }
 
@@ -55,6 +87,12 @@ export function onFixedUpdate(fixedUpdate: () => any) {
   requireEntity("onFixedUpdate");
   const script = useComponent(Script);
   script.on("fixedUpdate", fixedUpdate);
+}
+
+export function onLateUpdate(lateUpdate: () => any) {
+  requireEntity("onLateUpdate");
+  const script = useComponent(Script);
+  script.on("lateUpdate", lateUpdate);
 }
 
 export function withTag(tag: string) {
@@ -86,9 +124,14 @@ export function onStart(callback: () => void) {
 }
 
 export function onDestroy(callback: () => void) {
-  requireEntity("onDestroy");
-  const script = useComponent(Script);
-  script.on("destroy", callback);
+  if (getThisEntity()) {
+    const script = useComponent(Script);
+    script.on("destroy", callback);
+  } else if (hasActiveCleanupScope()) {
+    registerCleanup(callback);
+  } else {
+    throw new Error("onDestroy() requires defineGameEntity or defineUI context.");
+  }
 }
 
 export function onEnable(callback: () => void) {

@@ -1,5 +1,5 @@
 import type { AudioHandle, PlayOptions } from "@dalpeng/core";
-import { requireEntity } from "./context";
+import { requireEntity } from "../context";
 import { onDestroy } from "./gameEntity";
 
 /**
@@ -15,7 +15,7 @@ import { onDestroy } from "./gameEntity";
  */
 export function useAudio(url: string) {
   const entity = requireEntity("useAudio");
-  const audio = (entity.currentApp as any).audio; // AudioManager — typed after integration
+  const audio = entity.currentApp.audio;
   const handles: AudioHandle[] = [];
 
   // Auto-cleanup on destroy

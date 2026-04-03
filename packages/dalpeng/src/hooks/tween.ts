@@ -1,5 +1,5 @@
 import type { Tween, TweenOptions } from "@dalpeng/core";
-import { requireEntity } from "./context";
+import { requireEntity } from "../context";
 import { onDestroy } from "./gameEntity";
 
 /**
@@ -11,8 +11,7 @@ import { onDestroy } from "./gameEntity";
  */
 export function useTween() {
   const entity = requireEntity("useTween");
-  // app.tweens (TweenManager) will be present after Wave 3 integration
-  const tweens = (entity.currentApp as any).tweens;
+  const tweens = entity.currentApp.tweens;
   const tracked: Tween[] = [];
 
   // Auto-cleanup when entity is destroyed
