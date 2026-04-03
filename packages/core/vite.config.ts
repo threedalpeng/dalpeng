@@ -1,6 +1,7 @@
 import path from "node:path";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
+import { glslInclude } from "./vite-plugin-glsl-include";
 
 export default defineConfig({
   resolve: {
@@ -25,6 +26,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    glslInclude(),
     dts({
       tsconfigPath: path.resolve(__dirname, "tsconfig.json"),
       insertTypesEntry: true,

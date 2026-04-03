@@ -134,23 +134,28 @@ packages/core_old/
 packages/demo/old/
 packages/renderer/
 
+# Downloaded textures (run download-textures.sh to fetch)
+demo/textured-scene/public/textures/
+
+# Downloaded models (run download-models.sh to fetch)
+demo/gltf-viewer/public/models/
+
+# Local assistant / scratch files
+.claude/
+CLAUDE.md
+.cursor/
+.cursorrules
+.windsurf/
+.codeium/
+.copilot/
+.github/copilot-instructions.md
+.aider*
+.ai/
+.llm/
+.promptfoo/
+docs/
+docs/TEMP-*.md
+
 # turborepo
 .turbo
 dist/**
-docs/assets.md
-docs/camera.md
-docs/composable-api.md
-docs/demos.md
-docs/g-buffer.md
-docs/lights.md
-docs/math-and-transform.md
-docs/pipeline.md
-docs/post-processing.md
-docs/quality.md
-docs/README.md
-docs/renderer-backend.md
-docs/shaders-pbr.md
-docs/shadows.md
-docs/TODO.md
-docs/ui.md
-docs/webgpu.md

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "description": "Monorepo for the dalpeng web game engine and demos",
   "license": "MIT",
-  "packageManager": "pnpm@10.21.0",
+  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
   "engines": {
     "node": ">=18.18.0"
   },
@@ -16,13 +16,17 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "format": "prettier -w .",
-    "format:check": "prettier -c ."
+    "format:check": "prettier -c .",
+    "deps:check": "pnpm outdated -r",
+    "deps:update": "node scripts/deps-update.mjs",
+    "deps:update:apply": "node scripts/deps-update.mjs --apply",
+    "deps:audit": "pnpm audit"
   },
   "devDependencies": {
-    "turbo": "^2.6.0",
-    "typescript": "^5.9.3",
-    "prettier": "^3.3.3",
-    "prettier-plugin-organize-imports": "^4.0.0"
+    "prettier": "^3.8.1",
+    "prettier-plugin-organize-imports": "^4.0.0",
+    "turbo": "^2.8.20",
+    "typescript": "^5.9.3"
   },
   "pnpm": {
     "overrides": {

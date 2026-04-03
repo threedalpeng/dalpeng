@@ -39,11 +39,10 @@
     "test:ui": "vitest --ui --api.host 172.105.229.189 --api.port 5050"
   },
   "devDependencies": {
-    "@vitest/ui": "^4.0.8",
+    "@vitest/ui": "^4.1.2",
     "typescript": "^5.9.3",
     "vite": "^7.2.2",
-    "vitest": "^4.0.8",
-    "vite-plugin-dts": "^4.5.4"
-  },
-  "dependencies": {}
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.1.2"
+  }
 }

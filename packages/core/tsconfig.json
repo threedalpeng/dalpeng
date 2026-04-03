@@ -7,9 +7,8 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "outDir": "./dist",
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src", "test"]
