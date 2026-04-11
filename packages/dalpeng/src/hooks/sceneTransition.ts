@@ -86,9 +86,8 @@ export function useSceneSwitch(): SceneSwitcher {
     const wrappedFactory = (): Scene => {
       setThisApp(app);
       try {
-        const { scene } = sceneFactory();
-        newScene = scene;
-        return scene;
+        newScene = sceneFactory();
+        return newScene;
       } finally {
         setThisApp(null);
       }

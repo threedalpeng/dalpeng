@@ -121,6 +121,11 @@ export default class Application {
     this.#materializer = m;
   }
 
+  #disposeCallbacks = new Set<() => void>();
+  onDispose(cb: () => void): void {
+    this.#disposeCallbacks.add(cb);
+  }
+
   activeComponents = new Map<string, Set<Component>>();
   #dirtyTransforms = new Set<Transform>();
   forEachActiveComponent<Type extends Component>(
@@ -458,6 +463,16 @@ export default class Application {
 
   dispose() {
     this.stop();
+
+    for (const cb of this.#disposeCallbacks) {
+      try {
+        cb();
+      } catch (err) {
+        console.error("Application.dispose: onDispose callback threw", err);
+      }
+    }
+    this.#disposeCallbacks.clear();
+
     for (const [, scene] of this.#sceneList) {
       for (const entityId of Object.keys(scene.rootEntities)) {
         this.#executeDestroy(scene.rootEntities[Number(entityId)]);

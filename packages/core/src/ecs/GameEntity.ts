@@ -15,9 +15,7 @@ export default class GameEntity extends Entity {
     GameEntity.#gameEntityList.set(this.id, this);
   }
 
-  /** Reverse pointer to the owning GameInstance (descriptor spawn path). Null for direct-entity spawns (e.g. glTF). */
   _gameInstance: GameInstance | null = null;
-  /** Layer name set by `withLayer(name)`. Undefined means use renderer default. */
   _layerName: string | undefined = undefined;
 
   scene!: Scene;

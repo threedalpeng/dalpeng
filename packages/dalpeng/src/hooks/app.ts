@@ -59,10 +59,7 @@ export function defineApp(setup: () => UseScene | undefined) {
     setThisApp(app);
     try {
       const sceneFn = setup();
-      if (sceneFn) {
-        const { scene, rootDescriptors } = sceneFn();
-        scene._pendingRootDescriptors = [...rootDescriptors];
-      }
+      sceneFn?.();
     } finally {
       setThisApp(null);
     }
@@ -153,8 +150,8 @@ function makeMaterializerHooks(app: Application): MaterializerHooks {
           return app.watchFeature ? app.watchFeature(key, cb) : () => {};
         },
         layers: app.layers,
-        onDispose(_cb) {
-          // TODO: wire into Application dispose lifecycle
+        onDispose(cb) {
+          app.onDispose(cb);
         },
       };
     },
