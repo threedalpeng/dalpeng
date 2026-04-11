@@ -1,0 +1,21 @@
+{
+  "name": "grid-rpg",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@dalpeng/core": "workspace:^0.1.0",
+    "@dalpeng/math": "workspace:^0.2.0",
+    "dalpeng": "workspace:^0.1.0"
+  },
+  "devDependencies": {
+    "@dalpeng/devtools": "workspace:^0.1.0",
+    "@dalpeng/devtools-vite": "workspace:^0.1.0",
+    "vite": "^7.2.2"
+  }
+}
