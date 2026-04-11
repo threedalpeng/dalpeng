@@ -8,6 +8,13 @@ export * from "./audio";
 export * from "./input";
 export * from "./texture";
 export * from "./model";
+export * from "./sprite2d";
+export * from "./tilemap";
+export * from "./camera2d";
+export * from "./event";
+export * from "./triggerZone";
+export * from "./sceneTransition";
+export * from "./dialogue";
 
 export function withName(name: string) {
   const current = getThis();

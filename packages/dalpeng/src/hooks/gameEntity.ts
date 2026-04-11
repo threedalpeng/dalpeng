@@ -1,60 +1,40 @@
-import { GameEntity, MeshBuilder, MeshRenderer, Script, Transform, type Component } from "@dalpeng/core";
 import {
-  getParentEntity,
+  GameEntity,
+  MeshBuilder,
+  MeshRenderer,
+  Script,
+  createGameDescriptor,
+  type Component,
+  type GameDescriptor,
+  type LogicalDescriptor,
+} from "@dalpeng/core";
+import {
   getThisEntity,
-  getThisScene,
   requireEntity,
-  setParentEntity,
-  setThisEntity,
-  setThisScene,
-  beginCleanupScope,
-  endCleanupScope,
   registerCleanup,
   hasActiveCleanupScope,
 } from "../context";
+// withLayer works in both entity AND UI scope; dispatch to the UI hook when
+// inside a defineUI setup. getThisUI returning null is the cheap test.
+import { getThisUI as uiGetActiveScope, withLayer as uiWithLayer } from "@dalpeng/ui";
 
-export type UseGameEntity = () => GameEntity;
+function uiHasActiveScope(): boolean {
+  return uiGetActiveScope() !== null;
+}
 
-export function defineGameEntity(setup: () => UseGameEntity[] | void): UseGameEntity;
-export function defineGameEntity<P>(setup: (props: P) => UseGameEntity[] | void): (props: P) => UseGameEntity;
-export function defineGameEntity<P = void>(setup: (props?: P) => UseGameEntity[] | void) {
-  const factory = (props?: P): UseGameEntity => () => {
-    const entity = new GameEntity();
-    setThisEntity(entity);
+export type GameFactory = () => GameDescriptor;
+export type GameFactoryWithProps<P> = (props: P) => GameDescriptor<P>;
 
-    const parent = getParentEntity();
-    if (parent === null) {
-      getThisScene()?.addEntity(entity);
-    } else {
-      parent.addChild(entity);
-    }
-    entity.addComponent(Transform);
-
-    const cleanups = beginCleanupScope();
-    const prevParent = parent;
-    try {
-      const children = setup(props as P) ?? [];
-      setParentEntity(entity);
-      children.forEach((child) => child());
-    } finally {
-      endCleanupScope();
-      setParentEntity(prevParent);
-    }
-
-    // Auto-register cleanup handlers on entity destroy
-    if (cleanups.size > 0) {
-      const script = entity.getComponent(Script) ?? entity.addComponent(Script);
-      script.on("destroy", () => {
-        cleanups.forEach((fn) => fn());
-        cleanups.clear();
-      });
-    }
-
-    return entity;
-  };
-
-  // Props overload detection: setup.length === 0 means no-props variant
-  return (setup.length === 0 ? factory() : factory) as any;
+export function defineGameEntity(setup: () => LogicalDescriptor[] | void): GameFactory;
+export function defineGameEntity<P>(
+  setup: (props: P) => LogicalDescriptor[] | void,
+): GameFactoryWithProps<P>;
+export function defineGameEntity<P>(
+  setup: (props: P) => LogicalDescriptor[] | void,
+): (props: P) => GameDescriptor<P> {
+  // Passing undefined for P=void is sound at runtime; the public overloads
+  // declare the correct external types.
+  return (props: P) => createGameDescriptor<P>(setup, props);
 }
 
 type ComponentConstructor<Type extends Component> = new (gameEntity: GameEntity) => Type;
@@ -100,16 +80,45 @@ export function withTag(tag: string) {
   entity.tag = tag;
 }
 
-export function spawn(factory: UseGameEntity, parent?: GameEntity): void {
+/**
+ * Assign the current setup scope to a named layer.
+ *
+ * Works in both game entity and UI scopes:
+ *   - Inside `defineGameEntity`: stamps the entity with the layer name.
+ *   - Inside `defineUI`: forwards to `@dalpeng/ui`'s `withLayer`.
+ *
+ * Game entity validation happens immediately (entity has app context).
+ * UI validation is deferred to mount time (UI is authored before being attached to an app).
+ */
+export function withLayer(name: string) {
+  if (uiHasActiveScope()) {
+    uiWithLayer(name);
+    return;
+  }
+  const entity = requireEntity("withLayer");
+  const app = entity.scene?.app;
+  if (!app) {
+    throw new Error(
+      `withLayer("${name}"): entity has no Application context yet. ` +
+        `Call withLayer inside defineGameEntity setup, after the entity is attached to a scene.`,
+    );
+  }
+  if (!app.layers.has(name)) {
+    const known = app.layers.ordered.map((l) => l.name).join(", ");
+    throw new Error(
+      `withLayer("${name}"): no such layer. ` +
+        `Did you forget to declare it in withLayers([...])? ` +
+        `Known layers: ${known}.`,
+    );
+  }
+  entity._layerName = name;
+}
+
+export function spawn(factory: GameFactory, parent?: GameEntity): void {
   const callingEntity = requireEntity("spawn");
   const app = callingEntity.currentApp;
-  const scene = parent?.scene ?? callingEntity.scene;
-
-  app.spawn(() => {
-    setThisScene(scene);
-    setParentEntity(parent ?? null);
-    return factory();
-  });
+  const descriptor = factory();
+  app.spawn(descriptor, parent ?? undefined);
 }
 
 export function destroy(entity?: GameEntity): void {

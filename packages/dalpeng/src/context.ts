@@ -1,4 +1,5 @@
 import type { Application, GameEntity, Scene } from "@dalpeng/core";
+import { isInUIScope } from "@dalpeng/core";
 
 let currentThis: Application | Scene | GameEntity | null = null;
 export function getThis() {
@@ -40,7 +41,19 @@ export function setThisEntity(entity: GameEntity | null) {
   currentThis = entity;
 }
 export function requireEntity(hookName: string): GameEntity {
-  if (!thisEntity) throw new Error(`${hookName}() must be called inside defineGameEntity setup.`);
+  if (!thisEntity) {
+    // Can't import getThisUI directly (circular dep via @dalpeng/ui).
+    // isInUIScope() is the cross-package boolean signal @dalpeng/ui toggles.
+    if (isInUIScope()) {
+      throw new Error(
+        `${hookName}() is a game-kind hook and cannot be called inside defineUI setup. ` +
+          `Frame hooks (onUpdate / onFixedUpdate / onLateUpdate / onStart / onEnable / onDisable) ` +
+          `are only available on game-kind nodes. ` +
+          `If you need to react to state changes inside a UI, use watch(ref, ...) instead.`,
+      );
+    }
+    throw new Error(`${hookName}() must be called inside defineGameEntity setup.`);
+  }
   return thisEntity;
 }
 
@@ -52,42 +65,11 @@ export function setParentEntity(entity: GameEntity | null) {
   parentEntity = entity;
 }
 
-export interface UIContext {
-  nodes: import("./ui/types").NodeDescriptor[];
-  layout: { direction: "column" | "row"; gap: number; align?: string };
-}
-
-let thisUI: UIContext | null = null;
-export function getThisUI(): UIContext | null {
-  return thisUI;
-}
-export function setThisUI(ui: UIContext | null): void {
-  thisUI = ui;
-}
-export function requireUI(hookName: string): UIContext {
-  if (!thisUI) throw new Error(`${hookName}() requires an active UI context (must be called inside defineUI setup).`);
-  return thisUI;
-}
-
-const cleanupStack: Set<() => void>[] = [];
-
-export function beginCleanupScope(): Set<() => void> {
-  const scope = new Set<() => void>();
-  cleanupStack.push(scope);
-  return scope;
-}
-
-export function endCleanupScope(): void {
-  cleanupStack.pop();
-}
-
-export function registerCleanup(fn: () => void): void {
-  const current = cleanupStack[cleanupStack.length - 1];
-  if (current) {
-    current.add(fn);
-  }
-}
-
-export function hasActiveCleanupScope(): boolean {
-  return cleanupStack.length > 0;
-}
+// Cleanup scope helpers live in @dalpeng/core so reactive primitives and
+// @dalpeng/ui share the same singleton stack without a circular dep.
+export {
+  beginCleanupScope,
+  endCleanupScope,
+  registerCleanup,
+  hasActiveCleanupScope,
+} from "@dalpeng/core";

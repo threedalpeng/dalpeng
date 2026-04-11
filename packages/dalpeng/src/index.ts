@@ -1,11 +1,13 @@
 import { Application, GameEntity, Scene } from "@dalpeng/core";
 export { vec2, vec3, vec4 } from "@dalpeng/math";
 
+export { EventEmitter, type EventMap } from "@dalpeng/core";
 export {
   Animator,
   AudioHandle,
   AudioManager,
   Camera,
+  CameraFollow2D,
   Easings,
   InputManager,
   Light,
@@ -16,51 +18,87 @@ export {
   Shader,
   Skeleton,
   SkinnedMeshRenderer,
+  Sprite2DRenderer,
+  SpriteAnimator,
+  SpriteAtlas,
   SpriteRenderer,
+  TileCollider,
+  TiledImporter,
+  TilemapRenderer,
   Time,
   Transform,
   Tween,
   TweenManager,
 } from "@dalpeng/core";
+export type {
+  AtlasFrame,
+  ParsedObjectLayer,
+  ParsedTileLayer,
+  ParsedTiledMap,
+  ParsedTileset,
+  SpriteAnimationClip,
+  TilemapLayerBatch,
+  TriggerZone,
+} from "@dalpeng/core";
 
-// ECS + Resource hooks
-export { runApp, withCanvasOptions, withFeatures, type AppRunOptions } from "./hooks/app";
+export {
+  runApp,
+  withCanvasOptions,
+  withFeatures,
+  withLayers,
+  type AppRunOptions,
+} from "./hooks/app";
+
+export type {
+  Layer,
+  LayerBackend,
+  LayerSort,
+  LayerMember,
+  ResolvedLayer,
+} from "@dalpeng/core";
 export * from "./hooks/index";
 
-// Reactive
-export { ref, watch, isRef, type Ref } from "./reactive";
+export {
+  ref,
+  computed,
+  watch,
+  isRef,
+  type Ref,
+  type ReadonlyRef,
+} from "./reactive";
 
-// UI System
 export {
   defineUI,
-  defineText,
-  defineBar,
-  defineHtml,
-  defineToggle,
-  defineRange,
-  defineSelect,
-  defineButton,
-  defineValue,
+  Text,
+  Bar,
+  Html,
+  Toggle,
+  Range,
+  Select,
+  Button,
+  Value,
+  Menu,
+  List,
   useLayout,
   useFeature,
-} from "./ui/define";
-export type { UITemplate, UIHandle, NodeDescriptor, SlotPosition } from "./ui/types";
-export { mountOverlay } from "./ui/mount";
-export {
-  defineControlGroup,
-  type ControlGroup,
-  LIGHTING_VIEWS_GROUP,
-  TONE_MAPPING_GROUP,
-  SHADOWS_GROUP,
-  BLOOM_GROUP,
-  IBL_GROUP,
-  SSAO_GROUP,
-  FXAA_GROUP,
-  ANIMATION_GROUP,
-  ALL_RENDER_GROUPS,
-} from "./ui/controlGroups";
-
-// Debug
-export { enableDebugPanel, type DebugPanelHandle, type DebugView } from "./debug/panel";
+  // The UI-side withLayer is NOT re-exported here separately — gameEntity.ts
+  // exports a polymorphic withLayer that dispatches to whichever scope is active.
+  usePlacement,
+  renderDescriptor,
+} from "@dalpeng/ui";
+export type {
+  NodeDescriptor,
+  RenderContext,
+  MenuItem,
+  Placement,
+  Anchor,
+  ViewportCorner,
+  Size,
+  Vec2,
+} from "@dalpeng/ui";
+export type { DialogueLine, DialogueChoice } from "@dalpeng/ui";
+export { createDialogueController, Dialogue } from "@dalpeng/ui";
+export type { DialogueController } from "@dalpeng/ui";
+export { useDialogueController } from "./hooks/dialogue";
 
 export { type Application, type GameEntity, type Scene };

@@ -6,8 +6,6 @@ export function useInput() {
   return entity.currentApp.input;
 }
 
-// ─── Action hooks ──────────────────────────────────────────────────────
-
 export function useActionDown(action: string, cb: () => void) {
   const entity = requireEntity("useActionDown");
   const unsub = entity.currentApp.input.onActionDown(action, cb);
@@ -30,8 +28,6 @@ export function useActionState(action: string): Ref<boolean> {
   registerCleanup(unsub);
   return state;
 }
-
-// ─── Raw key hooks ─────────────────────────────────────────────────────
 
 export function useKeyDown(key: string, cb: () => void) {
   const entity = requireEntity("useKeyDown");
