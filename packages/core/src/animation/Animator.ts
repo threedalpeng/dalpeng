@@ -35,7 +35,6 @@ export default class Animator extends Component {
     super(gameEntity);
   }
 
-  // ─── Build node→joint index cache ──────────────────────────────────────────
   #buildJointCache(): Map<number, number> {
     const map = new Map<number, number>();
     for (let i = 0; i < this.skeleton.jointCount; i++) {
@@ -44,7 +43,6 @@ export default class Animator extends Component {
     return map;
   }
 
-  // ─── Public API ─────────────────────────────────────────────────────────────
 
   play(clipIndex: number, options?: { loop?: boolean; speed?: number }): void {
     this.#currentClip = clipIndex;
@@ -106,7 +104,6 @@ export default class Animator extends Component {
     }
   }
 
-  // ─── Getters for debug overlay ───────────────────────────────────────────────
 
   get currentClipIndex(): number {
     return this.#currentClip;
@@ -124,7 +121,6 @@ export default class Animator extends Component {
     return this.clips.length;
   }
 
-  // ─── Tick ────────────────────────────────────────────────────────────────────
 
   tick(dt: number): void {
     if (!this.#playing) return;
@@ -170,10 +166,8 @@ export default class Animator extends Component {
       }
     }
 
-    // ── Step 1: Sample current clip channels into skeleton ──────────────────
     this.#sampleClipIntoSkeleton(clip, this.#currentTime, nodeToJointIdx);
 
-    // ── Step 2: Crossfade blending ───────────────────────────────────────────
     if (isFading) {
       const fadeClip = this.clips[this.#fadeClip];
       const blendFactor = Math.min(this.#fadeElapsed / this.#fadeDuration, 1);
@@ -225,12 +219,10 @@ export default class Animator extends Component {
       }
     }
 
-    // ── Step 3: Compute joint matrices ───────────────────────────────────────
     computeNodeGlobalTransforms(this.nodes, this.rootNodeIndices, this.skeleton, this.#nodeToJointIdx!, this.#globalTransforms);
     this.skeleton.computeJointMatrices(this.#globalTransforms);
   }
 
-  // ─── Private: sample a clip's channels directly into skeleton arrays ────────
   #sampleClipIntoSkeleton(
     clip: ParsedAnimation,
     time: number,

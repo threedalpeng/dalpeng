@@ -28,6 +28,14 @@ import ssaoblurfrag from "../shaders/ssao_blur.frag?raw";
 import skyboxvert from "../shaders/skybox.vert?raw";
 import skyboxfrag from "../shaders/skybox.frag?raw";
 import fxaafrag from "../shaders/fxaa.frag?raw";
+import sprite2dvert from "../shaders/sprite2d.vert?raw";
+import sprite2dfrag from "../shaders/sprite2d.frag?raw";
+import blitvert from "../shaders/blit.vert?raw";
+import blitfrag from "../shaders/blit.frag?raw";
+import Sprite2DRenderer from "../graphics2d/Sprite2DRenderer";
+import CameraFollow2D from "../graphics2d/CameraFollow2D";
+import TilemapRenderer, { type TilemapLayerBatch } from "../graphics2d/TilemapRenderer";
+import { Mat4 } from "@dalpeng/math";
 
 export default class RenderPipeline {
   shader = {
@@ -42,6 +50,8 @@ export default class RenderPipeline {
     ssaoBlur: new Shader(),
     skybox: new Shader(),
     fxaa: new Shader(),
+    sprite2d: new Shader(),
+    blit: new Shader(),
   };
 
   lightingQuad!: GfxVertexArray;
@@ -53,6 +63,11 @@ export default class RenderPipeline {
   #particleQuadVao: GfxVertexArray | null = null;
   #particleQuadVbo: GfxBuffer | null = null;
   #particleInstanceVbo: GfxBuffer | null = null;
+
+  #sprite2dQuadVao: GfxVertexArray | null = null;
+  #sprite2dQuadVbo: GfxBuffer | null = null;
+  #sprite2dInstanceVbo: GfxBuffer | null = null;
+  #sprite2dInstanceBuf = new Float32Array(0);
 
   #iblPrecompute = new IBLPrecompute();
   #iblPending = false;
@@ -94,9 +109,10 @@ export default class RenderPipeline {
       this.shader.ssaoBlur.loadFrom(mainvert, ssaoblurfrag),
       this.shader.skybox.loadFrom(skyboxvert, skyboxfrag),
       this.shader.fxaa.loadFrom(mainvert, fxaafrag),
+      this.shader.sprite2d.loadFrom(sprite2dvert, sprite2dfrag),
+      this.shader.blit.loadFrom(blitvert, blitfrag),
     ]);
 
-    // Material texture sampler uniforms (texture units are constant)
     this.shader.geometry.use();
     this.shader.geometry.setUniform1i("uBaseColorMap", 0);
     this.shader.geometry.setUniform1i("uNormalMap", 1);
@@ -104,7 +120,6 @@ export default class RenderPipeline {
     this.shader.geometry.setUniform1i("uEmissiveMap", 3);
     this.shader.geometry.setUniform1i("uOcclusionMap", 4);
 
-    // G-Buffer sampler uniforms (texture units are constant)
     this.shader.lighting.use();
     this.shader.lighting.setUniform1i("gPositionMetallic", 0);
     this.shader.lighting.setUniform1i("gNormalRoughness", 1);
@@ -112,39 +127,38 @@ export default class RenderPipeline {
     this.shader.lighting.setUniform1i("gEmissive", 3);
     this.shader.lighting.setUniform1i("uShadowMapDepth", 4);
 
-    // Shared fullscreen quad for lighting pass
     const lightingPosLoc = this.shader.lighting.getAttribLocation("aPosition");
     this.lightingQuad = renderer.createVertexArray();
     const lightingQuadBuf = renderer.createBuffer("vertex");
     lightingQuadBuf.update(dummyQuadForLight());
     this.lightingQuad.setVertexBuffer(lightingPosLoc, lightingQuadBuf, 3);
 
-    // SSAO sampler uniforms
     this.shader.ssao.use();
     this.shader.ssao.setUniform1i("gPositionMetallic", 0);
     this.shader.ssao.setUniform1i("gNormalRoughness", 1);
     this.shader.ssao.setUniform1i("uNoiseTex", 9);
 
-    // SSAO blur sampler uniform
     this.shader.ssaoBlur.use();
     this.shader.ssaoBlur.setUniform1i("uSSAORaw", 0);
 
-    // Lighting shader IBL/SSAO sampler uniforms
     this.shader.lighting.use();
     this.shader.lighting.setUniform1i("uSSAOMap", 5);
     this.shader.lighting.setUniform1i("uIrradianceMap", 6);
     this.shader.lighting.setUniform1i("uPrefilteredMap", 7);
     this.shader.lighting.setUniform1i("uBrdfLUT", 8);
 
-    // Skybox sampler uniform
     this.shader.skybox.use();
     this.shader.skybox.setUniform1i("uSkybox", 0);
 
-    // FXAA sampler uniform
     this.shader.fxaa.use();
     this.shader.fxaa.setUniform1i("uSource", 0);
 
-    // Generate SSAO noise texture and kernel
+    this.shader.sprite2d.use();
+    this.shader.sprite2d.setUniform1i("uAtlas", 0);
+
+    this.shader.blit.use();
+    this.shader.blit.setUniform1i("uSource", 0);
+
     this.#ssaoNoiseTex = this.#createSSAONoiseTex(renderer);
     this.#ssaoKernel = this.#generateSSAOKernel(64);
   }
@@ -162,18 +176,14 @@ export default class RenderPipeline {
     resources.ensureSize(renderer, width, height);
     renderer.setViewport(0, 0, width, height);
 
-    // Lazy IBL precompute (if features set after mount)
     if (features.ibl && features.iblHdrUrl && !this.#iblPrecompute.resources && !this.#iblPending) {
       this.#iblPending = true;
       this.initIBL(renderer, features.iblHdrUrl).then(() => { this.#iblPending = false; });
     }
 
-    // Shadow pass
     FrameProfiler.beginPass("shadow");
     this.#shadowSys?.update(app, resources);
     FrameProfiler.endPass();
-
-    // ─── Geometry pass ───
     FrameProfiler.beginPass("geometry");
     this.shader.geometry.use();
     renderer.beginPass({
@@ -206,26 +216,20 @@ export default class RenderPipeline {
     renderer.endPass();
     FrameProfiler.endPass();
     if (features.debugGLVerbose) renderer.debugCheckError?.("after geometry endPass");
-
-    // ─── SSAO pass ───
     if (features.ssao) {
       FrameProfiler.beginPass("ssao");
       this.#renderSSAO(app, resources);
       FrameProfiler.endPass();
     }
-
-    // ─── Lighting pass ───
     FrameProfiler.beginPass("lighting");
     this.shader.lighting.use();
 
-    // Bind G-Buffer textures to units 0..3
     const gb = resources.gbuffer!;
     gb.positionMetallic.bind(0);
     gb.normalRoughness.bind(1);
     gb.albedo.bind(2);
     gb.emissive.bind(3);
 
-    // Bind IBL textures
     const iblRes = this.#iblPrecompute.resources;
     if (features.ibl && iblRes) {
       iblRes.irradianceCubemap.bind(6);
@@ -237,7 +241,6 @@ export default class RenderPipeline {
       this.shader.lighting.setUniform1i("uEnableIBL", 0);
     }
 
-    // Bind SSAO blurred result
     if (features.ssao && resources.ssao) {
       resources.ssao.texBlurred.bind(5);
       this.shader.lighting.setUniform1i("uEnableSSAO", 1);
@@ -281,7 +284,6 @@ export default class RenderPipeline {
       light.renderLight();
     });
 
-    // If no lights exist, still draw one ambient+emissive pass
     if (isFirstLight) {
       this.shader.lighting.setUniform1i("uIsFirstLight", 1);
       this.shader.lighting.setUniform1i("uLight.type", 0);
@@ -302,30 +304,58 @@ export default class RenderPipeline {
     renderer.endPass();
     FrameProfiler.endPass();
     if (features.debugGLVerbose) renderer.debugCheckError?.("after lighting endPass");
-
-    // ─── Skybox pass ───
     if ((features.skybox ?? features.ibl) && this.#iblPrecompute.resources) {
       FrameProfiler.beginPass("skybox");
       this.#renderSkybox(app, resources);
       FrameProfiler.endPass();
     }
-
-    // ─── Particle forward pass ───
+    // FBO dimensions must be exact multiples of tile size to keep 1 unit = ppu pixels.
+    // Height is fixed from camera.size * 2 * ppu (always integer).
+    // Width is rounded to nearest integer; the 2D projection is then derived FROM the FBO size.
+    {
+      let pixelArtWidth = 0, pixelArtHeight = 0;
+      app.forEachActiveComponent(Camera, (camera) => {
+        if (camera.isOrthographic) {
+          let ppu = 16;
+          app.forEachActiveComponent(CameraFollow2D, (cf) => { ppu = cf.pixelsPerUnit; });
+          pixelArtHeight = Math.round(camera.size * 2 * ppu);
+          pixelArtWidth = Math.round(pixelArtHeight * camera.aspectRatio);
+        }
+      });
+      if (pixelArtWidth > 0 && pixelArtHeight > 0) {
+        resources.ensurePixelArt(renderer, pixelArtWidth, pixelArtHeight);
+      }
+    }
+    if (resources.pixelArt) {
+      renderer.beginPass({
+        target: resources.pixelArt.rt,
+        depthTest: false,
+        depthWrite: false,
+        blend: { enable: false },
+        clearColor: [0, 0, 0, 0],
+        viewport: { x: 0, y: 0, w: resources.pixelArt.width, h: resources.pixelArt.height },
+        colorAttachments: [0],
+      });
+      renderer.endPass();
+    }
+    FrameProfiler.beginPass("tilemap2d");
+    this.#renderTilemap(app);
+    FrameProfiler.endPass();
+    FrameProfiler.beginPass("sprites2d");
+    this.#render2DSprites(app);
+    FrameProfiler.endPass();
+    if (resources.pixelArt && resources.lighting) {
+      this.#blitPixelArt(app, resources);
+    }
     FrameProfiler.beginPass("particles");
     this.#renderParticles(app);
     FrameProfiler.endPass();
-
-    // ─── Bloom allocation ───
     if (features.bloom) {
       resources.ensureBloom(renderer);
     }
-
-    // ─── FXAA allocation ───
     if (features.fxaa) {
       resources.ensureFxaa(renderer);
     }
-
-    // ─── Post-processing ───
     FrameProfiler.beginPass("post");
     this.#postProcessing.render(renderer, resources, {
       post: this.shader.post,
@@ -411,13 +441,11 @@ export default class RenderPipeline {
 
     const gb = resources.gbuffer;
 
-    // ── SSAO raw pass ──
     this.shader.ssao.use();
     gb.positionMetallic.bind(0);
     gb.normalRoughness.bind(1);
     if (this.#ssaoNoiseTex) this.#ssaoNoiseTex.bind(9);
 
-    // Set kernel samples
     const kernelSize = features.ssaoKernelSize ?? 64;
     this.shader.ssao.setUniform1i("uKernelSize", Math.min(kernelSize, 64));
     this.shader.ssao.setUniform1f("uRadius", features.ssaoRadius ?? 0.5);
@@ -426,13 +454,11 @@ export default class RenderPipeline {
     this.#ssaoNoiseScale[1] = height / 4.0;
     this.shader.ssao.setUniformVec2("uNoiseScale", this.#ssaoNoiseScale);
 
-    // Set view/projection from camera
     app.forEachActiveComponent(Camera, (camera) => {
       this.shader.ssao.setUniformMat4("uView", camera.viewMatrix);
       this.shader.ssao.setUniformMat4("uProjection", camera.glProjectionMatrix);
     });
 
-    // Upload kernel samples as individual vec3 uniforms
     for (let i = 0; i < Math.min(kernelSize, 64); i++) {
       this.shader.ssao.setUniformVec3(
         `uSamples[${i}]`,
@@ -451,7 +477,6 @@ export default class RenderPipeline {
     renderer.drawArrays(this.lightingQuad, { mode: "triangle-strip", count: 4 });
     renderer.endPass();
 
-    // ── SSAO blur pass ──
     this.shader.ssaoBlur.use();
     resources.ssao.texRaw.bind(0);
 
@@ -509,6 +534,255 @@ export default class RenderPipeline {
     renderer.setCullFace?.(false);
     renderer.drawArrays(this.#skyboxVao, { mode: "triangles", count: 36 });
     renderer.setCullFace?.(true);
+    renderer.endPass();
+  }
+
+  #renderTilemap(app: Application) {
+    const renderer = app.renderer;
+    const resources = this.#frameResources;
+    if (!resources.pixelArt) return;
+
+    const batches: TilemapLayerBatch[] = [];
+    app.forEachActiveComponent(TilemapRenderer, (tmr) => {
+      batches.push(...tmr.layerBatches);
+    });
+    if (batches.length === 0) return;
+
+    const viewProj = this.#get2DViewProjection(app);
+    if (!viewProj) return;
+
+    // Reuse sprite2d shader and quad VAO for tilemap rendering
+    if (!this.#sprite2dQuadVao) {
+      this.#sprite2dQuadVao = renderer.createVertexArray();
+      this.#sprite2dQuadVbo = renderer.createBuffer("vertex");
+      this.#sprite2dQuadVbo.update(new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
+      const posLoc = this.shader.sprite2d.getAttribLocation("aPosition");
+      this.#sprite2dQuadVao.setVertexBuffer(posLoc, this.#sprite2dQuadVbo!, 2);
+      this.#sprite2dInstanceVbo = renderer.createBuffer("vertex");
+    }
+
+    this.shader.sprite2d.use();
+    this.shader.sprite2d.setUniformMat4("uViewProjection", viewProj);
+
+    renderer.beginPass({
+      target: resources.pixelArt!.rt,
+      depthTest: false,
+      depthWrite: false,
+      blend: { enable: true, mode: "alpha" },
+      colorAttachments: [0],
+      viewport: { x: 0, y: 0, w: resources.pixelArt!.width, h: resources.pixelArt!.height },
+    });
+    renderer.setCullFace?.(false);
+
+    const stride = 14 * 4; // 56 bytes
+    for (const batch of batches) {
+      this.#sprite2dInstanceVbo!.update(batch.instanceData);
+
+      const posLoc = this.shader.sprite2d.getAttribLocation("aInstPos");
+      const sizeLoc = this.shader.sprite2d.getAttribLocation("aInstSize");
+      const uvLoc = this.shader.sprite2d.getAttribLocation("aInstUV");
+      const tintLoc = this.shader.sprite2d.getAttribLocation("aInstTint");
+      const depthLoc = this.shader.sprite2d.getAttribLocation("aInstDepth");
+
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(posLoc, this.#sprite2dInstanceVbo!, 2, 1, { stride, offset: 0 });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(sizeLoc, this.#sprite2dInstanceVbo!, 2, 1, { stride, offset: 8 });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(uvLoc, this.#sprite2dInstanceVbo!, 4, 1, { stride, offset: 16 });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(tintLoc, this.#sprite2dInstanceVbo!, 4, 1, { stride, offset: 32 });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(depthLoc, this.#sprite2dInstanceVbo!, 1, 1, { stride, offset: 48 });
+
+      batch.atlas.texture.bind(0);
+
+      renderer.drawArraysInstanced?.(this.#sprite2dQuadVao!, {
+        mode: "triangle-strip",
+        count: 4,
+        instanceCount: batch.tileCount,
+      });
+    }
+
+    renderer.setCullFace?.(true);
+    renderer.endPass();
+  }
+
+  #get2DViewProjection(app: Application): Mat4 | null {
+    const pa = this.#frameResources.pixelArt;
+    if (!pa) return null;
+
+    let viewProj: Mat4 | null = null;
+    app.forEachActiveComponent(Camera, (camera) => {
+      if (camera.isOrthographic) {
+        let viewMatrix = camera.viewMatrix;
+        let ppu = 16;
+        app.forEachActiveComponent(CameraFollow2D, (cf) => {
+          ppu = cf.pixelsPerUnit;
+          if (cf.snappedViewMatrix) {
+            viewMatrix = cf.snappedViewMatrix;
+          }
+        });
+
+        // Build projection from FBO dimensions so 1 world unit = exactly ppu pixels
+        const halfW = pa.width / ppu / 2;
+        const halfH = pa.height / ppu / 2;
+        const proj = Mat4.toWebGL(
+          Mat4.orthographic(halfW, halfH, camera.dNear, camera.dFar)
+        );
+        viewProj = proj.mul(viewMatrix);
+      }
+    });
+    return viewProj;
+  }
+
+  #render2DSprites(app: Application) {
+    const renderer = app.renderer;
+    const resources = this.#frameResources;
+    if (!resources.pixelArt) return;
+
+    const sprites: { renderer: Sprite2DRenderer; sortKey: number }[] = [];
+    app.forEachActiveComponent(Sprite2DRenderer, (s) => {
+      if (!s.atlas) return;
+      const layerName = s.gameEntity._layerName;
+      const layerIndex = layerName
+        ? (app.layers.get(layerName)?.index ?? s.sortingLayer)
+        : s.sortingLayer;
+      sprites.push({ renderer: s, sortKey: s.getSortKey(layerIndex) });
+    });
+    if (sprites.length === 0) return;
+
+    sprites.sort((a, b) => a.sortKey - b.sortKey);
+
+    const floatsPerSprite = 14;
+    const totalFloats = sprites.length * floatsPerSprite;
+    if (this.#sprite2dInstanceBuf.length < totalFloats) {
+      this.#sprite2dInstanceBuf = new Float32Array(totalFloats);
+    }
+    for (let i = 0; i < sprites.length; i++) {
+      sprites[i].renderer.writeInstanceData(
+        this.#sprite2dInstanceBuf,
+        i * floatsPerSprite,
+      );
+    }
+
+    if (!this.#sprite2dQuadVao) {
+      this.#sprite2dQuadVao = renderer.createVertexArray();
+      this.#sprite2dQuadVbo = renderer.createBuffer("vertex");
+      this.#sprite2dQuadVbo.update(new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
+      const posLoc = this.shader.sprite2d.getAttribLocation("aPosition");
+      this.#sprite2dQuadVao.setVertexBuffer(posLoc, this.#sprite2dQuadVbo!, 2);
+      this.#sprite2dInstanceVbo = renderer.createBuffer("vertex");
+    }
+
+    const viewProj = this.#get2DViewProjection(app);
+    if (!viewProj) return;
+
+    this.shader.sprite2d.use();
+    this.shader.sprite2d.setUniformMat4("uViewProjection", viewProj);
+
+    renderer.beginPass({
+      target: resources.pixelArt!.rt,
+      depthTest: false,
+      depthWrite: false,
+      blend: { enable: true, mode: "alpha" },
+      colorAttachments: [0],
+      viewport: { x: 0, y: 0, w: resources.pixelArt!.width, h: resources.pixelArt!.height },
+    });
+    renderer.setCullFace?.(false);
+
+    let batchStart = 0;
+    while (batchStart < sprites.length) {
+      const currentAtlas = sprites[batchStart].renderer.atlas!;
+      let batchEnd = batchStart + 1;
+      while (batchEnd < sprites.length && sprites[batchEnd].renderer.atlas === currentAtlas) {
+        batchEnd++;
+      }
+
+      const batchCount = batchEnd - batchStart;
+      const batchOffset = batchStart * floatsPerSprite;
+      const batchData = this.#sprite2dInstanceBuf.subarray(
+        batchOffset,
+        batchOffset + batchCount * floatsPerSprite
+      );
+
+      this.#sprite2dInstanceVbo!.update(batchData);
+
+      const stride = floatsPerSprite * 4; // 56 bytes = 14 floats * 4
+      const posLoc = this.shader.sprite2d.getAttribLocation("aInstPos");
+      const sizeLoc = this.shader.sprite2d.getAttribLocation("aInstSize");
+      const uvLoc = this.shader.sprite2d.getAttribLocation("aInstUV");
+      const tintLoc = this.shader.sprite2d.getAttribLocation("aInstTint");
+      const depthLoc = this.shader.sprite2d.getAttribLocation("aInstDepth");
+
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(posLoc, this.#sprite2dInstanceVbo!, 2, 1, { stride, offset: 0 });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(sizeLoc, this.#sprite2dInstanceVbo!, 2, 1, { stride, offset: 8 });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(uvLoc, this.#sprite2dInstanceVbo!, 4, 1, { stride, offset: 16 });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(tintLoc, this.#sprite2dInstanceVbo!, 4, 1, { stride, offset: 32 });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(depthLoc, this.#sprite2dInstanceVbo!, 1, 1, { stride, offset: 48 });
+
+      currentAtlas.texture.bind(0);
+
+      renderer.drawArraysInstanced?.(this.#sprite2dQuadVao!, {
+        mode: "triangle-strip",
+        count: 4,
+        instanceCount: batchCount,
+      });
+
+      batchStart = batchEnd;
+    }
+
+    renderer.setCullFace?.(true);
+    renderer.endPass();
+  }
+
+  #blitQuadVao: GfxVertexArray | null = null;
+  #blitQuadVbo: GfxBuffer | null = null;
+
+  #blitPixelArt(app: Application, resources: FrameResources): void {
+    const renderer = app.renderer;
+    const pa = resources.pixelArt!;
+    const lt = resources.lighting!;
+
+    // Lazy-init fullscreen quad VAO for blit
+    if (!this.#blitQuadVao) {
+      this.#blitQuadVao = renderer.createVertexArray();
+      this.#blitQuadVbo = renderer.createBuffer("vertex");
+      this.#blitQuadVbo.update(new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
+      const posLoc = this.shader.blit.getAttribLocation("aPosition");
+      this.#blitQuadVao.setVertexBuffer(posLoc, this.#blitQuadVbo!, 2);
+    }
+
+    const { width, height } = renderer.getDrawableSize();
+
+    // Integer scale to avoid uneven pixel sizes
+    const scaleX = Math.max(1, Math.floor(width / pa.width));
+    const scaleY = Math.max(1, Math.floor(height / pa.height));
+    const scale = Math.min(scaleX, scaleY);
+    const blitW = pa.width * scale;
+    const blitH = pa.height * scale;
+
+    // Sub-pixel compensation: shift blit quad by the camera's snap remainder
+    // This restores smooth motion that was lost by snapping the camera in the FBO
+    let subPixelOffsetX = 0;
+    let subPixelOffsetY = 0;
+    app.forEachActiveComponent(CameraFollow2D, (cf) => {
+      if (cf.pixelPerfect) {
+        subPixelOffsetX = cf.subPixelX * cf.pixelsPerUnit * scale;
+        subPixelOffsetY = cf.subPixelY * cf.pixelsPerUnit * scale;
+      }
+    });
+
+    const offsetX = Math.round((width - blitW) / 2 - subPixelOffsetX);
+    const offsetY = Math.round((height - blitH) / 2 - subPixelOffsetY);
+
+    this.shader.blit.use();
+    pa.color.bind(0);
+
+    renderer.beginPass({
+      target: lt.rt,
+      depthTest: false,
+      depthWrite: false,
+      blend: { enable: true, mode: "alpha" },
+      colorAttachments: [0],
+      viewport: { x: offsetX, y: offsetY, w: blitW, h: blitH },
+    });
+    renderer.drawArrays(this.#blitQuadVao, { mode: "triangle-strip", count: 4 });
     renderer.endPass();
   }
 

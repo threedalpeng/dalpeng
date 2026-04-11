@@ -1,3 +1,5 @@
+import { computed, ref, type ReadonlyRef } from "../runtime/reactive";
+
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error";
 export type LogModule = "render" | "shader" | "gl" | "animation" | "asset" | "app";
 
@@ -24,6 +26,12 @@ export default class Logger {
   static #maxEntries = 500;
   static #listeners: ((entry: LogEntry) => void)[] = [];
 
+  static #version = ref(0);
+  static entries: ReadonlyRef<readonly LogEntry[]> = computed(() => {
+    void Logger.#version.value;
+    return [...Logger.#buffer];
+  });
+
   static log(module: LogModule, level: LogLevel, message: string, ...args: unknown[]): void {
     if (!this.enabled) return;
     if (LEVEL_ORDER[level] < LEVEL_ORDER[this.level]) return;
@@ -41,12 +49,13 @@ export default class Logger {
       this.#buffer.shift();
     }
 
+    this.#version.value++;
+
     for (const listener of this.#listeners) {
       listener(entry);
     }
   }
 
-  // Convenience methods
   static trace(module: LogModule, message: string, ...args: unknown[]): void {
     this.log(module, "trace", message, ...args);
   }
@@ -97,6 +106,7 @@ export default class Logger {
 
   static clear(): void {
     this.#buffer.length = 0;
+    this.#version.value++;
   }
 
   static onEntry(cb: (entry: LogEntry) => void): () => void {

@@ -17,15 +17,29 @@ import Time from "./Time";
 import Transform from "./ecs/Transform";
 import Animator from "./animation/Animator";
 import TweenManager from "./animation/TweenManager";
+import SpriteAnimator from "./graphics2d/SpriteAnimator";
+import CameraFollow2D from "./graphics2d/CameraFollow2D";
 import AudioManager from "./audio/AudioManager";
 import TextureManager from "./asset/TextureManager";
 import ModelManager from "./asset/ModelManager";
+import SpriteAtlasManager from "./asset/SpriteAtlasManager";
 import { isNil } from "./utils/basic";
 import { FrameProfiler } from "./debug";
+import { ref, type ReadonlyRef } from "./runtime/reactive";
+import { LayerRegistry } from "./runtime/Layer";
+import type { UIRenderer } from "./runtime/UIRenderer";
+import { isGameDescriptor, type LogicalDescriptor } from "./runtime/Descriptor";
+import { type Materializer } from "./runtime/Materializer";
+import type { GameInstance } from "./runtime/Instance";
+
+export interface FrameStatsSummary {
+  fps: number;
+  frameTime: number;
+  drawCalls: number;
+  triangles: number;
+}
 
 export default class Application {
-  // ─── App Self-Management ───────────────────────────────────────────────────
-  // Handles instance registration and naming for Applications.
   static instanceList = new Map<number, Application>();
   static #nextId = 0;
   #id = 0;
@@ -40,24 +54,73 @@ export default class Application {
     this.name = name;
   }
 
-  // ─── Scene Management ──────────────────────────────────────────────────────
-  // Adds/removes scenes while keeping ownership references consistent.
   #sceneList = new Map<number, Scene>();
+  get scenes(): Iterable<Scene> {
+    return this.#sceneList.values();
+  }
+  #activeScene = ref<Scene | null>(null);
+  get activeScene(): ReadonlyRef<Scene | null> {
+    return this.#activeScene;
+  }
   addScene(scene: Scene) {
     if (scene.app !== undefined) {
       scene.app.removeScene(scene);
     }
     scene.app = this;
     this.#sceneList.set(scene.id, scene);
+    this.#activeScene.value = scene;
     return this;
   }
   removeScene(scene: Scene) {
     this.#sceneList.delete(scene.id);
+    if (this.#activeScene.value === scene) {
+      const remaining = Array.from(this.#sceneList.values());
+      this.#activeScene.value = remaining[remaining.length - 1] ?? null;
+    }
     return this;
   }
 
-  // ─── Component Management ──────────────────────────────────────────────────
-  // Tracks active component sets and dirty transforms per frame.
+  #frameStats = ref<FrameStatsSummary>({
+    fps: 0,
+    frameTime: 0,
+    drawCalls: 0,
+    triangles: 0,
+  });
+  get frameStats(): ReadonlyRef<FrameStatsSummary> {
+    return this.#frameStats;
+  }
+  _setFrameStats(next: FrameStatsSummary): void {
+    this.#frameStats.value = next;
+  }
+
+  layers = new LayerRegistry();
+
+  #uiRenderer: UIRenderer | null = null;
+  registerUIRenderer(renderer: UIRenderer): void {
+    if (this.#uiRenderer) {
+      throw new Error(
+        "Application.registerUIRenderer: a UI renderer is already registered. " +
+          "Each Application accepts exactly one renderer; call this once " +
+          "before mounting any UI.",
+      );
+    }
+    this.#uiRenderer = renderer;
+  }
+  getUIRenderer(): UIRenderer | null {
+    return this.#uiRenderer;
+  }
+
+  #materializer: Materializer | null = null;
+  registerMaterializer(m: Materializer): void {
+    if (this.#materializer) {
+      throw new Error(
+        "Application.registerMaterializer: a Materializer is already registered. " +
+          "Call this once per Application instance.",
+      );
+    }
+    this.#materializer = m;
+  }
+
   activeComponents = new Map<string, Set<Component>>();
   #dirtyTransforms = new Set<Transform>();
   forEachActiveComponent<Type extends Component>(
@@ -82,8 +145,6 @@ export default class Application {
     for (const transform of batch) transform.checkModelMatrixToBeUpdated();
   }
 
-  // ─── Script Management ─────────────────────────────────────────────────────
-  // Iterates active scripts for setup, update, and fixed-update phases.
   activeScripts = new Map<number, Script>();
   forEachActiveScript(callback: (component: Script) => void) {
     for (const script of this.activeScripts.values()) {
@@ -91,7 +152,6 @@ export default class Application {
     }
   }
 
-  // ─── Graphic Context ───────────────────────────────────────────────────────
   renderer: RendererBackend = new WebGL2Renderer();
   features: RenderConfig = {
     postToneMapping: false,
@@ -105,12 +165,11 @@ export default class Application {
   input = new InputManager();
   textures = new TextureManager();
   models = new ModelManager();
+  atlases = new SpriteAtlasManager();
 
-  /** Proxy — components access shaders via `this.currentApp.shader.geometry` etc. */
   get shader() {
     return this.pipeline.shader;
   }
-  /** Proxy — Light.renderLight() reads the shared lighting quad. */
   get lightingQuad() {
     return this.pipeline.lightingQuad;
   }
@@ -120,13 +179,11 @@ export default class Application {
     return this;
   }
 
-  /** Bulk-set render features. Useful for runtime reconfiguration. */
   configure(features: Partial<RenderConfig>): this {
     Object.assign(this.features, features);
     return this;
   }
 
-  /** Load an HDR environment map for IBL. Can be called after mount(). */
   async loadIBL(hdrUrl: string): Promise<void> {
     this.features.iblHdrUrl = hdrUrl;
     await this.pipeline.initIBL(this.renderer, hdrUrl);
@@ -141,36 +198,24 @@ export default class Application {
     return this;
   }
 
-  // ─── Mount & Render Loop ───────────────────────────────────────────────────
-  // Initializes WebGL state and kicks off the main render/update loop.
   async mount(canvas: HTMLCanvasElement) {
     if (isNil(canvas)) {
       console.error("Canvas Not Mounted");
       return this;
     }
 
-    // Apply canvas sizing FIRST so renderer reads correct buffer dimensions
     this.canvasController.applyInitialSize(canvas);
-
-    // Initialize renderer backend (creates context and G-Buffer at correct size)
     await this.renderer.init(canvas);
-
-    // Bind CanvasController to renderer for ongoing resize events
     this.canvasController.mount(canvas, this.renderer);
-
-    // Initialize render pipeline (shaders, shadow system, GPU resources)
     await this.pipeline.init(this.renderer);
 
-    // IBL precompute (if HDR URL is configured)
     if (this.features.iblHdrUrl) {
       await this.pipeline.initIBL(this.renderer, this.features.iblHdrUrl);
     }
 
-    // Initialize texture manager (placeholder texture, default sampler)
     this.textures.init(this.renderer);
-
-    // Initialize model manager
     this.models.init(this.renderer);
+    this.atlases.init(this.renderer, this.textures);
 
     canvas.setAttribute("tabindex", "0");
     canvas.focus();
@@ -216,16 +261,27 @@ export default class Application {
     return this;
   }
 
-  // ─── Runtime Lifecycle ──────────────────────────────────────────────────────
-  // Deferred spawn/destroy queue, flushed between update and render.
   #pendingStarts = new Set<Script>();
   #lifecycleQueue: Array<
-    | { kind: "spawn"; factory: () => GameEntity }
+    | { kind: "spawn-entity"; factory: () => GameEntity }
+    | { kind: "spawn-descriptor"; descriptor: LogicalDescriptor; parent?: GameEntity }
     | { kind: "destroy"; entity: GameEntity }
   > = [];
 
-  spawn(factory: () => GameEntity): void {
-    this.#lifecycleQueue.push({ kind: "spawn", factory });
+  spawn(factory: () => GameEntity): void;
+  spawn(descriptor: LogicalDescriptor, parent?: GameEntity): void;
+  spawn(arg: (() => GameEntity) | LogicalDescriptor, parent?: GameEntity): void {
+    if (typeof arg === "function") {
+      this.#lifecycleQueue.push({ kind: "spawn-entity", factory: arg });
+    } else {
+      if (!this.#materializer) {
+        throw new Error(
+          "Application.spawn(descriptor): no Materializer registered. " +
+            "Ensure `runApp` has been called before spawning descriptors.",
+        );
+      }
+      this.#lifecycleQueue.push({ kind: "spawn-descriptor", descriptor: arg, parent });
+    }
   }
 
   destroy(entity: GameEntity): void {
@@ -250,14 +306,31 @@ export default class Application {
     for (const cmd of commands) {
       if (cmd.kind === "destroy") {
         this.#executeDestroy(cmd.entity);
+      } else if (cmd.kind === "spawn-entity") {
+        this.#executeSpawnEntity(cmd.factory);
       } else {
-        this.#executeSpawn(cmd.factory);
+        this.#executeSpawnDescriptor(cmd.descriptor, cmd.parent);
       }
     }
   }
 
-  #executeSpawn(factory: () => GameEntity) {
+  #executeSpawnEntity(factory: () => GameEntity) {
     const entity = factory();
+    this.#setupEntitySubtree(entity);
+  }
+
+  #executeSpawnDescriptor(descriptor: LogicalDescriptor, parent?: GameEntity) {
+    if (!this.#materializer) return;
+    const scene = parent?.scene ?? this.#activeScene.value;
+    if (!scene) return;
+    const parentArg: GameInstance | Scene = parent?._gameInstance ?? scene;
+    const instance = this.#materializer.materialize(descriptor, parentArg);
+    if (isGameDescriptor(descriptor)) {
+      this.#setupEntitySubtree((instance as GameInstance).entity);
+    }
+  }
+
+  #setupEntitySubtree(entity: GameEntity) {
     const stack: GameEntity[] = [entity];
     while (stack.length) {
       const current = stack.pop()!;
@@ -271,8 +344,32 @@ export default class Application {
     }
   }
 
+  #runOnDestroyScripts(entity: GameEntity) {
+    for (const script of entity.getComponents(Script)) {
+      script.onDestroy();
+    }
+  }
+
   #executeDestroy(entity: GameEntity) {
     if (!entity.scene) return;
+
+    const gameInstance = entity._gameInstance;
+    if (gameInstance && this.#materializer) {
+      this.#materializer.destroyCascade(gameInstance, (e) =>
+        this.#runOnDestroyScripts(e),
+      );
+    } else {
+      const stack: GameEntity[] = [entity];
+      const allEntities: GameEntity[] = [];
+      while (stack.length) {
+        const current = stack.pop()!;
+        allEntities.push(current);
+        stack.push(...current.children);
+      }
+      for (const e of allEntities) {
+        this.#runOnDestroyScripts(e);
+      }
+    }
 
     const stack: GameEntity[] = [entity];
     const allEntities: GameEntity[] = [];
@@ -280,12 +377,6 @@ export default class Application {
       const current = stack.pop()!;
       allEntities.push(current);
       stack.push(...current.children);
-    }
-
-    for (const e of allEntities) {
-      for (const script of e.getComponents(Script)) {
-        script.onDestroy();
-      }
     }
 
     for (const e of allEntities) {
@@ -305,7 +396,6 @@ export default class Application {
     entity.remove();
   }
 
-  /* Game Loop */
   static #activeInstances = new Map<number, Application>();
   static #instanceEvents: (() => any)[] = [];
   state: "new" | "ready" | "running" = "new";
@@ -330,10 +420,44 @@ export default class Application {
     });
   }
 
+  switchScene(oldScene: Scene, newSceneFactory: () => Scene): void {
+    for (const entityId of Object.keys(oldScene.rootEntities)) {
+      this.#executeDestroy(oldScene.rootEntities[Number(entityId)]);
+    }
+    this.#flushLifecycleQueue();
+    this.removeScene(oldScene);
+
+    const newScene = newSceneFactory();
+    if (newScene.app !== this) {
+      this.addScene(newScene);
+    }
+
+    if (!this.#materializer) {
+      throw new Error(
+        "Application.switchScene: no Materializer registered. " +
+          "Ensure `runApp` has been called before switching scenes.",
+      );
+    }
+    const pending = newScene._pendingRootDescriptors;
+    if (pending.length > 0) {
+      newScene._pendingRootDescriptors = [];
+      this.#materializer.materializeRoots(newScene, pending);
+    }
+
+    for (const entityId of Object.keys(newScene.rootEntities)) {
+      const stack: GameEntity[] = [newScene.rootEntities[Number(entityId)]];
+      while (stack.length) {
+        const current = stack.pop()!;
+        for (const script of current.getComponents(Script)) {
+          this.#pendingStarts.add(script);
+        }
+        stack.push(...current.children);
+      }
+    }
+  }
+
   dispose() {
     this.stop();
-
-    // Destroy all entities in all scenes
     for (const [, scene] of this.#sceneList) {
       for (const entityId of Object.keys(scene.rootEntities)) {
         this.#executeDestroy(scene.rootEntities[Number(entityId)]);
@@ -386,26 +510,18 @@ export default class Application {
       Time._updateDelta(t);
       this.forEachActive((app) => app.input.poll());
 
-      // onStart for scripts pending from setup or previous-frame spawns
       this.forEachActive((app) => app.#flushPendingStarts());
 
-      // Fixed timestep updates (physics, deterministic logic)
       while (Time._needsFixedUpdate()) {
         this.forEachActive((app) => app.#fixedUpdate());
       }
 
-      // Variable-rate update (game logic, animation, particles)
       this.forEachActive((app) => app.#update());
-
-      // Late update (camera follow, UI tracking — after all movement)
       this.forEachActive((app) => app.#lateUpdate());
 
-      // Process deferred spawn/destroy
       this.forEachActive((app) => app.#flushLifecycleQueue());
-      // Immediate onStart for just-spawned entities (render-ready this frame)
       this.forEachActive((app) => app.#flushPendingStarts());
 
-      // Sync transforms + camera matrices (once per frame, after all movement)
       this.forEachActive((app) => app.#preRender());
 
       this.forEachActive((app) => app.#render());
@@ -431,6 +547,7 @@ export default class Application {
 
   #update() {
     this.forEachActiveComponent(Animator, (anim) => anim.tick(Time.delta() / 1000));
+    this.forEachActiveComponent(SpriteAnimator, (anim) => anim.tick(Time.delta() / 1000));
     this.forEachActiveScript((script) => script.update());
     this.tweens.update(Time.delta());
     this.forEachActiveComponent(ParticleEmitter, (emitter) => emitter.tick(Time.delta()));
@@ -438,6 +555,7 @@ export default class Application {
 
   #lateUpdate() {
     this.forEachActiveScript((script) => script.lateUpdate());
+    this.forEachActiveComponent(CameraFollow2D, (cf) => cf.lateUpdate());
   }
 
   #preRender() {
@@ -449,7 +567,22 @@ export default class Application {
     FrameProfiler.beginFrame();
     this.pipeline.render(this);
     FrameProfiler.endFrame();
+    // ~10 Hz update so DevTools subscribers don't pay a ref write every frame.
+    if (FrameProfiler.enabled) {
+      const now = performance.now();
+      if (now - this.#lastFrameStatsPush >= 100) {
+        this.#lastFrameStatsPush = now;
+        const last = FrameProfiler.getLastFrame();
+        this._setFrameStats({
+          fps: FrameProfiler.getAverageFPS(),
+          frameTime: FrameProfiler.getAverageFrameTime(),
+          drawCalls: last?.totalDrawCalls ?? 0,
+          triangles: last?.totalTriangles ?? 0,
+        });
+      }
+    }
   }
+  #lastFrameStatsPush = 0;
 
   static forEach(callback: (instance: Application) => void) {
     Application.instanceList.forEach(callback);
@@ -457,4 +590,5 @@ export default class Application {
   static forEachActive(callback: (instance: Application) => void) {
     Application.#activeInstances.forEach(callback);
   }
+
 }

@@ -2,16 +2,11 @@ import Entity from "./Entity.js";
 import type GameEntity from "./GameEntity.js";
 import { isNil } from "../utils/basic.js";
 
-// ─── Component Base Class ─────────────────────────────────────────────────────
-// Provides lifecycle, activation, and ECS wiring for concrete components.
-
 export type ComponentConstructor<Type extends Component> = new (gameEntity: GameEntity) => Type;
 type ComponentGroup<Type extends Component> = Map<number, Type[]>;
 type ComponentGroups = Map<ComponentConstructor<Component>["name"], ComponentGroup<Component>>;
 type ComponentEventCallback = (...data: any[]) => void;
 export default class Component extends Entity {
-  // ─── Instance Context ──────────────────────────────────────────────────────
-  // Captures the owning entity and activation flags for this component.
   #gameEntity: GameEntity;
   #isActive: boolean = true;
   componentGroup!: ComponentGroup<Component>;
@@ -25,8 +20,6 @@ export default class Component extends Entity {
     this.#isSetup = true;
   }
 
-  // ─── Static Registry ───────────────────────────────────────────────────────
-  // Global mapping from component types to their entity-specific instances.
   static componentGroups: ComponentGroups = new Map<
     ComponentConstructor<Component>["name"],
     ComponentGroup<Component>
@@ -76,8 +69,6 @@ export default class Component extends Entity {
     return component;
   }
 
-  // ─── Registry Queries ──────────────────────────────────────────────────────
-  // Helper for retrieving components either globally or per-entity.
   static find<Type extends Component>(
     type: ComponentConstructor<Type>
   ): ComponentGroup<Type> | null;
@@ -100,8 +91,6 @@ export default class Component extends Entity {
     }
   }
 
-  // ─── Context Shortcuts ─────────────────────────────────────────────────────
-  // Convenience getters to access owning scene or application.
   get gameEntity() {
     return this.#gameEntity;
   }
@@ -112,8 +101,6 @@ export default class Component extends Entity {
     return this.#gameEntity.scene.app;
   }
 
-  // ─── Activation Control ────────────────────────────────────────────────────
-  // Publishes components to Application active sets and handles teardown.
   get isActive() {
     return this.#isActive;
   }
@@ -147,8 +134,6 @@ export default class Component extends Entity {
     return this.#gameEntity.getComponent<Type>(type);
   }
 
-  // ─── Event Hooks ───────────────────────────────────────────────────────────
-  // Lightweight event emitter for intra-component communication.
   #callbacks: { [event: string]: ComponentEventCallback[] } = {};
   on(event: string, callback: ComponentEventCallback) {
     this.#callbacks = this.#callbacks || {};

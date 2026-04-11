@@ -140,8 +140,7 @@ export default class DirectionalShadowSystem {
     shader.setUniform1i("uShadowMapDepth", shadowUnit);
 
     if (!app.features.shadows || !this.lastLightVP || !resources.shadow) {
-      // Bind a valid placeholder texture so the sampler on unit 4 doesn't
-      // cause WebGL to silently drop the lighting draw call.
+      // WebGL silently drops the draw call if a sampler unit has no bound texture.
       app.textures.placeholder.bind(shadowUnit);
       return;
     }

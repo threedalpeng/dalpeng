@@ -2,10 +2,9 @@ import Component, { type ComponentConstructor } from "./Component.js";
 import type Scene from "../Scene.js";
 import Transform from "./Transform";
 import Entity from "./Entity.js";
+import type { GameInstance } from "../runtime/Instance";
 
 export default class GameEntity extends Entity {
-  // ─── Static Registry ───────────────────────────────────────────────────────
-  // Keeps global references and per-entity component caches.
   static #gameEntityList = new Map<number, GameEntity>();
   #tag = "default";
   #componentsByType = new Map<string, Component[]>();
@@ -16,8 +15,11 @@ export default class GameEntity extends Entity {
     GameEntity.#gameEntityList.set(this.id, this);
   }
 
-  // ─── Hierarchy State ───────────────────────────────────────────────────────
-  // Tracks scene membership, parent pointers, and child entities.
+  /** Reverse pointer to the owning GameInstance (descriptor spawn path). Null for direct-entity spawns (e.g. glTF). */
+  _gameInstance: GameInstance | null = null;
+  /** Layer name set by `withLayer(name)`. Undefined means use renderer default. */
+  _layerName: string | undefined = undefined;
+
   scene!: Scene;
   #parent: GameEntity | null = null;
   get parent() {
@@ -80,8 +82,6 @@ export default class GameEntity extends Entity {
     return Component.create(type, this);
   }
 
-  // ─── Component Lookup ───────────────────────────────────────────────────────
-  // Cached component accessors keyed by constructor name.
   getComponent<Type extends Component>(type: ComponentConstructor<Type>): Type | null {
     const components = this.#componentsByType.get(type.name) as Type[] | undefined;
     return components?.[0] ?? null;
@@ -97,8 +97,6 @@ export default class GameEntity extends Entity {
     return result;
   }
 
-  // ─── Tag State ─────────────────────────────────────────────────────────────
-  // Keeps the current tag and syncs with the owning scene's tag map.
   get tag() {
     return this.#tag;
   }
@@ -113,8 +111,6 @@ export default class GameEntity extends Entity {
     return this.scene.app;
   }
 
-  // ─── Component Registry Hooks ──────────────────────────────────────────────
-  // Internal helpers invoked by Component to maintain per-entity caches.
   _registerComponentInstance(component: Component) {
     const typeName = component.constructor.name;
     let components = this.#componentsByType.get(typeName);

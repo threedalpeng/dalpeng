@@ -23,7 +23,6 @@ export default class TweenManager {
 
   /** Tick all active tweens. Called from Application update loop. */
   update(dt: number): void {
-    // Iterate backwards so we can splice safely
     for (let i = this.#tweens.length - 1; i >= 0; i--) {
       const tween = this.#tweens[i];
       const alive = tween.tick(dt);

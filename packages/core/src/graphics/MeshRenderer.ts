@@ -100,7 +100,6 @@ export default class MeshRenderer extends BaseRenderer {
     const keepBits = this.material.texFlags & ~0xF; // bits 4+ (HAS_TANGENT, OCCLUSION)
     this.geometryShader.setUniform1i("uTexFlags", maskedTexBits | keepBits);
 
-    // Bind textures (or placeholder if null)
     const textures = this.currentApp.textures;
     const placeholder = textures.placeholder;
     const sampler = textures.defaultSampler;

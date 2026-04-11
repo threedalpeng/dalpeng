@@ -1,0 +1,140 @@
+import type Application from "../Application";
+import type Scene from "../Scene";
+import type GameEntity from "../ecs/GameEntity";
+import {
+  isGameDescriptor,
+  isUIDescriptor,
+  type GameDescriptor,
+  type LogicalDescriptor,
+  type UIDescriptor,
+} from "./Descriptor";
+import {
+  INSTANCE_KIND,
+  type GameInstance,
+  type UIInstance,
+} from "./Instance";
+import type { ProjectionContext } from "./ProjectionContext";
+
+export interface MaterializerHooks {
+  createGameEntity(parent: GameInstance | Scene): GameEntity;
+  pushGameContext(entity: GameEntity, parent: GameInstance | Scene): () => void;
+  buildProjectionContext(owner: GameInstance | Scene): ProjectionContext;
+}
+
+export class Materializer {
+  readonly #app: Application;
+  readonly #hooks: MaterializerHooks;
+
+  constructor(app: Application, hooks: MaterializerHooks) {
+    this.#app = app;
+    this.#hooks = hooks;
+  }
+
+  materializeRoots(
+    scene: Scene,
+    rootDescriptors: readonly LogicalDescriptor[],
+  ): { gameInstances: GameInstance[]; uiInstances: UIInstance[] } {
+    const gameInstances: GameInstance[] = [];
+    const uiInstances: UIInstance[] = [];
+    for (const descriptor of rootDescriptors) {
+      const result = this.materialize(descriptor, scene);
+      if (result[INSTANCE_KIND] === "game") {
+        gameInstances.push(result as GameInstance);
+      } else {
+        uiInstances.push(result as UIInstance);
+      }
+    }
+    return { gameInstances, uiInstances };
+  }
+
+  materialize(
+    descriptor: LogicalDescriptor,
+    parent: GameInstance | Scene,
+  ): GameInstance | UIInstance {
+    if (isGameDescriptor(descriptor)) {
+      return this.#materializeGame(descriptor, parent);
+    }
+    if (isUIDescriptor(descriptor)) {
+      return this.#materializeUI(descriptor, parent);
+    }
+    throw new Error(
+      `Materializer: unknown descriptor kind. Expected game or ui, got ${JSON.stringify(descriptor)}`,
+    );
+  }
+
+  #materializeGame(
+    descriptor: GameDescriptor,
+    parent: GameInstance | Scene,
+  ): GameInstance {
+    const entity = this.#hooks.createGameEntity(parent);
+
+    const instance: GameInstance = {
+      [INSTANCE_KIND]: "game",
+      descriptor,
+      entity,
+      owner: parent,
+      gameChildren: [],
+      uiChildren: [],
+    };
+
+    entity._gameInstance = instance;
+
+    const popContext = this.#hooks.pushGameContext(entity, parent);
+
+    let childDescriptors: readonly LogicalDescriptor[] | void;
+    try {
+      childDescriptors = descriptor.setup(descriptor.props);
+    } finally {
+      popContext();
+    }
+
+    if (childDescriptors) {
+      for (const childDescriptor of childDescriptors) {
+        const childInstance = this.materialize(childDescriptor, instance);
+        if (childInstance[INSTANCE_KIND] === "game") {
+          instance.gameChildren.push(childInstance as GameInstance);
+        } else {
+          instance.uiChildren.push(childInstance as UIInstance);
+        }
+      }
+    }
+
+    return instance;
+  }
+
+  #materializeUI(
+    descriptor: UIDescriptor,
+    parent: GameInstance | Scene,
+  ): UIInstance {
+    const renderer = this.#app.getUIRenderer();
+    if (!renderer) {
+      throw new Error(
+        "Materializer: no UI renderer registered for this Application. " +
+          "Call `app.registerUIRenderer(domUIRenderer)` before materialising " +
+          "any UI descriptor. The dalpeng `runApp` wrapper does this " +
+          "automatically; standalone Application users must register manually.",
+      );
+    }
+
+    const context = this.#hooks.buildProjectionContext(parent);
+    return renderer.materialize(descriptor, context, parent);
+  }
+
+  /** DFS teardown: detaches owned UI children first, then calls runOnDestroy. Component teardown is the caller's responsibility. */
+  destroyCascade(instance: GameInstance, runOnDestroy: (e: GameEntity) => void): void {
+    for (const child of instance.gameChildren) {
+      this.destroyCascade(child, runOnDestroy);
+    }
+
+    for (const uiChild of instance.uiChildren) {
+      try {
+        uiChild.detach();
+      } catch (err) {
+        console.error("Materializer: UI detach failed during cascade", err);
+      }
+    }
+    instance.uiChildren.length = 0;
+
+    runOnDestroy(instance.entity);
+  }
+}

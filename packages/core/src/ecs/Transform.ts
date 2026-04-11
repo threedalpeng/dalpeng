@@ -5,13 +5,9 @@ import type GameEntity from "./GameEntity";
 export default class Transform extends Component {
   constructor(gameEntity: GameEntity) {
     super(gameEntity);
-    // Ensure initial model/world matrices are computed on first setup/update.
-    // markDirty also queues this Transform in the owning Application so
-    // Application.#processDirtyTransforms() updates it before first render.
     this.markDirty();
   }
-  // ─── Local State ───────────────────────────────────────────────────────────
-  // Stores position, rotation, scale and their world-space counterparts.
+
   #position: Vec3 = new Vec3([0, 0, 0]);
   get position() {
     return this.#position;
@@ -52,8 +48,6 @@ export default class Transform extends Component {
     return this.#isDirty;
   }
 
-  // ─── Mutation Helpers ──────────────────────────────────────────────────────
-  // High-level operations that mutate local transform state.
   translate(v: Float32List) {
     this.#position = this.#position.add(v);
     this.markDirty();
@@ -61,8 +55,7 @@ export default class Transform extends Component {
 
   rotate(axis: Vec3, angle: number, space: "local" | "world" = "local") {
     const dq = Quaternion.fromAxisAngle(axis, deg2rad(angle));
-    // local: post-multiply (old * delta) → rotate around local axis
-    // world: pre-multiply (delta * old) → rotate around world axis
+    // local: post-multiply; world: pre-multiply
     this.#rotation = space === "world" ? dq.mul(this.#rotation) : this.#rotation.mul(dq);
     this.markDirty();
   }
@@ -81,8 +74,6 @@ export default class Transform extends Component {
     this.markDirty();
   }
 
-  // ─── Matrix Computation ────────────────────────────────────────────────────
-  // Builds model matrices and propagates updates to child entities.
   #modelMatrix: Mat4 = new Mat4();
   get modelMatrix() {
     return this.#modelMatrix;
@@ -115,7 +106,6 @@ export default class Transform extends Component {
         this.#worldRotation = this.#rotation;
       }
     } else {
-      // Parent may have refreshed our model matrix already; refresh world caches.
       const parent = this.gameEntity.parent;
       if (parent) {
         const parentTransform = parent.getComponent(Transform)!;
@@ -131,8 +121,6 @@ export default class Transform extends Component {
     }
   }
 
-  // ─── Coordinate Conversion ─────────────────────────────────────────────────
-  // Converts points between local and world space using the cached matrices.
   localToWorldPoint(v: Vec3) {
     return this.#modelMatrix.toMat3().mulv(v);
   }
@@ -151,8 +139,6 @@ export default class Transform extends Component {
     return this.#worldRotation.mulv([1, 0, 0]);
   }
 
-  // ─── Dirty Tracking ────────────────────────────────────────────────────────
-  // Notifies the owning Application when transform data needs processing.
   markDirty() {
     this.#isDirty = true;
     const app = this.gameEntity.scene?.app;

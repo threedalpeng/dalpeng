@@ -44,7 +44,6 @@ export default class FrameProfiler {
   static endFrame(): void {
     if (!this.enabled || !this.#currentFrame) return;
     this.#currentFrame.totalTime = performance.now() - this.#frameStart;
-    // Sum totals from passes
     for (const p of this.#currentFrame.passes) {
       this.#currentFrame.totalDrawCalls += p.drawCalls;
       this.#currentFrame.totalTriangles += p.triangles;
@@ -53,7 +52,6 @@ export default class FrameProfiler {
     if (this.#history.length > this.#maxHistory) {
       this.#history.shift();
     }
-    // Push to subscribers
     const now = this.#currentFrame.timestamp;
     for (const sub of this.#subscribers) {
       if (now - sub.lastPush >= sub.rate) {
@@ -121,14 +119,12 @@ export default class FrameProfiler {
   }
 
   static getMinFPS(): number {
-    // Based on max frame time in history
     if (this.#history.length === 0) return 0;
     let maxTime = 0;
     for (const f of this.#history) if (f.totalTime > maxTime) maxTime = f.totalTime;
     return maxTime > 0 ? Math.round(1000 / maxTime) : 0;
   }
 
-  // ─── Subscription (Push Model) ────────────────────────────────────────────
   static #subscribers: Array<{
     cb: (stats: { fps: number; frameTime: number; last: FrameStats | null }) => void;
     rate: number;

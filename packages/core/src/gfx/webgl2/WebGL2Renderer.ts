@@ -38,11 +38,9 @@ export default class WebGL2Renderer implements RendererBackend {
       document.body.innerHTML =
         "This requires EXT_color_buffer_float which is unavailable on this system.";
     }
-    // Optional: blending to float render targets
     this.#supportsFloatBlend = !!gl.getExtension("EXT_float_blend");
     this.capabilities.supportsFloatBlend = this.#supportsFloatBlend;
 
-    // Input hookup remains in app; this class focuses on graphics.
   }
 
   isReady() {
@@ -219,7 +217,6 @@ export default class WebGL2Renderer implements RendererBackend {
     return { width: c.width, height: c.height };
   }
 
-  // Optional: generic pass API (supports default framebuffer and internal RenderTarget)
   beginPass(desc: RenderPassDescriptor) {
     const gl = this.#gl!;
     if (desc.target && desc.target !== "default") {
@@ -238,7 +235,6 @@ export default class WebGL2Renderer implements RendererBackend {
       gl.viewport(desc.viewport.x, desc.viewport.y, desc.viewport.w, desc.viewport.h);
     }
 
-    // Depth test control (fullscreen quad passes should disable)
     if (typeof desc.depthTest === "boolean") {
       if (desc.depthTest) gl.enable(gl.DEPTH_TEST);
       else gl.disable(gl.DEPTH_TEST);
@@ -258,12 +254,10 @@ export default class WebGL2Renderer implements RendererBackend {
       gl.disable(gl.BLEND);
     }
 
-    // Color write mask
     if (desc.colorWrite === false) {
       gl.colorMask(false, false, false, false);
     }
 
-    // Polygon offset (shadow depth bias)
     if (desc.polygonOffset) {
       gl.enable(gl.POLYGON_OFFSET_FILL);
       gl.polygonOffset(desc.polygonOffset.factor, desc.polygonOffset.units);
@@ -286,12 +280,10 @@ export default class WebGL2Renderer implements RendererBackend {
     }
     if (clearBits) gl.clear(clearBits);
 
-    // Set depthMask for subsequent draw calls (after clear)
     if (typeof desc.depthWrite === "boolean") gl.depthMask(!!desc.depthWrite);
   }
   endPass() {
     const gl = this.#gl!;
-    // Restore states that beginPass may have changed to non-defaults
     gl.colorMask(true, true, true, true);
     gl.disable(gl.POLYGON_OFFSET_FILL);
   }
@@ -303,12 +295,10 @@ export default class WebGL2Renderer implements RendererBackend {
       extFloatBlend: this.#supportsFloatBlend,
     };
 
-    // Framebuffer bindings
     const fb = gl.getParameter(gl.FRAMEBUFFER_BINDING);
     const rfb = gl.getParameter((gl as any).READ_FRAMEBUFFER_BINDING ?? gl.FRAMEBUFFER_BINDING);
     const dfb = gl.getParameter((gl as any).DRAW_FRAMEBUFFER_BINDING ?? gl.FRAMEBUFFER_BINDING);
 
-    // Draw buffers on current framebuffer
     const maxDB: number = gl.getParameter(gl.MAX_DRAW_BUFFERS) as number;
     const drawBuffers: number[] = [];
     for (let i = 0; i < Math.min(8, maxDB); i++) {
@@ -316,7 +306,6 @@ export default class WebGL2Renderer implements RendererBackend {
       drawBuffers.push(val);
     }
 
-    // Active textures 0..7
     const activeTex = gl.getParameter(gl.ACTIVE_TEXTURE);
     const tex2D: (WebGLTexture | null)[] = [];
     for (let i = 0; i < 8; i++) {
@@ -325,13 +314,11 @@ export default class WebGL2Renderer implements RendererBackend {
     }
     gl.activeTexture(activeTex);
 
-    // Program, VAO, buffers
     const prog = gl.getParameter(gl.CURRENT_PROGRAM);
     const vao = gl.getParameter((gl as any).VERTEX_ARRAY_BINDING ?? null);
     const arrBuf = gl.getParameter(gl.ARRAY_BUFFER_BINDING);
     const idxBuf = gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING);
 
-    // States
     const blend = gl.isEnabled(gl.BLEND);
     const depthTest = gl.isEnabled(gl.DEPTH_TEST);
     const cull = gl.isEnabled(gl.CULL_FACE);
@@ -339,7 +326,6 @@ export default class WebGL2Renderer implements RendererBackend {
     const depthMask = gl.getParameter(gl.DEPTH_WRITEMASK);
     const colorMask = gl.getParameter(gl.COLOR_WRITEMASK);
 
-    // Attached textures on current FBO (first 4)
     const attachments: any[] = [];
     if (fb) {
       for (let i = 0; i < 4; i++) {

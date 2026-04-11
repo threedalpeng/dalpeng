@@ -43,6 +43,13 @@ export interface FxaaResources {
   readonly rt: RenderTarget;
 }
 
+export interface PixelArtResources {
+  readonly rt: RenderTarget;
+  readonly color: GfxTexture;
+  readonly width: number;
+  readonly height: number;
+}
+
 export default class FrameResources {
   gbuffer: GBufferResources | null = null;
   lighting: LightingResources | null = null;
@@ -50,6 +57,7 @@ export default class FrameResources {
   ssao: SSAOResources | null = null;
   bloom: BloomResources | null = null;
   fxaa: FxaaResources | null = null;
+  pixelArt: PixelArtResources | null = null;
 
   #width = 0;
   #height = 0;
@@ -59,7 +67,6 @@ export default class FrameResources {
     this.#width = width;
     this.#height = height;
 
-    // Dispose old resources
     if (this.gbuffer) {
       backend.destroyRenderTarget(this.gbuffer.rt);
       this.gbuffer.positionMetallic.dispose();
@@ -73,7 +80,6 @@ export default class FrameResources {
       this.lighting.color.dispose();
     }
 
-    // G-Buffer textures
     const positionMetallic = backend.createTexture({ kind: "2d", width, height, format: "rgba16f", samplerHint: "nearest" });
     const normalRoughness = backend.createTexture({ kind: "2d", width, height, format: "rgba16f", samplerHint: "nearest" });
     const albedo = backend.createTexture({ kind: "2d", width, height, format: "rgba16f", samplerHint: "nearest" });
@@ -88,7 +94,7 @@ export default class FrameResources {
 
     this.gbuffer = { rt: gbufferRT, positionMetallic, normalRoughness, albedo, emissive, depth };
 
-    // Lighting RT (shares G-Buffer depth for particle depth testing)
+    // Lighting RT shares G-Buffer depth for particle depth testing.
     const lightingFormat = backend.capabilities.supportsFloatBlend ? "rgba16f" as const : "rgba8unorm" as const;
     if (!backend.capabilities.supportsFloatBlend) {
       console.warn("EXT_float_blend not available; lighting RT uses RGBA8 (LDR).");
@@ -98,12 +104,11 @@ export default class FrameResources {
     const lightingRT = backend.createRenderTarget({
       width, height,
       colorAttachments: [lightingColor],
-      depthAttachment: depth, // shared with G-Buffer
+      depthAttachment: depth,
     });
 
     this.lighting = { rt: lightingRT, color: lightingColor };
 
-    // Drop SSAO, bloom, and fxaa so they get recreated at new size
     if (this.ssao) {
       this.#disposeSSAO(backend);
     }
@@ -143,6 +148,20 @@ export default class FrameResources {
     const rtBlurred = backend.createRenderTarget({ width, height, colorAttachments: [texBlurred] });
 
     this.ssao = { rtRaw, rtBlurred, texRaw, texBlurred };
+  }
+
+  ensurePixelArt(backend: RendererBackend, gameWidth: number, gameHeight: number): void {
+    if (this.pixelArt && this.pixelArt.width === gameWidth && this.pixelArt.height === gameHeight) return;
+
+    if (this.pixelArt) {
+      backend.destroyRenderTarget(this.pixelArt.rt);
+      this.pixelArt.color.dispose();
+    }
+
+    const color = backend.createTexture({ kind: "2d", width: gameWidth, height: gameHeight, format: "rgba8unorm", samplerHint: "nearest" });
+    const rt = backend.createRenderTarget({ width: gameWidth, height: gameHeight, colorAttachments: [color] });
+
+    this.pixelArt = { rt, color, width: gameWidth, height: gameHeight };
   }
 
   ensureFxaa(backend: RendererBackend): void {
@@ -201,6 +220,11 @@ export default class FrameResources {
     }
     if (this.fxaa) {
       this.#disposeFxaa(backend);
+    }
+    if (this.pixelArt) {
+      backend.destroyRenderTarget(this.pixelArt.rt);
+      this.pixelArt.color.dispose();
+      this.pixelArt = null;
     }
   }
 

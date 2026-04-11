@@ -5,7 +5,6 @@ export const enum MouseButton {
 }
 
 export default class InputManager {
-  // ─── Event-side buffers (written by handlers between polls) ────────────────
   #heldKeys = new Set<string>();
   #justDown = new Set<string>();
   #justUp = new Set<string>();
@@ -18,7 +17,6 @@ export default class InputManager {
   #mousePos = { x: 0, y: 0 };
   #pendingScrollDelta = 0;
 
-  // ─── Frame-side snapshots (readable during frame after poll) ───────────────
   #frameDown = new Set<string>();
   #frameUp = new Set<string>();
   #mouseFrameDown = new Set<MouseButton>();
@@ -26,17 +24,14 @@ export default class InputManager {
   #cursorDelta = { x: 0, y: 0 };
   #scrollDelta = 0;
 
-  // ─── Action Map ────────────────────────────────────────────────────────────
   #actions = new Map<string, string[]>();
 
-  // ─── Callbacks (dispatched once per frame after poll swap) ───────────────
   #actionDownCbs = new Map<string, Set<() => void>>();
   #actionUpCbs = new Map<string, Set<() => void>>();
   #actionChangeCbs = new Map<string, Set<(pressed: boolean) => void>>();
   #keyDownCbs = new Map<string, Set<() => void>>();
   #keyUpCbs = new Map<string, Set<() => void>>();
 
-  // ─── Canvas binding ────────────────────────────────────────────────────────
   #canvas: HTMLCanvasElement | null = null;
   #boundHandlers: { type: string; handler: EventListener }[] = [];
 
@@ -67,7 +62,6 @@ export default class InputManager {
     this.#canvas = null;
   }
 
-  // ─── Event handlers ───────────────────────────────────────────────────────
   #onKeyDown(e: KeyboardEvent) {
     if (e.repeat) return;
     e.preventDefault();
@@ -104,7 +98,6 @@ export default class InputManager {
     this.#pendingScrollDelta += e.deltaY;
   }
 
-  // ─── Poll (swap pattern, zero allocation per frame) ────────────────────────
   poll() {
     const tmpDown = this.#frameDown;
     this.#frameDown = this.#justDown;
@@ -137,7 +130,6 @@ export default class InputManager {
     this.#dispatchCallbacks();
   }
 
-  // ─── Raw key queries ──────────────────────────────────────────────────────
   keyDown(key: string) {
     return this.#frameDown.has(key);
   }
@@ -151,7 +143,6 @@ export default class InputManager {
     return !this.#heldKeys.has(key);
   }
 
-  // ─── Raw mouse queries ────────────────────────────────────────────────────
   mouseDown(button: MouseButton) {
     return this.#mouseFrameDown.has(button);
   }
@@ -177,7 +168,6 @@ export default class InputManager {
     return this.#scrollDelta;
   }
 
-  // ─── Action Map ───────────────────────────────────────────────────────────
   defineAction(name: string, bindings: string[]) {
     this.#actions.set(name, [...bindings]);
   }
@@ -197,7 +187,6 @@ export default class InputManager {
     return b !== undefined && b.some((k) => this.#frameUp.has(k));
   }
 
-  // ─── Event callbacks ────────────────────────────────────────────────────
   onActionDown(action: string, cb: () => void): () => void {
     let set = this.#actionDownCbs.get(action);
     if (!set) { set = new Set(); this.#actionDownCbs.set(action, set); }
@@ -229,11 +218,9 @@ export default class InputManager {
     return () => { set!.delete(cb); if (set!.size === 0) this.#keyUpCbs.delete(key); };
   }
 
-  // ─── Dispatch (called once per frame from poll) ─────────────────────────
   #dispatchCallbacks() {
     if (this.#frameDown.size === 0 && this.#frameUp.size === 0) return;
 
-    // Raw key callbacks
     for (const key of this.#frameDown) {
       const cbs = this.#keyDownCbs.get(key);
       if (cbs) for (const cb of cbs) cb();
@@ -243,21 +230,18 @@ export default class InputManager {
       if (cbs) for (const cb of cbs) cb();
     }
 
-    // Action down callbacks
     for (const [action, cbs] of this.#actionDownCbs) {
       const bindings = this.#actions.get(action);
       if (bindings && bindings.some(k => this.#frameDown.has(k))) {
         for (const cb of cbs) cb();
       }
     }
-    // Action up callbacks
     for (const [action, cbs] of this.#actionUpCbs) {
       const bindings = this.#actions.get(action);
       if (bindings && bindings.some(k => this.#frameUp.has(k))) {
         for (const cb of cbs) cb();
       }
     }
-    // Action change callbacks (pressed state)
     for (const [action, cbs] of this.#actionChangeCbs) {
       const bindings = this.#actions.get(action);
       if (!bindings) continue;

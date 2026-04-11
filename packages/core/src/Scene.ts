@@ -2,10 +2,11 @@ import { Vec3 } from "@dalpeng/math";
 import type Application from "./Application";
 import Transform from "./ecs/Transform";
 import type GameEntity from "./ecs/GameEntity";
+import EventEmitter from "./utils/EventEmitter";
+import { computed, ref, type ReadonlyRef } from "./runtime/reactive";
+import type { LogicalDescriptor } from "./runtime/Descriptor";
 
 export default class Scene {
-  // ─── Scene Identity ────────────────────────────────────────────────────────
-  // Assigns a unique id and friendly name to each scene instance.
   static #nextId = 0;
   #id = 0;
   get id() {
@@ -13,13 +14,13 @@ export default class Scene {
   }
 
   name = "";
+  events = new EventEmitter();
+
   constructor(name: string = "") {
     this.#id = Scene.#nextId++;
     this.name = name;
   }
 
-  // ─── Application Binding ────────────────────────────────────────────────────
-  // Tracks which Application currently owns this scene.
   #app!: Application;
   get app() {
     return this.#app;
@@ -28,14 +29,18 @@ export default class Scene {
     this.#app = app;
   }
 
-  // ─── Entity Registry ────────────────────────────────────────────────────────
-  // Keeps root entities plus flattened sets for tags and spatial queries.
+  _pendingRootDescriptors: LogicalDescriptor[] = [];
+
   rootEntities: { [key: number]: GameEntity } = {};
   #entities = new Set<GameEntity>();
   #tagMap = new Map<string, Set<GameEntity>>();
 
-  // ─── Entity Management API ──────────────────────────────────────────────────
-  // Public helpers for injecting and ejecting entity hierarchies.
+  #entityVersion = ref(0);
+  entitiesRef: ReadonlyRef<readonly GameEntity[]> = computed(() => {
+    void this.#entityVersion.value;
+    return Array.from(this.#entities);
+  });
+
   addEntity(entity: GameEntity) {
     entity.detach();
     entity.scene = this;
@@ -50,8 +55,6 @@ export default class Scene {
     return this;
   }
 
-  // ─── Query APIs ─────────────────────────────────────────────────────────────
-  // Provide tag lookups and simple proximity queries over scene entities.
   findByTag(tag: string) {
     return Array.from(this.#tagMap.get(tag) ?? []);
   }
@@ -80,10 +83,9 @@ export default class Scene {
     return results;
   }
 
-  // ─── Internal Helpers ───────────────────────────────────────────────────────
-  // Scene-private hooks used by GameEntity to keep registries in sync.
   _attachEntityHierarchy(entity: GameEntity) {
     const stack: GameEntity[] = [entity];
+    let added = false;
     while (stack.length) {
       const current = stack.pop()!;
       if (current.scene !== this) {
@@ -92,23 +94,28 @@ export default class Scene {
       if (!this.#entities.has(current)) {
         this.#entities.add(current);
         this.#addTagEntry(current.tag, current);
+        added = true;
       }
       for (const child of current.children) {
         child.scene = this;
         stack.push(child);
       }
     }
+    if (added) this.#entityVersion.value++;
   }
 
   _detachEntityHierarchy(entity: GameEntity) {
     const stack: GameEntity[] = [entity];
+    let removed = false;
     while (stack.length) {
       const current = stack.pop()!;
       if (this.#entities.delete(current)) {
         this.#removeTagEntry(current.tag, current);
+        removed = true;
       }
       stack.push(...current.children);
     }
+    if (removed) this.#entityVersion.value++;
   }
 
   _updateEntityTag(entity: GameEntity, oldTag: string, newTag: string) {

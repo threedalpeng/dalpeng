@@ -98,7 +98,6 @@ export default class SkinnedMeshRenderer extends BaseRenderer {
         vaoS.setVertexBuffer(jointsLocShadow, jointsBufferS, 4);
       }
 
-      // Weights buffer for shadow VAO
       const weightsLocShadow = this.shadowShader.getAttribLocation("aWeights");
       if (weightsLocShadow >= 0) {
         const weightsBufferS = renderer.createBuffer("vertex");
@@ -139,7 +138,6 @@ export default class SkinnedMeshRenderer extends BaseRenderer {
     const keepBits = this.material.texFlags & ~0xF; // bits 4+ (HAS_TANGENT, OCCLUSION)
     this.geometryShader.setUniform1i("uTexFlags", maskedTexBits | keepBits);
 
-    // Bind textures (or placeholder if null)
     const textures = this.currentApp.textures;
     const placeholder = textures.placeholder;
     const sampler = textures.defaultSampler;
