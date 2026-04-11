@@ -1,0 +1,40 @@
+{
+  "name": "@dalpeng/devtools",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "DevTools host frame and plugin platform for the dalpeng game engine",
+  "main": "./dist/dalpeng-devtools.umd.cjs",
+  "module": "./dist/dalpeng-devtools.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/dalpeng-devtools.js",
+      "require": "./dist/dalpeng-devtools.umd.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/threedalpeng/dalpeng.git"
+  },
+  "homepage": "https://github.com/threedalpeng/dalpeng/packages/devtools#readme",
+  "author": "Kim Jeong-Won <threedalpeng@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build",
+    "build:dev": "vite build --mode development"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2",
+    "vite-plugin-dts": "^4.5.4"
+  },
+  "dependencies": {
+    "@dalpeng/core": "workspace:^0.1.0",
+    "@dalpeng/ui": "workspace:^0.1.0"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "@dalpeng/ui",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Backend-agnostic UI tree authoring layer for the dalpeng game engine",
+  "main": "./dist/dalpeng-ui.umd.cjs",
+  "module": "./dist/dalpeng-ui.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/dalpeng-ui.js",
+      "require": "./dist/dalpeng-ui.umd.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/threedalpeng/dalpeng.git"
+  },
+  "homepage": "https://github.com/threedalpeng/dalpeng/packages/ui#readme",
+  "author": "Kim Jeong-Won <threedalpeng@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build",
+    "build:dev": "vite build --mode development",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.1.2"
+  },
+  "dependencies": {
+    "@dalpeng/core": "workspace:^0.1.0",
+    "@dalpeng/math": "workspace:^0.2.0"
+  }
+}
