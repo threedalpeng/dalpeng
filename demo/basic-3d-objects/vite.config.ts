@@ -1,8 +1,10 @@
 import { defineConfig, loadEnv } from "vite";
+import { devtools } from "@dalpeng/devtools-vite";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   return {
+    plugins: [devtools()],
     server: {
       host: "0.0.0.0",
       port: 8081,

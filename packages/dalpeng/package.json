@@ -31,7 +31,8 @@
     "dev": "vite build --watch --mode development",
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
@@ -41,6 +42,7 @@
   },
   "dependencies": {
     "@dalpeng/core": "workspace:^0.1.0",
-    "@dalpeng/math": "workspace:^0.2.0"
+    "@dalpeng/math": "workspace:^0.2.0",
+    "@dalpeng/ui": "workspace:^0.1.0"
   }
 }

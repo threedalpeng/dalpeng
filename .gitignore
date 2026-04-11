@@ -163,3 +163,4 @@ docs/TEMP-*.md
 # turborepo
 .turbo
 dist/**
+games/grid-rpg/public/assets/
