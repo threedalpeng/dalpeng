@@ -12,7 +12,6 @@ export default defineGameEntity(() => {
 
   useQuad().material.baseColor = vec3(0.2, 0.9, 0.2);
 
-  // simple ball movement and collision using closure state
   let velocity = vec3(4, 3, 0);
   const boundsY = 5.8;
   let leftPaddle: Transform | null = null;
@@ -20,7 +19,6 @@ export default defineGameEntity(() => {
 
   onUpdate(() => {
     const p = t.position;
-    // integrate with fixed step (uses Time.delta under the hood in engine)
     const dt = Time.delta();
     const sec = dt * 0.001;
     const np = vec3(p.x + velocity.x * sec, p.y + velocity.y * sec, p.z);

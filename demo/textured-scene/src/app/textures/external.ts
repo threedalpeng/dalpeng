@@ -23,10 +23,6 @@ export const EXTERNAL_PRESETS = {
   },
 } as const satisfies Record<string, ExternalTextureSet>;
 
-/**
- * Check if external textures are available by probing one file.
- * Returns true if the textures have been downloaded.
- */
 export async function hasExternalTextures(): Promise<boolean> {
   try {
     const res = await fetch(EXTERNAL_PRESETS.brick.baseColor, { method: "HEAD" });

@@ -16,10 +16,9 @@ export default function useBallPhysics() {
   let launched = false;
   let paddleTransform: Transform | null = null;
   let elapsedSinceLaunch = 0;
-  const ACCEL_INTERVAL = 15; // seconds
+  const ACCEL_INTERVAL = 15;
   const ACCEL_STEP = 0.1;
 
-  // ─── One-shot: Launch ────────────────────────────────────────────────
   useActionDown("launch", () => {
     if (launched || gameOver.value || cleared.value) return;
     launched = true;
@@ -33,7 +32,6 @@ export default function useBallPhysics() {
     const scene = transform.gameEntity.scene;
     const speedMul = speedMultiplier.value;
 
-    // Cache paddle reference
     if (!paddleTransform) {
       const paddles = scene.findByTag("paddle");
       if (paddles.length > 0) {
@@ -41,10 +39,8 @@ export default function useBallPhysics() {
       }
     }
 
-    // Stop if game over or cleared
     if (gameOver.value || cleared.value) return;
 
-    // Before launch: follow paddle
     if (!launched) {
       if (paddleTransform) {
         const pp = paddleTransform.position;
@@ -53,14 +49,12 @@ export default function useBallPhysics() {
       return;
     }
 
-    // Auto-accelerate every 15 seconds
     elapsedSinceLaunch += dt;
     if (elapsedSinceLaunch >= ACCEL_INTERVAL) {
       elapsedSinceLaunch -= ACCEL_INTERVAL;
       setSpeedMultiplier(speedMultiplier.value + ACCEL_STEP);
     }
 
-    // Apply speed multiplier — preserve direction, adjust magnitude
     const curSpeed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
     const targetSpeed = BASE_SPEED * speedMul;
     if (curSpeed > 0 && Math.abs(curSpeed - targetSpeed) > 0.01) {
@@ -68,14 +62,12 @@ export default function useBallPhysics() {
       velocity = vec3(velocity.x * ratio, velocity.y * ratio, 0);
     }
 
-    // Move
     const p = transform.position;
     let nx = p.x + velocity.x * dt;
     let ny = p.y + velocity.y * dt;
     let vx = velocity.x;
     let vy = velocity.y;
 
-    // Wall collision (left/right)
     if (nx - BALL_RADIUS < -BOUNDS_X) {
       nx = -BOUNDS_X + BALL_RADIUS;
       vx = Math.abs(vx);
@@ -84,13 +76,11 @@ export default function useBallPhysics() {
       vx = -Math.abs(vx);
     }
 
-    // Wall collision (top)
     if (ny + BALL_RADIUS > BOUNDS_Y_TOP) {
       ny = BOUNDS_Y_TOP - BALL_RADIUS;
       vy = -Math.abs(vy);
     }
 
-    // Paddle collision — swept check to prevent tunneling
     if (paddleTransform && vy < 0) {
       const pp = paddleTransform.position;
       const ps = paddleTransform.scale;
@@ -98,11 +88,10 @@ export default function useBallPhysics() {
       const padRight = pp.x + ps.x;
       const padTop = pp.y + ps.y;
 
-      // Check if ball crossed paddle top this frame (swept Y)
+      // Swept check: interpolate X at the frame boundary where ball crosses paddle top
       const prevBottom = p.y - BALL_RADIUS;
       const nextBottom = ny - BALL_RADIUS;
       if (prevBottom >= padTop && nextBottom < padTop) {
-        // Ball crossed paddle top — interpolate X at crossing time
         const t = (prevBottom - padTop) / (prevBottom - nextBottom);
         const crossX = p.x + (nx - p.x) * t;
         if (crossX + BALL_RADIUS > padLeft && crossX - BALL_RADIUS < padRight) {
@@ -115,7 +104,6 @@ export default function useBallPhysics() {
           vy = Math.abs(Math.cos(angle) * speed);
         }
       } else if (
-        // Standard AABB overlap check (for slow-moving ball)
         nx + BALL_RADIUS > padLeft &&
         nx - BALL_RADIUS < padRight &&
         ny - BALL_RADIUS < padTop &&
@@ -130,7 +118,6 @@ export default function useBallPhysics() {
       }
     }
 
-    // Brick collision
     const bricks = scene.findByTag("brick");
     for (const brick of bricks) {
       const bt = brick.getComponent(Transform);
@@ -148,7 +135,6 @@ export default function useBallPhysics() {
         ny + BALL_RADIUS > bBottom &&
         ny - BALL_RADIUS < bTop
       ) {
-        // Determine collision side and push ball out
         const overlapLeft = nx + BALL_RADIUS - bLeft;
         const overlapRight = bRight - (nx - BALL_RADIUS);
         const overlapTop = bTop - (ny - BALL_RADIUS);
@@ -157,7 +143,6 @@ export default function useBallPhysics() {
         const minOverlapY = Math.min(overlapTop, overlapBottom);
 
         if (minOverlapX < minOverlapY) {
-          // Horizontal collision — push ball out sideways
           if (overlapLeft < overlapRight) {
             nx -= overlapLeft;
             vx = -Math.abs(vx);
@@ -166,13 +151,10 @@ export default function useBallPhysics() {
             vx = Math.abs(vx);
           }
         } else {
-          // Vertical collision — push ball out vertically
           if (overlapBottom < overlapTop) {
-            // Ball closer to brick bottom → push down
             ny -= overlapBottom;
             vy = -Math.abs(vy);
           } else {
-            // Ball closer to brick top → push up
             ny += overlapTop;
             vy = Math.abs(vy);
           }
@@ -184,7 +166,6 @@ export default function useBallPhysics() {
       }
     }
 
-    // Ball lost (below screen)
     if (ny < BOUNDS_Y_BOTTOM) {
       launched = false;
       velocity = vec3(0, 0, 0);

@@ -37,7 +37,6 @@ export default defineGameEntity(() => {
   onUpdate(() => {
     let changed = false;
 
-    // Left mouse drag: orbit
     if (input.mousePressed(0)) {
       const delta = input.getCursorDelta();
       if (delta.x !== 0 || delta.y !== 0) {
@@ -48,7 +47,6 @@ export default defineGameEntity(() => {
       }
     }
 
-    // Middle mouse drag: pan
     if (input.mousePressed(1)) {
       const delta = input.getCursorDelta();
       if (delta.x !== 0 || delta.y !== 0) {
@@ -66,7 +64,6 @@ export default defineGameEntity(() => {
       }
     }
 
-    // Scroll: zoom
     const scroll = input.getScrollDelta();
     if (scroll !== 0) {
       radius *= 1 + scroll * 0.001;
@@ -74,7 +71,6 @@ export default defineGameEntity(() => {
       changed = true;
     }
 
-    // Keyboard fallback
     if (input.keyPressed("ArrowLeft")) { yaw += 0.02; changed = true; }
     if (input.keyPressed("ArrowRight")) { yaw -= 0.02; changed = true; }
     if (input.keyPressed("ArrowUp")) { pitch += 0.02; pitch = Math.min(pitch, Math.PI / 2 - 0.01); changed = true; }

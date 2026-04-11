@@ -9,7 +9,6 @@ export default defineGameEntity(() => {
 
   const transform = useComponent(Transform);
 
-  // ─── One-shot: Restart ───────────────────────────────────────────────
   useActionDown("restart", () => {
     if (!gameOver.value && !cleared.value) return;
     const scene = transform.gameEntity.scene;
@@ -27,7 +26,6 @@ export default defineGameEntity(() => {
     spawn(Ball);
   });
 
-  // ─── Continuous: Clear check ─────────────────────────────────────────
   onUpdate(() => {
     if (gameOver.value || cleared.value) return;
 

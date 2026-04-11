@@ -18,7 +18,6 @@ export default function useThirdPersonCamera() {
   let targetTransform: Transform | null = null;
 
   onUpdate(() => {
-    // Lazy find character
     if (!targetTransform) {
       const chars = transform.gameEntity.scene?.findByTag("character");
       if (chars && chars.length > 0) {
@@ -27,7 +26,6 @@ export default function useThirdPersonCamera() {
       if (!targetTransform) return;
     }
 
-    // Left mouse drag: orbit
     if (input.mousePressed(0)) {
       const delta = input.getCursorDelta();
       if (delta.x !== 0 || delta.y !== 0) {
@@ -37,7 +35,6 @@ export default function useThirdPersonCamera() {
       }
     }
 
-    // Scroll: zoom
     const scroll = input.getScrollDelta();
     if (scroll !== 0) {
       radius *= 1 + scroll * 0.001;
@@ -45,7 +42,6 @@ export default function useThirdPersonCamera() {
       cameraDistance.value = radius;
     }
 
-    // Spherical → Cartesian offset
     const targetPos = targetTransform.worldPosition;
     radius = cameraDistance.value;
     const lookTarget = targetPos.add(vec3(0, cameraHeight.value, 0));

@@ -7,5 +7,5 @@ import PaddleRight from "./entities/PaddleRight";
 
 export default defineScene(() => {
   withName("Pong Scene");
-  return [Camera, Light, PaddleLeft, PaddleRight, Ball];
+  return [Camera(), Light(), PaddleLeft(), PaddleRight(), Ball()];
 });

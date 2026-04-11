@@ -29,7 +29,6 @@ export function takeDamage(brick: GameEntity) {
     return;
   }
   _brickHP.set(brick, hp);
-  // Dim color to indicate damage
   const base = _brickBaseColor.get(brick);
   if (base) {
     const renderer = brick.getComponent(MeshRenderer);
@@ -60,14 +59,12 @@ export function createBrick(x: number, y: number, color: Vec3, hitPoints = 1) {
     _brickBaseColor.set(self, color);
 
     onDestroy(() => {
-      // Power-up drop
       if (Math.random() < POWERUP_CHANCE) {
         const effect = EFFECTS[Math.floor(Math.random() * EFFECTS.length)];
         const p = transform.position;
         spawn(createPowerUp(p.x, p.y, effect));
       }
 
-      // Break effect: spawn a visual-only copy that shrinks + flashes
       const pos = transform.position;
       const col = color;
       spawn(defineGameEntity(() => {
@@ -93,7 +90,6 @@ export function createBrick(x: number, y: number, color: Vec3, hitPoints = 1) {
           onComplete() { self.currentApp.destroy(self); },
         });
       }));
-      // Particle burst
       spawn(defineGameEntity(() => {
         withName("BrickParticle");
         const pt = useComponent(Transform);

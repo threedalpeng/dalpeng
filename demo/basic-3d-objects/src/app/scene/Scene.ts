@@ -7,5 +7,5 @@ import Light2 from "./entities/Light2";
 export default defineScene(() => {
   withName("Basic 3D Objects Scene");
 
-  return [Group, Camera, Light1, Light2];
+  return [Group(), Camera(), Light1(), Light2()];
 });

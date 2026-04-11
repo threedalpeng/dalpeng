@@ -1,5 +1,5 @@
-import { enableDebugPanel, ALL_RENDER_GROUPS, ANIMATION_GROUP, runApp } from "dalpeng";
-import { CHARACTER_GROUP } from "./app/composables/characterConfig";
+import { runApp } from "dalpeng";
+import { setupDevTools } from "@dalpeng/devtools-vite/runtime";
 import App from "./app/App";
 
 const app = await runApp(App, "#app", {
@@ -26,7 +26,4 @@ app.input.defineAction("right", ["KeyD", "ArrowRight"]);
 app.input.defineAction("sprint", ["ShiftLeft", "ShiftRight"]);
 app.input.defineAction("reset", ["KeyR"]);
 
-enableDebugPanel(app, {
-  position: "top-right",
-  controls: [...ALL_RENDER_GROUPS, ANIMATION_GROUP, CHARACTER_GROUP],
-});
+await setupDevTools(app);

@@ -6,5 +6,5 @@ import GLTFModel from "./entities/GLTFModel";
 
 export default defineScene(() => {
   withName("glTF Viewer Scene");
-  return [GLTFModel, Ground, Camera, Light];
+  return [GLTFModel(), Ground(), Camera(), Light()];
 });

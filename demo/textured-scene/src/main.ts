@@ -1,6 +1,6 @@
-import { enableDebugPanel, runApp, MeshRenderer } from "dalpeng";
+import { runApp, MeshRenderer } from "dalpeng";
+import { setupDevTools } from "@dalpeng/devtools-vite/runtime";
 import App from "./app/App";
-import { createTextureControls } from "./app/dashboard";
 import { hasExternalTextures, EXTERNAL_PRESETS } from "./app/textures/external";
 import {
   makeBrickTextures,
@@ -12,8 +12,6 @@ const app = await runApp(App, "#app", {
   fit: "fill",
   features: { shadows: true },
 });
-
-// ─── Texture preset switching ─────────────────────────────────────────────
 
 const externalAvail = await hasExternalTextures();
 
@@ -106,15 +104,7 @@ async function switchTextureSource(source: string) {
   }
 }
 
-// ─── UI ───────────────────────────────────────────────────────────────────
+await switchTextureSource("procedural");
+app.features.textureMask = 0b1111;
 
-const textureGroup = createTextureControls({
-  externalAvailable: externalAvail,
-  onSourceChange: switchTextureSource,
-  onMaskChange: (mask) => { app.features.textureMask = mask; },
-});
-
-enableDebugPanel(app, {
-  position: "top-right",
-  controls: [textureGroup],
-});
+await setupDevTools(app);

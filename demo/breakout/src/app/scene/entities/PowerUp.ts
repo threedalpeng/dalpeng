@@ -60,10 +60,8 @@ export function createPowerUp(x: number, y: number, effect: PowerUpEffect) {
       const p = transform.position;
       const ny = p.y - FALL_SPEED * dt;
 
-      // Spin animation
       transform.rotate(vec3(0, 1, 0), dt * 180);
 
-      // Check paddle collision
       const scene = self.scene;
       const paddles = scene.findByTag("paddle");
       if (paddles.length > 0) {
@@ -83,7 +81,6 @@ export function createPowerUp(x: number, y: number, effect: PowerUpEffect) {
         }
       }
 
-      // Out of bounds
       if (ny < BOUNDS_Y_BOTTOM) {
         self.currentApp.destroy(self);
         return;

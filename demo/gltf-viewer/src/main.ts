@@ -1,4 +1,5 @@
-import { enableDebugPanel, ALL_RENDER_GROUPS, runApp } from "dalpeng";
+import { runApp } from "dalpeng";
+import { setupDevTools } from "@dalpeng/devtools-vite/runtime";
 import App from "./app/App";
 
 const app = await runApp(App, "#app", {
@@ -12,7 +13,5 @@ const app = await runApp(App, "#app", {
     fxaa: true,
   },
 });
-enableDebugPanel(app, {
-  position: "top-right",
-  controls: ALL_RENDER_GROUPS,
-});
+
+await setupDevTools(app);

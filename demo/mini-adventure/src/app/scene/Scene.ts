@@ -6,5 +6,5 @@ import Light from "./entities/Light";
 
 export default defineScene(() => {
   withName("Adventure Scene");
-  return [Character, Ground, Camera, Light];
+  return [Character(), Ground(), Camera(), Light()];
 });

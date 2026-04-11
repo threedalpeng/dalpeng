@@ -8,5 +8,5 @@ import Light from "./entities/Light";
 export default defineScene(() => {
   withName("Textured Scene");
 
-  return [TexturedBox, TexturedSphere, Ground, Camera, Light];
+  return [TexturedBox(), TexturedSphere(), Ground(), Camera(), Light()];
 });
