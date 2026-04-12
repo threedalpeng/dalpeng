@@ -9,8 +9,8 @@ import {
   type UIDescriptor,
 } from "@dalpeng/core";
 import { getThisUI, setThisUI, type UIContext } from "./context";
-import type { NodeDescriptor, TextOpts } from "./types";
 import type { Placement } from "./placement";
+import type { NodeDescriptor, TextOpts } from "./types";
 
 export interface RenderContext {
   doc: Document;
@@ -19,10 +19,7 @@ export interface RenderContext {
    * (e.g. `Toggle("shadows", ...)`). Leave unset for devtools-level UI.
    */
   features?: Record<string, unknown>;
-  watchFeature?: (
-    key: string,
-    cb: (newVal: unknown, oldVal: unknown) => void,
-  ) => () => void;
+  watchFeature?: (key: string, cb: (newVal: unknown, oldVal: unknown) => void) => () => void;
 }
 
 export interface RenderResult {
@@ -34,10 +31,7 @@ export interface RenderResult {
   layer?: string;
 }
 
-export function renderDescriptor(
-  descriptor: UIDescriptor,
-  ctx: RenderContext,
-): RenderResult {
+export function renderDescriptor(descriptor: UIDescriptor, ctx: RenderContext): RenderResult {
   const prevUI = getThisUI();
   const uiCtx: UIContext = {
     nodes: [] as NodeDescriptor[],
@@ -80,27 +74,47 @@ export function renderDescriptor(
 
 function renderNode(node: NodeDescriptor, ctx: RenderContext): RenderResult {
   switch (node.type) {
-    case "text": return renderText(node, ctx);
-    case "bar": return renderBar(node);
-    case "html": return renderHtml(node, ctx);
-    case "toggle": return renderToggle(node, ctx);
-    case "range": return renderRange(node, ctx);
-    case "select": return renderSelect(node, ctx);
-    case "button": return renderButton(node, ctx);
-    case "value": return renderValue(node, ctx);
-    case "ui": return renderDescriptor(node.descriptor, ctx);
-    case "menu": return renderMenu(node, ctx);
-    case "list": return renderList(node, ctx);
-    case "split": return renderSplit(node, ctx);
-    case "tabs": return renderTabs(node, ctx);
-    case "for": return renderFor(node, ctx);
-    case "show": return renderShow(node, ctx);
-    case "floating": return renderFloating(node, ctx);
-    case "live": return { element: node.element, cleanups: node.cleanups ?? new Set() };
+    case "text":
+      return renderText(node, ctx);
+    case "bar":
+      return renderBar(node);
+    case "html":
+      return renderHtml(node, ctx);
+    case "toggle":
+      return renderToggle(node, ctx);
+    case "range":
+      return renderRange(node, ctx);
+    case "select":
+      return renderSelect(node, ctx);
+    case "button":
+      return renderButton(node, ctx);
+    case "value":
+      return renderValue(node, ctx);
+    case "ui":
+      return renderDescriptor(node.descriptor, ctx);
+    case "menu":
+      return renderMenu(node, ctx);
+    case "list":
+      return renderList(node, ctx);
+    case "split":
+      return renderSplit(node, ctx);
+    case "tabs":
+      return renderTabs(node, ctx);
+    case "for":
+      return renderFor(node, ctx);
+    case "show":
+      return renderShow(node, ctx);
+    case "floating":
+      return renderFloating(node, ctx);
+    case "live":
+      return { element: node.element, cleanups: node.cleanups ?? new Set() };
   }
 }
 
-function renderText(node: Extract<NodeDescriptor, { type: "text" }>, ctx: RenderContext): RenderResult {
+function renderText(
+  node: Extract<NodeDescriptor, { type: "text" }>,
+  ctx: RenderContext
+): RenderResult {
   const cleanups = new Set<() => void>();
   const doc = ctx.doc;
   const span = doc.createElement("span");
@@ -110,7 +124,9 @@ function renderText(node: Extract<NodeDescriptor, { type: "text" }>, ctx: Render
     const source = node.content as Ref<any>;
     const fmt = node.formatter ?? String;
     span.textContent = fmt(source.value);
-    const unsub = source.subscribe((v) => { span.textContent = fmt(v); });
+    const unsub = source.subscribe((v) => {
+      span.textContent = fmt(v);
+    });
     cleanups.add(unsub);
   } else {
     span.textContent = node.content as string;
@@ -146,7 +162,9 @@ function renderBar(node: Extract<NodeDescriptor, { type: "bar" }>): RenderResult
 
   if (node.source && node.formatter) {
     updateBar(node.formatter(node.source.value));
-    const unsub = node.source.subscribe((v) => { updateBar(node.formatter!(v)); });
+    const unsub = node.source.subscribe((v) => {
+      updateBar(node.formatter!(v));
+    });
     cleanups.add(unsub);
   } else {
     updateBar(0);
@@ -156,7 +174,10 @@ function renderBar(node: Extract<NodeDescriptor, { type: "bar" }>): RenderResult
   return { element: outer, cleanups };
 }
 
-function renderHtml(node: Extract<NodeDescriptor, { type: "html" }>, ctx: RenderContext): RenderResult {
+function renderHtml(
+  node: Extract<NodeDescriptor, { type: "html" }>,
+  ctx: RenderContext
+): RenderResult {
   const doc = ctx.doc;
   const el = doc.createElement("div");
   el.innerHTML = node.content;
@@ -165,7 +186,7 @@ function renderHtml(node: Extract<NodeDescriptor, { type: "html" }>, ctx: Render
 
 function resolveBinding<T>(
   source: { kind: "ref"; ref: Ref<T> } | { kind: "feature"; key: string },
-  ctx: RenderContext,
+  ctx: RenderContext
 ): { ref: Ref<T>; cleanups: Set<() => void> } {
   const cleanups = new Set<() => void>();
   if (source.kind === "ref") {
@@ -175,7 +196,9 @@ function resolveBinding<T>(
   const r = ref(ctx.features?.[key]) as Ref<T>;
 
   if (ctx.watchFeature) {
-    const unsub = ctx.watchFeature(key, (v) => { r.value = v as T; });
+    const unsub = ctx.watchFeature(key, (v) => {
+      r.value = v as T;
+    });
     cleanups.add(unsub);
   }
 
@@ -187,7 +210,10 @@ function resolveBinding<T>(
   return { ref: r, cleanups };
 }
 
-function renderToggle(node: Extract<NodeDescriptor, { type: "toggle" }>, ctx: RenderContext): RenderResult {
+function renderToggle(
+  node: Extract<NodeDescriptor, { type: "toggle" }>,
+  ctx: RenderContext
+): RenderResult {
   const cleanups = new Set<() => void>();
   const { ref: bound, cleanups: bindCleanups } = resolveBinding<boolean>(node.source, ctx);
   bindCleanups.forEach((fn) => cleanups.add(fn));
@@ -206,8 +232,12 @@ function renderToggle(node: Extract<NodeDescriptor, { type: "toggle" }>, ctx: Re
   const span = doc.createElement("span");
   span.textContent = node.label;
 
-  input.addEventListener("change", () => { bound.value = input.checked; });
-  const unsub = bound.subscribe((v) => { input.checked = v; });
+  input.addEventListener("change", () => {
+    bound.value = input.checked;
+  });
+  const unsub = bound.subscribe((v) => {
+    input.checked = v;
+  });
   cleanups.add(unsub);
 
   label.appendChild(input);
@@ -215,7 +245,10 @@ function renderToggle(node: Extract<NodeDescriptor, { type: "toggle" }>, ctx: Re
   return { element: label, cleanups };
 }
 
-function renderRange(node: Extract<NodeDescriptor, { type: "range" }>, ctx: RenderContext): RenderResult {
+function renderRange(
+  node: Extract<NodeDescriptor, { type: "range" }>,
+  ctx: RenderContext
+): RenderResult {
   const cleanups = new Set<() => void>();
   const { ref: bound, cleanups: bindCleanups } = resolveBinding<number>(node.source, ctx);
   bindCleanups.forEach((fn) => cleanups.add(fn));
@@ -257,7 +290,10 @@ function renderRange(node: Extract<NodeDescriptor, { type: "range" }>, ctx: Rend
   return { element: container, cleanups };
 }
 
-function renderSelect(node: Extract<NodeDescriptor, { type: "select" }>, ctx: RenderContext): RenderResult {
+function renderSelect(
+  node: Extract<NodeDescriptor, { type: "select" }>,
+  ctx: RenderContext
+): RenderResult {
   const cleanups = new Set<() => void>();
   const { ref: bound, cleanups: bindCleanups } = resolveBinding<string>(node.source, ctx);
   bindCleanups.forEach((fn) => cleanups.add(fn));
@@ -280,8 +316,12 @@ function renderSelect(node: Extract<NodeDescriptor, { type: "select" }>, ctx: Re
   }
   select.value = bound.value ?? "";
 
-  select.addEventListener("change", () => { bound.value = select.value; });
-  const unsub = bound.subscribe((v) => { select.value = v; });
+  select.addEventListener("change", () => {
+    bound.value = select.value;
+  });
+  const unsub = bound.subscribe((v) => {
+    select.value = v;
+  });
   cleanups.add(unsub);
 
   container.appendChild(label);
@@ -289,7 +329,10 @@ function renderSelect(node: Extract<NodeDescriptor, { type: "select" }>, ctx: Re
   return { element: container, cleanups };
 }
 
-function renderButton(node: Extract<NodeDescriptor, { type: "button" }>, ctx: RenderContext): RenderResult {
+function renderButton(
+  node: Extract<NodeDescriptor, { type: "button" }>,
+  ctx: RenderContext
+): RenderResult {
   const doc = ctx.doc;
   const btn = doc.createElement("button");
   btn.textContent = node.label;
@@ -297,7 +340,10 @@ function renderButton(node: Extract<NodeDescriptor, { type: "button" }>, ctx: Re
   return { element: btn, cleanups: new Set() };
 }
 
-function renderValue(node: Extract<NodeDescriptor, { type: "value" }>, ctx: RenderContext): RenderResult {
+function renderValue(
+  node: Extract<NodeDescriptor, { type: "value" }>,
+  ctx: RenderContext
+): RenderResult {
   const cleanups = new Set<() => void>();
   const doc = ctx.doc;
   const container = doc.createElement("div");
@@ -311,7 +357,9 @@ function renderValue(node: Extract<NodeDescriptor, { type: "value" }>, ctx: Rend
   const value = doc.createElement("span");
   if (isRef(node.content)) {
     value.textContent = node.content.value;
-    const unsub = node.content.subscribe((v) => { value.textContent = v; });
+    const unsub = node.content.subscribe((v) => {
+      value.textContent = v;
+    });
     cleanups.add(unsub);
   } else {
     value.textContent = node.content;
@@ -322,7 +370,10 @@ function renderValue(node: Extract<NodeDescriptor, { type: "value" }>, ctx: Rend
   return { element: container, cleanups };
 }
 
-function renderMenu(node: Extract<NodeDescriptor, { type: "menu" }>, ctx: RenderContext): RenderResult {
+function renderMenu(
+  node: Extract<NodeDescriptor, { type: "menu" }>,
+  ctx: RenderContext
+): RenderResult {
   const cleanups = new Set<() => void>();
   const { items, onSelect, focusIndex } = node;
   const doc = ctx.doc;
@@ -360,11 +411,15 @@ function renderMenu(node: Extract<NodeDescriptor, { type: "menu" }>, ctx: Render
   const signal = abortCtrl.signal;
 
   liElements.forEach((li, i) => {
-    li.addEventListener("click", () => {
-      if (items[i].disabled) return;
-      focusIndex.value = i;
-      onSelect(items[i]);
-    }, { signal });
+    li.addEventListener(
+      "click",
+      () => {
+        if (items[i].disabled) return;
+        focusIndex.value = i;
+        onSelect(items[i]);
+      },
+      { signal }
+    );
     ul.appendChild(li);
   });
 
@@ -372,30 +427,37 @@ function renderMenu(node: Extract<NodeDescriptor, { type: "menu" }>, ctx: Render
   const unsub = focusIndex.subscribe((idx) => updateHighlight(idx));
   cleanups.add(unsub);
 
-  ul.addEventListener("keydown", (e) => {
-    const count = items.length;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      let next = (focusIndex.value + 1) % count;
-      while (items[next].disabled && next !== focusIndex.value) next = (next + 1) % count;
-      focusIndex.value = next;
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      let prev = (focusIndex.value - 1 + count) % count;
-      while (items[prev].disabled && prev !== focusIndex.value) prev = (prev - 1 + count) % count;
-      focusIndex.value = prev;
-    } else if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      const focused = items[focusIndex.value];
-      if (!focused.disabled) onSelect(focused);
-    }
-  }, { signal });
+  ul.addEventListener(
+    "keydown",
+    (e) => {
+      const count = items.length;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        let next = (focusIndex.value + 1) % count;
+        while (items[next].disabled && next !== focusIndex.value) next = (next + 1) % count;
+        focusIndex.value = next;
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        let prev = (focusIndex.value - 1 + count) % count;
+        while (items[prev].disabled && prev !== focusIndex.value) prev = (prev - 1 + count) % count;
+        focusIndex.value = prev;
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        const focused = items[focusIndex.value];
+        if (!focused.disabled) onSelect(focused);
+      }
+    },
+    { signal }
+  );
 
   cleanups.add(() => abortCtrl.abort());
   return { element: ul, cleanups };
 }
 
-function renderList(node: Extract<NodeDescriptor, { type: "list" }>, ctx: RenderContext): RenderResult {
+function renderList(
+  node: Extract<NodeDescriptor, { type: "list" }>,
+  ctx: RenderContext
+): RenderResult {
   const cleanups = new Set<() => void>();
   const doc = ctx.doc;
 
@@ -416,7 +478,7 @@ function renderList(node: Extract<NodeDescriptor, { type: "list" }>, ctx: Render
 
 function renderSplit(
   node: Extract<NodeDescriptor, { type: "split" }>,
-  ctx: RenderContext,
+  ctx: RenderContext
 ): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
@@ -532,7 +594,7 @@ function renderSplit(
 
 function renderTabs(
   node: Extract<NodeDescriptor, { type: "tabs" }>,
-  ctx: RenderContext,
+  ctx: RenderContext
 ): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
@@ -598,9 +660,7 @@ function renderTabs(
       btn.style.color = isActive ? "inherit" : "rgba(255,255,255,0.6)";
       btn.style.border = "none";
       btn.style.borderRight = "1px solid rgba(255,255,255,0.06)";
-      btn.style.borderBottom = isActive
-        ? "2px solid currentColor"
-        : "2px solid transparent";
+      btn.style.borderBottom = isActive ? "2px solid currentColor" : "2px solid transparent";
       btn.style.padding = "5px 12px";
       btn.style.cursor = "pointer";
       btn.style.fontFamily = "inherit";
@@ -622,8 +682,18 @@ function renderTabs(
 
   renderStrip();
   renderActiveBody();
-  cleanups.add(opts.tabs.subscribe(() => { renderStrip(); renderActiveBody(); }));
-  cleanups.add(opts.active.subscribe(() => { renderStrip(); renderActiveBody(); }));
+  cleanups.add(
+    opts.tabs.subscribe(() => {
+      renderStrip();
+      renderActiveBody();
+    })
+  );
+  cleanups.add(
+    opts.active.subscribe(() => {
+      renderStrip();
+      renderActiveBody();
+    })
+  );
   cleanups.add(() => clearBody());
 
   return { element: wrap, cleanups };
@@ -631,7 +701,7 @@ function renderTabs(
 
 function renderFor(
   node: Extract<NodeDescriptor, { type: "for" }>,
-  ctx: RenderContext,
+  ctx: RenderContext
 ): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
@@ -670,7 +740,7 @@ function renderFor(
 
 function renderShow(
   node: Extract<NodeDescriptor, { type: "show" }>,
-  ctx: RenderContext,
+  ctx: RenderContext
 ): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
@@ -704,7 +774,7 @@ function renderShow(
 
 function renderFloating(
   node: Extract<NodeDescriptor, { type: "floating" }>,
-  ctx: RenderContext,
+  ctx: RenderContext
 ): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
@@ -720,11 +790,16 @@ function renderFloating(
   floater.style.zIndex = "2147483647";
   floater.style.display = "none";
 
-  const setNumeric = (key: "left" | "top" | "width" | "height", v: number | Ref<number> | undefined) => {
+  const setNumeric = (
+    key: "left" | "top" | "width" | "height",
+    v: number | Ref<number> | undefined
+  ) => {
     if (v == null) return;
     if (isRef(v)) {
       const r = v;
-      const apply = (n: number) => { floater.style[key] = `${n}px`; };
+      const apply = (n: number) => {
+        floater.style[key] = `${n}px`;
+      };
       apply(r.value);
       const unsub = r.subscribe((n: number) => apply(n));
       cleanups.add(unsub);
@@ -788,7 +863,7 @@ function renderFloating(
       sync();
       if (v) installDocHandlers();
       else removeDocHandlers();
-    }),
+    })
   );
   cleanups.add(() => {
     removeDocHandlers();

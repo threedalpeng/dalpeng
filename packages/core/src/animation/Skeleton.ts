@@ -1,11 +1,11 @@
 import { Mat4, Quaternion, Vec3 } from "@dalpeng/math";
-import type { ParsedSkin, ParsedNode } from "../utils/gltf/GLTFDocument";
+import type { ParsedNode, ParsedSkin } from "../utils/gltf/GLTFDocument";
 
 export const MAX_JOINTS = 128;
 
 export default class Skeleton {
-  readonly joints: number[];                    // node indices
-  readonly inverseBindMatrices: Float32Array;    // N * 16
+  readonly joints: number[]; // node indices
+  readonly inverseBindMatrices: Float32Array; // N * 16
   readonly jointCount: number;
   readonly skeletonRoot: number | null;
 
@@ -55,9 +55,10 @@ export default class Skeleton {
    */
   computeJointMatrices(nodeGlobalTransforms: Map<number, Mat4>): void {
     // Skeleton root's global transform (for normalization)
-    const rootGlobal = this.skeletonRoot !== null
-      ? (nodeGlobalTransforms.get(this.skeletonRoot) ?? Mat4.identity())
-      : Mat4.identity();
+    const rootGlobal =
+      this.skeletonRoot !== null
+        ? (nodeGlobalTransforms.get(this.skeletonRoot) ?? Mat4.identity())
+        : Mat4.identity();
     const rootGlobalInverse = rootGlobal.inverse() ?? Mat4.identity();
 
     for (let j = 0; j < this.jointCount; j++) {

@@ -1,5 +1,6 @@
 import {
   computed,
+  Logger,
   ref,
   type Application,
   type FrameStatsSummary,
@@ -7,7 +8,6 @@ import {
   type LogEntry,
   type ReadonlyRef,
   type Scene,
-  Logger,
 } from "@dalpeng/core";
 import type { DevToolsHost } from "./host";
 

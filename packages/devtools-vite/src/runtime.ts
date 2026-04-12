@@ -1,9 +1,5 @@
 import type { Application } from "@dalpeng/core";
-import type {
-  AttachDevToolsOptions,
-  DevToolsHandle,
-  DevToolsPlugin,
-} from "@dalpeng/devtools";
+import type { AttachDevToolsOptions, DevToolsHandle, DevToolsPlugin } from "@dalpeng/devtools";
 
 // Set by the Vite plugin at bundle time via `config.define`.
 // The dynamic import MUST stay inside the positive branch so Rollup can
@@ -13,7 +9,7 @@ declare const __DALPENG_DEVTOOLS__: boolean | undefined;
 export async function setupDevTools(
   app: Application,
   plugins?: DevToolsPlugin[],
-  opts?: Omit<AttachDevToolsOptions, "plugins">,
+  opts?: Omit<AttachDevToolsOptions, "plugins">
 ): Promise<DevToolsHandle | null> {
   if (
     typeof __DALPENG_DEVTOOLS__ !== "undefined"

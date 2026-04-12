@@ -15,6 +15,9 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
+import type Application from "../src/Application";
+import type Scene from "../src/Scene";
+import type GameEntity from "../src/ecs/GameEntity";
 import {
   Materializer,
   createGameDescriptor,
@@ -27,9 +30,6 @@ import {
   type UIInstance,
   type UIRenderer,
 } from "../src/index";
-import type Application from "../src/Application";
-import type Scene from "../src/Scene";
-import type GameEntity from "../src/ecs/GameEntity";
 
 // ─────────────────────────────────────────────────────────────────────
 // Mocks
@@ -54,7 +54,7 @@ function makeMockApp(renderer: UIRenderer | null): Application {
 import { INSTANCE_KIND } from "../src/runtime/Instance";
 
 function makeRealUIRenderer(
-  trackDetach?: (id: string) => void,
+  trackDetach?: (id: string) => void
 ): UIRenderer & { instances: UIInstance[] } {
   const instances: UIInstance[] = [];
   let counter = 0;
@@ -86,7 +86,7 @@ function makeHooks(
     onCreateEntity?: (entity: GameEntity, parent: GameInstance | Scene) => void;
     onPushContext?: (entity: GameEntity) => void;
     onPopContext?: (entity: GameEntity) => void;
-  } = {},
+  } = {}
 ): MaterializerHooks {
   let nextId = 0;
   return {
@@ -199,7 +199,7 @@ describe("Materializer — descriptor walk", () => {
       makeHooks({
         onPushContext: (e) => events.push(`push ${e.id}`),
         onPopContext: (e) => events.push(`pop ${e.id}`),
-      }),
+      })
     );
     const scene = makeMockScene();
 
@@ -219,9 +219,7 @@ describe("Materializer — descriptor walk", () => {
     const scene = makeMockScene();
 
     const desc = createUIDescriptor(() => [], {});
-    expect(() => m.materialize(desc, scene)).toThrow(
-      /no UI renderer registered/,
-    );
+    expect(() => m.materialize(desc, scene)).toThrow(/no UI renderer registered/);
   });
 });
 

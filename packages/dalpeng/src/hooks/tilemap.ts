@@ -1,14 +1,5 @@
-import {
-  TilemapRenderer,
-  TileCollider,
-  TiledImporter,
-  SpriteAtlas,
-} from "@dalpeng/core";
-import type {
-  ParsedTiledMap,
-  ParsedTileset,
-  TriggerZone,
-} from "@dalpeng/core";
+import type { ParsedTiledMap, ParsedTileset, TriggerZone } from "@dalpeng/core";
+import { SpriteAtlas, TileCollider, TiledImporter, TilemapRenderer } from "@dalpeng/core";
 import { requireEntity } from "../context";
 import { useComponent } from "./gameEntity";
 
@@ -46,27 +37,29 @@ export function useTilemap(url: string, pixelsPerUnit = 16): TilemapHandle {
     },
   };
 
-  handle.ready = TiledImporter.load(url).then(async (map) => {
-    parsedMap = map;
+  handle.ready = TiledImporter.load(url)
+    .then(async (map) => {
+      parsedMap = map;
 
-    const atlasMap = new Map<ParsedTileset, SpriteAtlas>();
-    await Promise.all(
-      map.tilesets.map(async (tileset) => {
-        const atlas = await atlases.loadUniform(
-          tileset.imageUrl,
-          tileset.tileWidth,
-          tileset.tileHeight,
-        );
-        atlasMap.set(tileset, atlas);
-      }),
-    );
+      const atlasMap = new Map<ParsedTileset, SpriteAtlas>();
+      await Promise.all(
+        map.tilesets.map(async (tileset) => {
+          const atlas = await atlases.loadUniform(
+            tileset.imageUrl,
+            tileset.tileWidth,
+            tileset.tileHeight
+          );
+          atlasMap.set(tileset, atlas);
+        })
+      );
 
-    renderer.build(map, atlasMap);
-    handle.collider = new TileCollider(map, pixelsPerUnit);
-  }).catch((err: any) => {
-    console.error("[useTilemap] Failed to load:", url, err);
-    throw err;
-  });
+      renderer.build(map, atlasMap);
+      handle.collider = new TileCollider(map, pixelsPerUnit);
+    })
+    .catch((err: any) => {
+      console.error("[useTilemap] Failed to load:", url, err);
+      throw err;
+    });
 
   return handle;
 }

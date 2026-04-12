@@ -8,12 +8,7 @@ import {
   type GameDescriptor,
   type LogicalDescriptor,
 } from "@dalpeng/core";
-import {
-  getThisEntity,
-  requireEntity,
-  registerCleanup,
-  hasActiveCleanupScope,
-} from "../context";
+import { getThisEntity, hasActiveCleanupScope, registerCleanup, requireEntity } from "../context";
 // withLayer works in both entity AND UI scope; dispatch to the UI hook when
 // inside a defineUI setup. getThisUI returning null is the cheap test.
 import { getThisUI as uiGetActiveScope, withLayer as uiWithLayer } from "@dalpeng/ui";
@@ -27,10 +22,10 @@ export type GameFactoryWithProps<P> = (props: P) => GameDescriptor<P>;
 
 export function defineGameEntity(setup: () => LogicalDescriptor[] | void): GameFactory;
 export function defineGameEntity<P>(
-  setup: (props: P) => LogicalDescriptor[] | void,
+  setup: (props: P) => LogicalDescriptor[] | void
 ): GameFactoryWithProps<P>;
 export function defineGameEntity<P>(
-  setup: (props: P) => LogicalDescriptor[] | void,
+  setup: (props: P) => LogicalDescriptor[] | void
 ): (props: P) => GameDescriptor<P> {
   // Passing undefined for P=void is sound at runtime; the public overloads
   // declare the correct external types.
@@ -100,7 +95,7 @@ export function withLayer(name: string) {
   if (!app) {
     throw new Error(
       `withLayer("${name}"): entity has no Application context yet. ` +
-        `Call withLayer inside defineGameEntity setup, after the entity is attached to a scene.`,
+        `Call withLayer inside defineGameEntity setup, after the entity is attached to a scene.`
     );
   }
   if (!app.layers.has(name)) {
@@ -108,7 +103,7 @@ export function withLayer(name: string) {
     throw new Error(
       `withLayer("${name}"): no such layer. ` +
         `Did you forget to declare it in withLayers([...])? ` +
-        `Known layers: ${known}.`,
+        `Known layers: ${known}.`
     );
   }
   entity._layerName = name;

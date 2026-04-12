@@ -4,15 +4,15 @@ import Transform from "../ecs/Transform";
 import Particle from "./Particle";
 
 export interface ParticleEmitterConfig {
-  maxParticles?: number;        // default 256
-  emitRate?: number;            // particles per second, default 10
-  lifetime?: [number, number];  // [min, max] ms, default [500, 1500]
-  speed?: [number, number];     // [min, max] units/sec, default [1, 3]
-  size?: [number, number];      // [start, end], default [0.5, 0.1]
+  maxParticles?: number; // default 256
+  emitRate?: number; // particles per second, default 10
+  lifetime?: [number, number]; // [min, max] ms, default [500, 1500]
+  speed?: [number, number]; // [min, max] units/sec, default [1, 3]
+  size?: [number, number]; // [start, end], default [0.5, 0.1]
   colorStart?: [number, number, number, number]; // RGBA 0-1, default [1,1,1,1]
-  colorEnd?: [number, number, number, number];   // RGBA 0-1, default [1,1,1,0]
-  gravity?: [number, number, number];            // world units/sec^2, default [0, -9.8, 0]
-  spread?: number;              // cone half-angle in radians, default Math.PI (full sphere)
+  colorEnd?: [number, number, number, number]; // RGBA 0-1, default [1,1,1,0]
+  gravity?: [number, number, number]; // world units/sec^2, default [0, -9.8, 0]
+  spread?: number; // cone half-angle in radians, default Math.PI (full sphere)
   direction?: [number, number, number]; // emit direction, default [0, 1, 0]
 }
 
@@ -179,16 +179,14 @@ export default class ParticleEmitter extends Component {
       // Full sphere
       const theta = Math.random() * 2 * Math.PI;
       const phi = Math.acos(2 * Math.random() - 1);
-      return [
-        Math.sin(phi) * Math.cos(theta),
-        Math.sin(phi) * Math.sin(theta),
-        Math.cos(phi),
-      ];
+      return [Math.sin(phi) * Math.cos(theta), Math.sin(phi) * Math.sin(theta), Math.cos(phi)];
     }
     // Cone around direction
     const [dx, dy, dz] = this.direction;
     const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
-    const ndx = dx / len, ndy = dy / len, ndz = dz / len;
+    const ndx = dx / len,
+      ndy = dy / len,
+      ndz = dz / len;
 
     const theta = Math.random() * 2 * Math.PI;
     const cosSpread = Math.cos(this.spread);
@@ -200,11 +198,16 @@ export default class ParticleEmitter extends Component {
     let ux: number, uy: number, uz: number;
     if (Math.abs(ndz) < 0.99) {
       // cross with (0,0,1)
-      ux = -ndy; uy = ndx; uz = 0;
+      ux = -ndy;
+      uy = ndx;
+      uz = 0;
       const ulen = Math.sqrt(ux * ux + uy * uy) || 1;
-      ux /= ulen; uy /= ulen;
+      ux /= ulen;
+      uy /= ulen;
     } else {
-      ux = 1; uy = 0; uz = 0;
+      ux = 1;
+      uy = 0;
+      uz = 0;
     }
     const vx = ndy * uz - ndz * uy;
     const vy = ndz * ux - ndx * uz;
@@ -213,11 +216,7 @@ export default class ParticleEmitter extends Component {
     const px = r * Math.cos(theta);
     const py = r * Math.sin(theta);
 
-    return [
-      px * ux + py * vx + z * ndx,
-      px * uy + py * vy + z * ndy,
-      px * uz + py * vz + z * ndz,
-    ];
+    return [px * ux + py * vx + z * ndx, px * uy + py * vy + z * ndy, px * uz + py * vz + z * ndz];
   }
 
   #packInstanceData(): void {
@@ -237,7 +236,13 @@ export default class ParticleEmitter extends Component {
     // aliveCount is already set in tick()
   }
 
-  get aliveCount(): number { return this.#aliveCount; }
-  get instanceData(): Float32Array { return this.#instanceData; }
-  get isEmitting(): boolean { return this.#isEmitting; }
+  get aliveCount(): number {
+    return this.#aliveCount;
+  }
+  get instanceData(): Float32Array {
+    return this.#instanceData;
+  }
+  get isEmitting(): boolean {
+    return this.#isEmitting;
+  }
 }

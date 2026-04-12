@@ -1,5 +1,4 @@
-import { vec3 } from "@dalpeng/math";
-import { defineGameEntity, onUpdate, Time, Transform, useComponent, withName } from "dalpeng";
+import { defineGameEntity, withName } from "dalpeng";
 import Box from "./Box";
 import Cylinder from "./Cylinder";
 import Ground from "./Ground";

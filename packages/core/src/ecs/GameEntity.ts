@@ -1,8 +1,8 @@
-import Component, { type ComponentConstructor } from "./Component.js";
-import type Scene from "../Scene.js";
-import Transform from "./Transform";
-import Entity from "./Entity.js";
 import type { GameInstance } from "../runtime/Instance";
+import type Scene from "../Scene.js";
+import Component, { type ComponentConstructor } from "./Component.js";
+import Entity from "./Entity.js";
+import Transform from "./Transform";
 
 export default class GameEntity extends Entity {
   static #gameEntityList = new Map<number, GameEntity>();

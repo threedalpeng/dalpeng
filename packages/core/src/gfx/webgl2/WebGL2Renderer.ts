@@ -1,19 +1,21 @@
 import { loadProgram, loadShader } from "@/utils/gl";
+import { ErrorTracker, FrameProfiler } from "../../debug";
 import type { RendererBackend } from "../RendererBackend";
 import type { RenderPassDescriptor } from "../RenderPass";
 import WebGL2Buffer from "./WebGL2Buffer";
+import WebGL2CubemapTexture from "./WebGL2CubemapTexture";
 import WebGL2Program from "./WebGL2Program";
 import WebGL2RenderTarget from "./WebGL2RenderTarget";
 import WebGL2Sampler from "./WebGL2Sampler";
-import WebGL2CubemapTexture from "./WebGL2CubemapTexture";
 import WebGL2Texture from "./WebGL2Texture";
 import WebGL2VertexArray from "./WebGL2VertexArray";
-import { FrameProfiler } from "../../debug";
-import { ErrorTracker } from "../../debug";
 
 export default class WebGL2Renderer implements RendererBackend {
   readonly type = "webgl2" as const;
-  readonly capabilities: { supportsCompute: boolean; supportsFloatBlend: boolean } = { supportsCompute: false, supportsFloatBlend: false };
+  readonly capabilities: { supportsCompute: boolean; supportsFloatBlend: boolean } = {
+    supportsCompute: false,
+    supportsFloatBlend: false,
+  };
   #gl: WebGL2RenderingContext | null = null;
   #supportsFloatBlend = false;
   #lastError: { name: string; tag?: string; time: number } | null = null;
@@ -40,7 +42,6 @@ export default class WebGL2Renderer implements RendererBackend {
     }
     this.#supportsFloatBlend = !!gl.getExtension("EXT_float_blend");
     this.capabilities.supportsFloatBlend = this.#supportsFloatBlend;
-
   }
 
   isReady() {
@@ -55,7 +56,9 @@ export default class WebGL2Renderer implements RendererBackend {
     return new WebGL2Program(gl, prog);
   }
 
-  resize() { /* FrameResources handles lazy reallocation */ }
+  resize() {
+    /* FrameResources handles lazy reallocation */
+  }
 
   createBuffer(kind: "vertex" | "index") {
     return new WebGL2Buffer(this.#gl!, kind);
@@ -75,7 +78,9 @@ export default class WebGL2Renderer implements RendererBackend {
     return new WebGL2Sampler(this.#gl!, desc);
   }
 
-  createRenderTarget(desc: import("../RenderTarget").RenderTargetDescriptor): import("../RenderTarget").RenderTarget {
+  createRenderTarget(
+    desc: import("../RenderTarget").RenderTargetDescriptor
+  ): import("../RenderTarget").RenderTarget {
     const gl = this.#gl!;
     const fbo = gl.createFramebuffer()!;
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
@@ -89,12 +94,14 @@ export default class WebGL2Renderer implements RendererBackend {
       for (let i = 0; i < desc.colorAttachments.length; i++) {
         const tex = desc.colorAttachments[i];
         if (tex) {
-          const glTex = tex.kind === "cube"
-            ? (tex as WebGL2CubemapTexture)._glTexture
-            : (tex as WebGL2Texture)._glTexture;
-          const target = tex.kind === "cube" && desc.cubeFace !== undefined
-            ? gl.TEXTURE_CUBE_MAP_POSITIVE_X + desc.cubeFace
-            : gl.TEXTURE_2D;
+          const glTex =
+            tex.kind === "cube"
+              ? (tex as WebGL2CubemapTexture)._glTexture
+              : (tex as WebGL2Texture)._glTexture;
+          const target =
+            tex.kind === "cube" && desc.cubeFace !== undefined
+              ? gl.TEXTURE_CUBE_MAP_POSITIVE_X + desc.cubeFace
+              : gl.TEXTURE_2D;
           gl.framebufferTexture2D(
             gl.FRAMEBUFFER,
             gl.COLOR_ATTACHMENT0 + i,
@@ -119,13 +126,7 @@ export default class WebGL2Renderer implements RendererBackend {
     let depthTexture: import("../Texture").default | undefined;
     if (desc.depthAttachment) {
       const glTex = (desc.depthAttachment as WebGL2Texture)._glTexture;
-      gl.framebufferTexture2D(
-        gl.FRAMEBUFFER,
-        gl.DEPTH_ATTACHMENT,
-        gl.TEXTURE_2D,
-        glTex,
-        0
-      );
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, glTex, 0);
       depthTexture = desc.depthAttachment;
     }
 
@@ -142,7 +143,7 @@ export default class WebGL2Renderer implements RendererBackend {
       desc.width,
       desc.height,
       colorTextures.length > 0 ? colorTextures : undefined,
-      depthTexture,
+      depthTexture
     );
   }
 
@@ -369,7 +370,6 @@ export default class WebGL2Renderer implements RendererBackend {
   }
 
   debugDumpState(tag = "") {
-    // eslint-disable-next-line no-console
     console.debug("[WebGL2Renderer.debugDumpState]", tag, this.debugCollectState());
   }
 
@@ -385,7 +385,6 @@ export default class WebGL2Renderer implements RendererBackend {
       else if (err === gl.OUT_OF_MEMORY) name = "OUT_OF_MEMORY";
       this.#lastError = { name, tag, time: performance.now() };
       ErrorTracker.record(tag, name, "error");
-      // eslint-disable-next-line no-console
       console.error(`[WebGL2Renderer] GL_ERROR ${name}`, tag);
     }
   }

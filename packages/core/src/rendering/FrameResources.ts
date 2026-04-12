@@ -80,14 +80,45 @@ export default class FrameResources {
       this.lighting.color.dispose();
     }
 
-    const positionMetallic = backend.createTexture({ kind: "2d", width, height, format: "rgba16f", samplerHint: "nearest" });
-    const normalRoughness = backend.createTexture({ kind: "2d", width, height, format: "rgba16f", samplerHint: "nearest" });
-    const albedo = backend.createTexture({ kind: "2d", width, height, format: "rgba16f", samplerHint: "nearest" });
-    const emissive = backend.createTexture({ kind: "2d", width, height, format: "rgba16f", samplerHint: "nearest" });
-    const depth = backend.createTexture({ kind: "2d", width, height, format: "depth16", samplerHint: "depth" });
+    const positionMetallic = backend.createTexture({
+      kind: "2d",
+      width,
+      height,
+      format: "rgba16f",
+      samplerHint: "nearest",
+    });
+    const normalRoughness = backend.createTexture({
+      kind: "2d",
+      width,
+      height,
+      format: "rgba16f",
+      samplerHint: "nearest",
+    });
+    const albedo = backend.createTexture({
+      kind: "2d",
+      width,
+      height,
+      format: "rgba16f",
+      samplerHint: "nearest",
+    });
+    const emissive = backend.createTexture({
+      kind: "2d",
+      width,
+      height,
+      format: "rgba16f",
+      samplerHint: "nearest",
+    });
+    const depth = backend.createTexture({
+      kind: "2d",
+      width,
+      height,
+      format: "depth16",
+      samplerHint: "depth",
+    });
 
     const gbufferRT = backend.createRenderTarget({
-      width, height,
+      width,
+      height,
       colorAttachments: [positionMetallic, normalRoughness, albedo, emissive],
       depthAttachment: depth,
     });
@@ -95,14 +126,23 @@ export default class FrameResources {
     this.gbuffer = { rt: gbufferRT, positionMetallic, normalRoughness, albedo, emissive, depth };
 
     // Lighting RT shares G-Buffer depth for particle depth testing.
-    const lightingFormat = backend.capabilities.supportsFloatBlend ? "rgba16f" as const : "rgba8unorm" as const;
+    const lightingFormat = backend.capabilities.supportsFloatBlend
+      ? ("rgba16f" as const)
+      : ("rgba8unorm" as const);
     if (!backend.capabilities.supportsFloatBlend) {
       console.warn("EXT_float_blend not available; lighting RT uses RGBA8 (LDR).");
     }
-    const lightingColor = backend.createTexture({ kind: "2d", width, height, format: lightingFormat, samplerHint: "nearest" });
+    const lightingColor = backend.createTexture({
+      kind: "2d",
+      width,
+      height,
+      format: lightingFormat,
+      samplerHint: "nearest",
+    });
 
     const lightingRT = backend.createRenderTarget({
-      width, height,
+      width,
+      height,
       colorAttachments: [lightingColor],
       depthAttachment: depth,
     });
@@ -128,9 +168,16 @@ export default class FrameResources {
       this.shadow.depth.dispose();
     }
 
-    const depth = backend.createTexture({ kind: "2d", width: mapSize, height: mapSize, format: "depth24unorm", samplerHint: "depth" });
+    const depth = backend.createTexture({
+      kind: "2d",
+      width: mapSize,
+      height: mapSize,
+      format: "depth24unorm",
+      samplerHint: "depth",
+    });
     const rt = backend.createRenderTarget({
-      width: mapSize, height: mapSize,
+      width: mapSize,
+      height: mapSize,
       depthAttachment: depth,
     });
 
@@ -142,8 +189,20 @@ export default class FrameResources {
 
     if (this.ssao) this.#disposeSSAO(backend);
 
-    const texRaw = backend.createTexture({ kind: "2d", width, height, format: "r16f", samplerHint: "nearest" });
-    const texBlurred = backend.createTexture({ kind: "2d", width, height, format: "r16f", samplerHint: "nearest" });
+    const texRaw = backend.createTexture({
+      kind: "2d",
+      width,
+      height,
+      format: "r16f",
+      samplerHint: "nearest",
+    });
+    const texBlurred = backend.createTexture({
+      kind: "2d",
+      width,
+      height,
+      format: "r16f",
+      samplerHint: "nearest",
+    });
     const rtRaw = backend.createRenderTarget({ width, height, colorAttachments: [texRaw] });
     const rtBlurred = backend.createRenderTarget({ width, height, colorAttachments: [texBlurred] });
 
@@ -151,15 +210,26 @@ export default class FrameResources {
   }
 
   ensurePixelArt(backend: RendererBackend, gameWidth: number, gameHeight: number): void {
-    if (this.pixelArt && this.pixelArt.width === gameWidth && this.pixelArt.height === gameHeight) return;
+    if (this.pixelArt && this.pixelArt.width === gameWidth && this.pixelArt.height === gameHeight)
+      return;
 
     if (this.pixelArt) {
       backend.destroyRenderTarget(this.pixelArt.rt);
       this.pixelArt.color.dispose();
     }
 
-    const color = backend.createTexture({ kind: "2d", width: gameWidth, height: gameHeight, format: "rgba8unorm", samplerHint: "nearest" });
-    const rt = backend.createRenderTarget({ width: gameWidth, height: gameHeight, colorAttachments: [color] });
+    const color = backend.createTexture({
+      kind: "2d",
+      width: gameWidth,
+      height: gameHeight,
+      format: "rgba8unorm",
+      samplerHint: "nearest",
+    });
+    const rt = backend.createRenderTarget({
+      width: gameWidth,
+      height: gameHeight,
+      colorAttachments: [color],
+    });
 
     this.pixelArt = { rt, color, width: gameWidth, height: gameHeight };
   }
@@ -171,7 +241,13 @@ export default class FrameResources {
 
     if (this.fxaa) this.#disposeFxaa(backend);
 
-    const tex = backend.createTexture({ kind: "2d", width: w, height: h, format: "rgba8unorm", samplerHint: "linear" });
+    const tex = backend.createTexture({
+      kind: "2d",
+      width: w,
+      height: h,
+      format: "rgba8unorm",
+      samplerHint: "linear",
+    });
     const rt = backend.createRenderTarget({ width: w, height: h, colorAttachments: [tex] });
 
     this.fxaa = { tex, rt };
@@ -184,8 +260,20 @@ export default class FrameResources {
 
     if (this.bloom) this.#disposeBloom(backend);
 
-    const texA = backend.createTexture({ kind: "2d", width: w, height: h, format: "rgba16f", samplerHint: "linear" });
-    const texB = backend.createTexture({ kind: "2d", width: w, height: h, format: "rgba16f", samplerHint: "linear" });
+    const texA = backend.createTexture({
+      kind: "2d",
+      width: w,
+      height: h,
+      format: "rgba16f",
+      samplerHint: "linear",
+    });
+    const texB = backend.createTexture({
+      kind: "2d",
+      width: w,
+      height: h,
+      format: "rgba16f",
+      samplerHint: "linear",
+    });
     const rtA = backend.createRenderTarget({ width: w, height: h, colorAttachments: [texA] });
     const rtB = backend.createRenderTarget({ width: w, height: h, colorAttachments: [texB] });
 

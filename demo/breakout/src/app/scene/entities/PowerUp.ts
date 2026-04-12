@@ -1,3 +1,4 @@
+import { addLife, setSpeedMultiplier, speedMultiplier } from "@app/composables/useGameState";
 import { vec3, type Vec3 } from "@dalpeng/math";
 import {
   defineGameEntity,
@@ -10,12 +11,16 @@ import {
   withName,
   withTag,
 } from "dalpeng";
-import { addLife, speedMultiplier, setSpeedMultiplier } from "@app/composables/useGameState";
 
 const FALL_SPEED = 3;
 const BOUNDS_Y_BOTTOM = -7;
 
-export type PowerUpEffect = "wide-paddle" | "fast-ball" | "slow-ball" | "extra-life" | "shrink-paddle";
+export type PowerUpEffect =
+  | "wide-paddle"
+  | "fast-ball"
+  | "slow-ball"
+  | "extra-life"
+  | "shrink-paddle";
 
 type PowerUpVisual = {
   color: Vec3;
@@ -24,11 +29,11 @@ type PowerUpVisual = {
 };
 
 const EFFECT_VISUALS: Record<PowerUpEffect, PowerUpVisual> = {
-  "wide-paddle":    { color: vec3(0.2, 0.6, 1.0),  mesh: "box",      scale: vec3(0.3, 0.15, 0.15) },
-  "shrink-paddle":  { color: vec3(0.8, 0.2, 0.8),  mesh: "box",      scale: vec3(0.12, 0.25, 0.12) },
-  "fast-ball":      { color: vec3(1.0, 0.3, 0.1),  mesh: "cylinder", scale: vec3(0.15, 0.25, 0.15) },
-  "slow-ball":      { color: vec3(0.3, 1.0, 0.4),  mesh: "sphere",   scale: vec3(0.2, 0.2, 0.2) },
-  "extra-life":     { color: vec3(1.0, 0.9, 0.2),  mesh: "sphere",   scale: vec3(0.25, 0.25, 0.25) },
+  "wide-paddle": { color: vec3(0.2, 0.6, 1.0), mesh: "box", scale: vec3(0.3, 0.15, 0.15) },
+  "shrink-paddle": { color: vec3(0.8, 0.2, 0.8), mesh: "box", scale: vec3(0.12, 0.25, 0.12) },
+  "fast-ball": { color: vec3(1.0, 0.3, 0.1), mesh: "cylinder", scale: vec3(0.15, 0.25, 0.15) },
+  "slow-ball": { color: vec3(0.3, 1.0, 0.4), mesh: "sphere", scale: vec3(0.2, 0.2, 0.2) },
+  "extra-life": { color: vec3(1.0, 0.9, 0.2), mesh: "sphere", scale: vec3(0.25, 0.25, 0.25) },
 };
 
 export function createPowerUp(x: number, y: number, effect: PowerUpEffect) {
@@ -69,12 +74,7 @@ export function createPowerUp(x: number, y: number, effect: PowerUpEffect) {
         const pp = pt.position;
         const ps = pt.scale;
 
-        if (
-          p.x > pp.x - ps.x &&
-          p.x < pp.x + ps.x &&
-          ny < pp.y + ps.y &&
-          ny > pp.y - ps.y
-        ) {
+        if (p.x > pp.x - ps.x && p.x < pp.x + ps.x && ny < pp.y + ps.y && ny > pp.y - ps.y) {
           applyEffect(effect, pt);
           self.currentApp.destroy(self);
           return;

@@ -18,8 +18,12 @@ export default class TilemapRenderer extends Component {
     super(gameEntity);
   }
 
-  get map(): ParsedTiledMap | null { return this.#map; }
-  get layerBatches(): TilemapLayerBatch[] { return this.#layerBatches; }
+  get map(): ParsedTiledMap | null {
+    return this.#map;
+  }
+  get layerBatches(): TilemapLayerBatch[] {
+    return this.#layerBatches;
+  }
 
   build(map: ParsedTiledMap, atlases: Map<ParsedTileset, SpriteAtlas>): void {
     this.#map = map;
@@ -30,7 +34,10 @@ export default class TilemapRenderer extends Component {
       if (!layer.visible || layer.isCollision) continue;
 
       // Group tiles by tileset
-      const tilesByTileset = new Map<ParsedTileset, Array<{ col: number; row: number; localId: number }>>();
+      const tilesByTileset = new Map<
+        ParsedTileset,
+        Array<{ col: number; row: number; localId: number }>
+      >();
 
       for (let i = 0; i < layer.tiles.length; i++) {
         const gid = layer.tiles[i];
@@ -67,18 +74,18 @@ export default class TilemapRenderer extends Component {
 
           instanceData[offset + 0] = col * tileW + tileW * 0.5;
           instanceData[offset + 1] = (map.mapHeight - 1 - row) * tileH + tileH * 0.5;
-          instanceData[offset + 2] = tileW;  // width
-          instanceData[offset + 3] = tileH;  // height
-          instanceData[offset + 4] = uv[0];  // uvX
-          instanceData[offset + 5] = uv[1];  // uvY
-          instanceData[offset + 6] = uv[2];  // uvW
-          instanceData[offset + 7] = uv[3];  // uvH
-          instanceData[offset + 8] = 1;      // tint r
-          instanceData[offset + 9] = 1;      // tint g
-          instanceData[offset + 10] = 1;     // tint b
+          instanceData[offset + 2] = tileW; // width
+          instanceData[offset + 3] = tileH; // height
+          instanceData[offset + 4] = uv[0]; // uvX
+          instanceData[offset + 5] = uv[1]; // uvY
+          instanceData[offset + 6] = uv[2]; // uvW
+          instanceData[offset + 7] = uv[3]; // uvH
+          instanceData[offset + 8] = 1; // tint r
+          instanceData[offset + 9] = 1; // tint g
+          instanceData[offset + 10] = 1; // tint b
           instanceData[offset + 11] = layer.opacity; // tint a
-          instanceData[offset + 12] = 0;     // depth (tiles have fixed order)
-          instanceData[offset + 13] = 0;     // pad
+          instanceData[offset + 12] = 0; // depth (tiles have fixed order)
+          instanceData[offset + 13] = 0; // pad
         }
 
         this.#layerBatches.push({ atlas, instanceData, tileCount: tiles.length });

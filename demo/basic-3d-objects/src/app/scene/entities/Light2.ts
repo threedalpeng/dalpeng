@@ -1,5 +1,13 @@
 import { vec3 } from "@dalpeng/math";
-import { Light, Time, Transform, defineGameEntity, onUpdate, useComponent, withName } from "dalpeng";
+import {
+  Light,
+  Time,
+  Transform,
+  defineGameEntity,
+  onUpdate,
+  useComponent,
+  withName,
+} from "dalpeng";
 
 export default defineGameEntity(() => {
   withName("Light2");

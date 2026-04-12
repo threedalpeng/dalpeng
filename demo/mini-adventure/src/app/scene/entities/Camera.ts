@@ -1,11 +1,5 @@
 import { vec3 } from "@dalpeng/math";
-import {
-  Camera,
-  defineGameEntity,
-  Transform,
-  useComponent,
-  withName,
-} from "dalpeng";
+import { Camera, defineGameEntity, Transform, useComponent, withName } from "dalpeng";
 import useThirdPersonCamera from "../../composables/useThirdPersonCamera";
 
 export default defineGameEntity(() => {

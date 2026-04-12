@@ -1,7 +1,6 @@
 import { Application, GameEntity, Scene } from "@dalpeng/core";
 export { vec2, vec3, vec4 } from "@dalpeng/math";
 
-export { EventEmitter, type EventMap } from "@dalpeng/core";
 export {
   Animator,
   AudioHandle,
@@ -9,6 +8,7 @@ export {
   Camera,
   CameraFollow2D,
   Easings,
+  EventEmitter,
   InputManager,
   Light,
   MeshBuilder,
@@ -29,12 +29,13 @@ export {
   Transform,
   Tween,
   TweenManager,
+  type EventMap,
 } from "@dalpeng/core";
 export type {
   AtlasFrame,
   ParsedObjectLayer,
-  ParsedTileLayer,
   ParsedTiledMap,
+  ParsedTileLayer,
   ParsedTileset,
   SpriteAnimationClip,
   TilemapLayerBatch,
@@ -49,56 +50,45 @@ export {
   type AppRunOptions,
 } from "./hooks/app";
 
-export type {
-  Layer,
-  LayerBackend,
-  LayerSort,
-  LayerMember,
-  ResolvedLayer,
-} from "@dalpeng/core";
+export type { Layer, LayerBackend, LayerMember, LayerSort, ResolvedLayer } from "@dalpeng/core";
 export * from "./hooks/index";
 
-export {
-  ref,
-  computed,
-  watch,
-  isRef,
-  type Ref,
-  type ReadonlyRef,
-} from "./reactive";
+export { computed, isRef, ref, watch, type ReadonlyRef, type Ref } from "./reactive";
 
 export {
-  defineUI,
-  Text,
   Bar,
-  Html,
-  Toggle,
-  Range,
-  Select,
   Button,
-  Value,
-  Menu,
+  createDialogueController,
+  defineUI,
+  Dialogue,
+  Html,
   List,
-  useLayout,
+  Menu,
+  Range,
+  renderDescriptor,
+  Select,
+  Text,
+  Toggle,
   useFeature,
+  useLayout,
   // The UI-side withLayer is NOT re-exported here separately — gameEntity.ts
   // exports a polymorphic withLayer that dispatches to whichever scope is active.
   usePlacement,
-  renderDescriptor,
+  Value,
 } from "@dalpeng/ui";
 export type {
-  NodeDescriptor,
-  RenderContext,
-  MenuItem,
-  Placement,
   Anchor,
-  ViewportCorner,
+  DialogueChoice,
+  DialogueController,
+  DialogueLine,
+  MenuItem,
+  NodeDescriptor,
+  Placement,
+  RenderContext,
   Size,
   Vec2,
+  ViewportCorner,
 } from "@dalpeng/ui";
-export type { DialogueLine, DialogueChoice } from "@dalpeng/ui";
-export { createDialogueController, Dialogue } from "@dalpeng/ui";
-export type { DialogueController } from "@dalpeng/ui";
 export { useDialogueController } from "./hooks/dialogue";
 
 export { type Application, type GameEntity, type Scene };

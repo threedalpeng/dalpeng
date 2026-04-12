@@ -1,6 +1,6 @@
-import { vec3 } from "@dalpeng/math";
 import { Camera, CameraFollow2D } from "@dalpeng/core";
-import { defineGameEntity, Transform, useComponent, onStart, withName } from "dalpeng";
+import { vec3 } from "@dalpeng/math";
+import { defineGameEntity, onStart, Transform, useComponent, withName } from "dalpeng";
 
 export default defineGameEntity(() => {
   withName("Camera");

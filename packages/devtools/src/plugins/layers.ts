@@ -4,10 +4,7 @@ import type { DevToolsPlugin } from "../plugin";
 import { definePlugin } from "../plugin";
 
 function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 export function layersPlugin(): DevToolsPlugin {
@@ -30,8 +27,7 @@ export function layersPlugin(): DevToolsPlugin {
       const renderLayers = () => {
         const app = host.app.value;
         if (!app) {
-          container.innerHTML =
-            '<div style="color:var(--dt-fg-dim)">no app yet</div>';
+          container.innerHTML = '<div style="color:var(--dt-fg-dim)">no app yet</div>';
           return;
         }
         const layers = app.layers.ordered;
@@ -41,10 +37,8 @@ export function layersPlugin(): DevToolsPlugin {
           : `<div style="color:var(--dt-fg-dim);margin-bottom:8px">default layer set — call <code>withLayers([...])</code> to customise</div>`;
         const rows = layers
           .map((l) => {
-            const backendColor =
-              l.backend === "canvas" ? "#7be0a1" : "#7aa2f7";
-            const sortLabel =
-              typeof l.sort === "string" ? l.sort : "custom";
+            const backendColor = l.backend === "canvas" ? "#7be0a1" : "#7aa2f7";
+            const sortLabel = typeof l.sort === "string" ? l.sort : "custom";
             return `<div style="padding:4px 0;border-bottom:1px solid var(--dt-border)">
               <span style="color:var(--dt-fg-dim)">#${l.index}</span>
               <span style="color:var(--dt-fg);font-weight:600;margin-left:6px">${escapeHtml(l.name)}</span>

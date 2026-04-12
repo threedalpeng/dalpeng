@@ -43,7 +43,7 @@ function f32ToF16(val: number): number {
     }
     const m = (frac | 0x800000) >> (1 - e);
     // Round to nearest even
-    if ((m >> 13) & 1 && (m & 0x1fff)) {
+    if ((m >> 13) & 1 && m & 0x1fff) {
       return sign | ((m >> 13) + 1);
     }
     return sign | (m >> 13);

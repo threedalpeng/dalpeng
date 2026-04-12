@@ -1,8 +1,5 @@
-import {
-  Sprite2DRenderer,
-  SpriteAnimator,
-} from "@dalpeng/core";
-import type { SpriteAtlas, AtlasFrame, SpriteAnimationClip } from "@dalpeng/core";
+import type { AtlasFrame, SpriteAnimationClip, SpriteAtlas } from "@dalpeng/core";
+import { Sprite2DRenderer, SpriteAnimator } from "@dalpeng/core";
 import { requireEntity } from "../context";
 import { useComponent } from "./gameEntity";
 
@@ -19,7 +16,7 @@ export function useSpriteAtlas(imageUrl: string, frames: AtlasFrame[]): SpriteAt
 export function useSpriteAtlas(
   imageUrl: string,
   frameWOrFrames: number | AtlasFrame[],
-  frameH?: number,
+  frameH?: number
 ): SpriteAtlasHandle {
   const entity = requireEntity("useSpriteAtlas");
   const atlases = entity.currentApp.atlases;
@@ -30,14 +27,16 @@ export function useSpriteAtlas(
     ready: (Array.isArray(frameWOrFrames)
       ? atlases.loadFrames(imageUrl, frameWOrFrames)
       : atlases.loadUniform(imageUrl, frameWOrFrames, frameH!)
-    ).then((atlas) => {
-      handle.atlas = atlas;
-      handle.isLoaded = true;
-      return atlas;
-    }).catch((err: any) => {
-      console.error("[useSpriteAtlas] Failed to load:", imageUrl, err);
-      throw err;
-    }),
+    )
+      .then((atlas) => {
+        handle.atlas = atlas;
+        handle.isLoaded = true;
+        return atlas;
+      })
+      .catch((err: any) => {
+        console.error("[useSpriteAtlas] Failed to load:", imageUrl, err);
+        throw err;
+      }),
   };
 
   return handle;
@@ -46,7 +45,7 @@ export function useSpriteAtlas(
 /** Adds a Sprite2DRenderer to the current entity. Must be called inside defineGameEntity() setup. */
 export function useSprite(
   atlasHandle?: SpriteAtlasHandle,
-  frame?: number | string,
+  frame?: number | string
 ): Sprite2DRenderer {
   const renderer = useComponent(Sprite2DRenderer);
 

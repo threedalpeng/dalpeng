@@ -1,5 +1,13 @@
-import { defineGameEntity, onUpdate, spawn, Transform, useComponent, withName, useActionDown } from "dalpeng";
 import { cleared, gameOver, resetGame, setCleared } from "@app/composables/useGameState";
+import {
+  defineGameEntity,
+  onUpdate,
+  spawn,
+  Transform,
+  useActionDown,
+  useComponent,
+  withName,
+} from "dalpeng";
 import Ball from "./Ball";
 import BrickGrid from "./BrickGrid";
 import Paddle from "./Paddle";

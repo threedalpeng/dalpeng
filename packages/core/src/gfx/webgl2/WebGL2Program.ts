@@ -57,7 +57,7 @@ export default class WebGL2Program implements Program {
     if (loc) this.gl.uniform1i(loc, v);
   }
   setUniformMat4Array(name: string, data: Float32Array, count: number): void {
-    const loc = this.#getLocation(name + '[0]');
+    const loc = this.#getLocation(name + "[0]");
     if (loc) this.gl.uniformMatrix4fv(loc, false, data.subarray(0, count * 16));
   }
 }

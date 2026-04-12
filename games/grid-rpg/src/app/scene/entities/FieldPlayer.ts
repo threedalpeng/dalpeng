@@ -1,15 +1,15 @@
-import { vec3 } from "@dalpeng/math";
 import { Sprite2DRenderer, SpriteAnimator, SpriteAtlas } from "@dalpeng/core";
+import { vec3 } from "@dalpeng/math";
 import type { SpriteAnimationClip } from "dalpeng";
 import {
   defineGameEntity,
-  Transform,
+  onStart,
+  onUpdate,
   Time,
+  Transform,
   useComponent,
   useInput,
   useSceneSwitch,
-  onStart,
-  onUpdate,
   withName,
   withTag,
 } from "dalpeng";

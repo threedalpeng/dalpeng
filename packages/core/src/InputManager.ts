@@ -189,33 +189,63 @@ export default class InputManager {
 
   onActionDown(action: string, cb: () => void): () => void {
     let set = this.#actionDownCbs.get(action);
-    if (!set) { set = new Set(); this.#actionDownCbs.set(action, set); }
+    if (!set) {
+      set = new Set();
+      this.#actionDownCbs.set(action, set);
+    }
     set.add(cb);
-    return () => { set!.delete(cb); if (set!.size === 0) this.#actionDownCbs.delete(action); };
+    return () => {
+      set!.delete(cb);
+      if (set!.size === 0) this.#actionDownCbs.delete(action);
+    };
   }
   onActionUp(action: string, cb: () => void): () => void {
     let set = this.#actionUpCbs.get(action);
-    if (!set) { set = new Set(); this.#actionUpCbs.set(action, set); }
+    if (!set) {
+      set = new Set();
+      this.#actionUpCbs.set(action, set);
+    }
     set.add(cb);
-    return () => { set!.delete(cb); if (set!.size === 0) this.#actionUpCbs.delete(action); };
+    return () => {
+      set!.delete(cb);
+      if (set!.size === 0) this.#actionUpCbs.delete(action);
+    };
   }
   onActionChange(action: string, cb: (pressed: boolean) => void): () => void {
     let set = this.#actionChangeCbs.get(action);
-    if (!set) { set = new Set(); this.#actionChangeCbs.set(action, set); }
+    if (!set) {
+      set = new Set();
+      this.#actionChangeCbs.set(action, set);
+    }
     set.add(cb);
-    return () => { set!.delete(cb); if (set!.size === 0) this.#actionChangeCbs.delete(action); };
+    return () => {
+      set!.delete(cb);
+      if (set!.size === 0) this.#actionChangeCbs.delete(action);
+    };
   }
   onKeyDown(key: string, cb: () => void): () => void {
     let set = this.#keyDownCbs.get(key);
-    if (!set) { set = new Set(); this.#keyDownCbs.set(key, set); }
+    if (!set) {
+      set = new Set();
+      this.#keyDownCbs.set(key, set);
+    }
     set.add(cb);
-    return () => { set!.delete(cb); if (set!.size === 0) this.#keyDownCbs.delete(key); };
+    return () => {
+      set!.delete(cb);
+      if (set!.size === 0) this.#keyDownCbs.delete(key);
+    };
   }
   onKeyUp(key: string, cb: () => void): () => void {
     let set = this.#keyUpCbs.get(key);
-    if (!set) { set = new Set(); this.#keyUpCbs.set(key, set); }
+    if (!set) {
+      set = new Set();
+      this.#keyUpCbs.set(key, set);
+    }
     set.add(cb);
-    return () => { set!.delete(cb); if (set!.size === 0) this.#keyUpCbs.delete(key); };
+    return () => {
+      set!.delete(cb);
+      if (set!.size === 0) this.#keyUpCbs.delete(key);
+    };
   }
 
   #dispatchCallbacks() {
@@ -232,23 +262,23 @@ export default class InputManager {
 
     for (const [action, cbs] of this.#actionDownCbs) {
       const bindings = this.#actions.get(action);
-      if (bindings && bindings.some(k => this.#frameDown.has(k))) {
+      if (bindings && bindings.some((k) => this.#frameDown.has(k))) {
         for (const cb of cbs) cb();
       }
     }
     for (const [action, cbs] of this.#actionUpCbs) {
       const bindings = this.#actions.get(action);
-      if (bindings && bindings.some(k => this.#frameUp.has(k))) {
+      if (bindings && bindings.some((k) => this.#frameUp.has(k))) {
         for (const cb of cbs) cb();
       }
     }
     for (const [action, cbs] of this.#actionChangeCbs) {
       const bindings = this.#actions.get(action);
       if (!bindings) continue;
-      const anyDown = bindings.some(k => this.#frameDown.has(k));
-      const anyUp = bindings.some(k => this.#frameUp.has(k));
+      const anyDown = bindings.some((k) => this.#frameDown.has(k));
+      const anyUp = bindings.some((k) => this.#frameUp.has(k));
       if (anyDown || anyUp) {
-        const pressed = bindings.some(k => this.#heldKeys.has(k));
+        const pressed = bindings.some((k) => this.#heldKeys.has(k));
         for (const cb of cbs) cb(pressed);
       }
     }

@@ -168,8 +168,7 @@ export function getSettings(): DevToolsSettings {
   const persisted = loadPersisted();
   // Failed deserialise (corrupt JSON, schema bump) falls back to default —
   // never block startup on bad persisted state.
-  const restoredWs =
-    deserializeWorkspace(persisted.workspace) ?? defaultWorkspace();
+  const restoredWs = deserializeWorkspace(persisted.workspace) ?? defaultWorkspace();
 
   const settings: DevToolsSettings = {
     theme: ref<ThemeName>(persisted.theme),
@@ -200,10 +199,7 @@ export function getSettings(): DevToolsSettings {
 }
 
 /** Apply a theme's tokens as CSS custom properties on the host element. */
-export function applyThemeVariables(
-  el: HTMLElement,
-  theme: DevToolsTheme,
-): void {
+export function applyThemeVariables(el: HTMLElement, theme: DevToolsTheme): void {
   el.style.setProperty("--dt-bg", theme.bg);
   el.style.setProperty("--dt-bg-muted", theme.bgMuted);
   el.style.setProperty("--dt-bg-sunken", theme.bgSunken);
@@ -218,11 +214,7 @@ export function applyThemeVariables(
 }
 
 /** Apply font-size and density tokens. */
-export function applySizingVariables(
-  el: HTMLElement,
-  fontSize: FontSize,
-  density: Density,
-): void {
+export function applySizingVariables(el: HTMLElement, fontSize: FontSize, density: Density): void {
   el.style.setProperty("--dt-font-size", fontSizePx(fontSize));
   el.style.setProperty("--dt-pad", densityPad(density));
 }

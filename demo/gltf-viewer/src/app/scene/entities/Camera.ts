@@ -5,8 +5,8 @@ import {
   onUpdate,
   Transform,
   useComponent,
-  withName,
   useInput,
+  withName,
 } from "dalpeng";
 
 export default defineGameEntity(() => {
@@ -50,11 +50,7 @@ export default defineGameEntity(() => {
     if (input.mousePressed(1)) {
       const delta = input.getCursorDelta();
       if (delta.x !== 0 || delta.y !== 0) {
-        const right = vec3(
-          Math.cos(yaw),
-          0,
-          -Math.sin(yaw)
-        );
+        const right = vec3(Math.cos(yaw), 0, -Math.sin(yaw));
         const up = vec3(0, 1, 0);
         const panSpeed = radius * 0.003;
         target.x -= right.x * delta.x * panSpeed + up.x * delta.y * panSpeed;
@@ -71,10 +67,24 @@ export default defineGameEntity(() => {
       changed = true;
     }
 
-    if (input.keyPressed("ArrowLeft")) { yaw += 0.02; changed = true; }
-    if (input.keyPressed("ArrowRight")) { yaw -= 0.02; changed = true; }
-    if (input.keyPressed("ArrowUp")) { pitch += 0.02; pitch = Math.min(pitch, Math.PI / 2 - 0.01); changed = true; }
-    if (input.keyPressed("ArrowDown")) { pitch -= 0.02; pitch = Math.max(pitch, -Math.PI / 2 + 0.01); changed = true; }
+    if (input.keyPressed("ArrowLeft")) {
+      yaw += 0.02;
+      changed = true;
+    }
+    if (input.keyPressed("ArrowRight")) {
+      yaw -= 0.02;
+      changed = true;
+    }
+    if (input.keyPressed("ArrowUp")) {
+      pitch += 0.02;
+      pitch = Math.min(pitch, Math.PI / 2 - 0.01);
+      changed = true;
+    }
+    if (input.keyPressed("ArrowDown")) {
+      pitch -= 0.02;
+      pitch = Math.max(pitch, -Math.PI / 2 + 0.01);
+      changed = true;
+    }
 
     if (changed) {
       updateCamera();

@@ -1,12 +1,5 @@
 import { vec3 } from "@dalpeng/math";
-import {
-  Camera,
-  defineGameEntity,
-  Transform,
-  useComponent,
-  withName,
-  onUpdate,
-} from "dalpeng";
+import { Camera, defineGameEntity, onUpdate, Transform, useComponent, withName } from "dalpeng";
 
 export default defineGameEntity(() => {
   withName("Camera");
@@ -26,11 +19,7 @@ export default defineGameEntity(() => {
   onUpdate(() => {
     angle += 0.005;
     const radius = 6;
-    transform.position = vec3(
-      Math.cos(angle) * radius,
-      3,
-      Math.sin(angle) * radius
-    );
+    transform.position = vec3(Math.cos(angle) * radius, 3, Math.sin(angle) * radius);
     transform.lookAt(vec3(0, 0, 0));
   });
 });

@@ -88,10 +88,7 @@ export interface OverlayContext {
  */
 export interface FeaturesContext {
   readonly features: Record<string, unknown>;
-  watchFeature(
-    key: string,
-    cb: (newVal: unknown, oldVal: unknown) => void,
-  ): () => void;
+  watchFeature(key: string, cb: (newVal: unknown, oldVal: unknown) => void): () => void;
 }
 
 /**

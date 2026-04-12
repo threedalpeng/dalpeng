@@ -169,11 +169,7 @@ export class Mat3 extends Float32Array {
 
   static view(center: Vec2, angle: number) {
     const r = Mat3.rotate(angle);
-    return new Mat3([
-      r[0], r[1], r[2],
-      r[3], r[4], r[5],
-      -center.x, -center.y, r[8],
-    ]);
+    return new Mat3([r[0], r[1], r[2], r[3], r[4], r[5], -center.x, -center.y, r[8]]);
   }
   static perspective(size: number, aspectRatio: number) {
     const invSize = 1 / size;
@@ -533,12 +529,23 @@ export class Mat4 extends Float32Array {
     ]);
   }
   static compose(translation: Float32List, rotation: Quaternion, scale: Float32List) {
-    const qx = rotation[0], qy = rotation[1], qz = rotation[2], qw = rotation[3];
-    const sx = scale[0], sy = scale[1], sz = scale[2];
+    const qx = rotation[0],
+      qy = rotation[1],
+      qz = rotation[2],
+      qw = rotation[3];
+    const sx = scale[0],
+      sy = scale[1],
+      sz = scale[2];
 
-    const x2 = qx * qx, y2 = qy * qy, z2 = qz * qz;
-    const xy = qx * qy, xz = qx * qz, yz = qy * qz;
-    const xw = qx * qw, yw = qy * qw, zw = qz * qw;
+    const x2 = qx * qx,
+      y2 = qy * qy,
+      z2 = qz * qz;
+    const xy = qx * qy,
+      xz = qx * qz,
+      yz = qy * qz;
+    const xw = qx * qw,
+      yw = qy * qw,
+      zw = qz * qw;
 
     // TRS = T * R * S (column-major): each rotation column scaled by s[j], translation in col 3
     // prettier-ignore

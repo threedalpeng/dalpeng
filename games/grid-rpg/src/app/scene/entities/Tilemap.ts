@@ -1,5 +1,5 @@
 import { SpriteAtlas, TileCollider, TiledImporter, TilemapRenderer } from "@dalpeng/core";
-import { defineGameEntity, Transform, useComponent, onStart, withName } from "dalpeng";
+import { defineGameEntity, onStart, Transform, useComponent, withName } from "dalpeng";
 import { setTileCollider } from "../shared";
 
 const TILEMAP_URL = "/assets/maps/world.tmj";
@@ -27,7 +27,7 @@ export default defineGameEntity(() => {
           tileset.imageWidth,
           tileset.imageHeight,
           tileset.tileWidth,
-          tileset.tileHeight,
+          tileset.tileHeight
         );
         atlasMap.set(tileset, atlas);
       }

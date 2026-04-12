@@ -24,7 +24,7 @@ export default class PostProcessing {
 
     // Determine composite target: if FXAA is enabled, render to intermediate FBO
     const hasFxaa = config.fxaa && shaders.fxaa && resources.fxaa;
-    const compositeTarget = hasFxaa ? resources.fxaa!.rt : "default" as const;
+    const compositeTarget = hasFxaa ? resources.fxaa!.rt : ("default" as const);
 
     // Final composite: tone mapping + bloom
     shaders.post.use();

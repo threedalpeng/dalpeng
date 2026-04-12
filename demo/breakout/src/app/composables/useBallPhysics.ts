@@ -1,7 +1,14 @@
-import { vec3 } from "@dalpeng/math";
-import { Time, Transform, useComponent, onUpdate, useActionDown } from "dalpeng";
-import { addScore, gameOver, cleared, loseLife, speedMultiplier, setSpeedMultiplier } from "./useGameState";
 import { takeDamage } from "@app/scene/entities/Brick";
+import { vec3 } from "@dalpeng/math";
+import { onUpdate, Time, Transform, useActionDown, useComponent } from "dalpeng";
+import {
+  addScore,
+  cleared,
+  gameOver,
+  loseLife,
+  setSpeedMultiplier,
+  speedMultiplier,
+} from "./useGameState";
 
 const BASE_SPEED = 6;
 const BOUNDS_X = 8;

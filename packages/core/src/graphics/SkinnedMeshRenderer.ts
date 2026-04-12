@@ -1,10 +1,10 @@
+import type Skeleton from "@/animation/Skeleton";
 import type GameEntity from "@/ecs/GameEntity";
 import type GfxVertexArray from "@/gfx/VertexArray";
 import Transform from "../ecs/Transform";
 import BaseRenderer from "./BaseRenderer";
 import Material from "./Material";
 import type Shader from "./Shader";
-import type Skeleton from "@/animation/Skeleton";
 
 export default class SkinnedMeshRenderer extends BaseRenderer {
   geometryShader!: Shader;
@@ -133,9 +133,9 @@ export default class SkinnedMeshRenderer extends BaseRenderer {
     this.geometryShader.setUniformMat3("uTexTransform", this.material.texTransform);
 
     // Texture flags: apply texture mask to bits 0-3, preserve HAS_TANGENT (bit 4) and OCCLUSION (bit 5) unconditionally
-    const texMask = this.currentApp.features.textureMask ?? 0xF;
-    const maskedTexBits = this.material.texFlags & texMask & 0xF;
-    const keepBits = this.material.texFlags & ~0xF; // bits 4+ (HAS_TANGENT, OCCLUSION)
+    const texMask = this.currentApp.features.textureMask ?? 0xf;
+    const maskedTexBits = this.material.texFlags & texMask & 0xf;
+    const keepBits = this.material.texFlags & ~0xf; // bits 4+ (HAS_TANGENT, OCCLUSION)
     this.geometryShader.setUniform1i("uTexFlags", maskedTexBits | keepBits);
 
     const textures = this.currentApp.textures;
@@ -162,7 +162,11 @@ export default class SkinnedMeshRenderer extends BaseRenderer {
 
     // Skinning uniforms
     this.geometryShader.setUniform1i("uSkinned", 1);
-    this.geometryShader.setUniformMat4Array("uJointMatrices", this.skeleton.jointMatrices, this.skeleton.jointCount);
+    this.geometryShader.setUniformMat4Array(
+      "uJointMatrices",
+      this.skeleton.jointMatrices,
+      this.skeleton.jointCount
+    );
 
     // doubleSided: disable cull face for this draw call
     if (this.material.doubleSided) {
@@ -198,7 +202,11 @@ export default class SkinnedMeshRenderer extends BaseRenderer {
 
     // Skinning uniforms for shadow pass
     this.shadowShader.setUniform1i("uSkinned", 1);
-    this.shadowShader.setUniformMat4Array("uJointMatrices", this.skeleton.jointMatrices, this.skeleton.jointCount);
+    this.shadowShader.setUniformMat4Array(
+      "uJointMatrices",
+      this.skeleton.jointMatrices,
+      this.skeleton.jointCount
+    );
 
     this.currentApp.renderer.drawIndexed(this.#shadowVao, {
       count: this.mesh.index.length,

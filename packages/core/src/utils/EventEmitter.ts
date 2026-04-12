@@ -5,7 +5,10 @@ export default class EventEmitter<E extends EventMap = EventMap> {
 
   on<K extends keyof E>(event: K, cb: (...args: E[K]) => void): () => void {
     let set = this.#listeners.get(event);
-    if (!set) { set = new Set(); this.#listeners.set(event, set); }
+    if (!set) {
+      set = new Set();
+      this.#listeners.set(event, set);
+    }
     set.add(cb);
     return () => set!.delete(cb);
   }
@@ -21,13 +24,19 @@ export default class EventEmitter<E extends EventMap = EventMap> {
   }
 
   once<K extends keyof E>(event: K, cb: (...args: E[K]) => void): () => void {
-    const wrapper = (...args: E[K]) => { unsub(); (cb as any)(...args); };
+    const wrapper = (...args: E[K]) => {
+      unsub();
+      (cb as any)(...args);
+    };
     const unsub = this.on(event, wrapper as any);
     return unsub;
   }
 
   clear(event?: keyof E): void {
-    if (event) { this.#listeners.delete(event); }
-    else { this.#listeners.clear(); }
+    if (event) {
+      this.#listeners.delete(event);
+    } else {
+      this.#listeners.clear();
+    }
   }
 }

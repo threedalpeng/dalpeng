@@ -22,7 +22,7 @@ export function performancePlugin(): DevToolsPlugin {
           drawCalls.value = s.drawCalls;
           triangles.value = s.triangles;
         },
-        { immediate: true },
+        { immediate: true }
       );
     },
 

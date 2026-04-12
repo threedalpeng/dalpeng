@@ -1,15 +1,11 @@
-import {
-  createDialogueController,
-  type DialogueController,
-  type DialogueLine,
-} from "@dalpeng/ui";
+import { createDialogueController, type DialogueController, type DialogueLine } from "@dalpeng/ui";
 import { onDestroy } from "./gameEntity";
 
 export { type DialogueController };
 
 export function useDialogueController(
   lines: DialogueLine[],
-  options?: { charsPerSecond?: number },
+  options?: { charsPerSecond?: number }
 ): DialogueController {
   const controller = createDialogueController(lines, options);
 
@@ -41,7 +37,7 @@ export function useDialogueController(
         if (!controller.isTyping.value && line?.choices && line.choices.length > 0) {
           controller.choiceIndex.value = Math.min(
             line.choices.length - 1,
-            controller.choiceIndex.value + 1,
+            controller.choiceIndex.value + 1
           );
         }
         break;

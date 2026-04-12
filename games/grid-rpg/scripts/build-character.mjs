@@ -1,7 +1,7 @@
-import { inflateSync, deflateSync } from "node:zlib";
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { deflateSync, inflateSync } from "node:zlib";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
@@ -55,7 +55,8 @@ function decodePNG(buffer) {
       bitDepth = data[8];
       colorType = data[9];
       if (bitDepth !== 8) throw new Error(`Unsupported bit depth: ${bitDepth}`);
-      if (colorType !== 6) throw new Error(`Unsupported color type: ${colorType} (expected 6 = RGBA)`);
+      if (colorType !== 6)
+        throw new Error(`Unsupported color type: ${colorType} (expected 6 = RGBA)`);
     } else if (type === "IDAT") {
       idatChunks.push(data);
     } else if (type === "IEND") {
@@ -82,7 +83,7 @@ function decodePNG(buffer) {
       const raw_val = srcRow[x];
       const a = x >= bytesPerPixel ? dstRow[x - bytesPerPixel] : 0;
       const b = prevRow ? prevRow[x] : 0;
-      const c = (x >= bytesPerPixel && prevRow) ? prevRow[x - bytesPerPixel] : 0;
+      const c = x >= bytesPerPixel && prevRow ? prevRow[x - bytesPerPixel] : 0;
 
       switch (filterType) {
         case 0: // None
@@ -97,7 +98,8 @@ function decodePNG(buffer) {
         case 3: // Average
           dstRow[x] = (raw_val + Math.floor((a + b) / 2)) & 0xff;
           break;
-        case 4: { // Paeth
+        case 4: {
+          // Paeth
           const p = a + b - c;
           const pa = Math.abs(p - a);
           const pb = Math.abs(p - b);
@@ -177,7 +179,7 @@ function alphaOver(dst, src, width, height) {
       dst[idx + 2] = 0;
       dst[idx + 3] = 0;
     } else {
-      dst[idx]     = Math.round((src[idx]     * srcA + dst[idx]     * dstA * (1 - srcA)) / outA);
+      dst[idx] = Math.round((src[idx] * srcA + dst[idx] * dstA * (1 - srcA)) / outA);
       dst[idx + 1] = Math.round((src[idx + 1] * srcA + dst[idx + 1] * dstA * (1 - srcA)) / outA);
       dst[idx + 2] = Math.round((src[idx + 2] * srcA + dst[idx + 2] * dstA * (1 - srcA)) / outA);
       dst[idx + 3] = Math.round(outA * 255);
@@ -187,23 +189,36 @@ function alphaOver(dst, src, width, height) {
 
 // --- Main ---
 const ASSETS_DIR = resolve(projectRoot, "public/assets");
-const BASE_PATH   = resolve(ASSETS_DIR, "ManaSeed/character_base/char_a_p1/char_a_p1_0bas_humn_v01.png");
-const OUTFIT_PATH = resolve(ASSETS_DIR, "ManaSeed/character_base/char_a_p1/1out/char_a_p1_1out_fstr_v02.png");
-const HAIR_PATH   = resolve(ASSETS_DIR, "ManaSeed/character_base/char_a_p1/4har/char_a_p1_4har_bob1_v05.png");
-const OUTPUT_DIR  = resolve(projectRoot, "public/assets/sprites");
+const BASE_PATH = resolve(
+  ASSETS_DIR,
+  "ManaSeed/character_base/char_a_p1/char_a_p1_0bas_humn_v01.png"
+);
+const OUTFIT_PATH = resolve(
+  ASSETS_DIR,
+  "ManaSeed/character_base/char_a_p1/1out/char_a_p1_1out_fstr_v02.png"
+);
+const HAIR_PATH = resolve(
+  ASSETS_DIR,
+  "ManaSeed/character_base/char_a_p1/4har/char_a_p1_4har_bob1_v05.png"
+);
+const OUTPUT_DIR = resolve(projectRoot, "public/assets/sprites");
 const OUTPUT_PATH = resolve(OUTPUT_DIR, "player.png");
 
 console.log("Loading layers...");
-const base   = decodePNG(readFileSync(BASE_PATH));
+const base = decodePNG(readFileSync(BASE_PATH));
 const outfit = decodePNG(readFileSync(OUTFIT_PATH));
-const hair   = decodePNG(readFileSync(HAIR_PATH));
+const hair = decodePNG(readFileSync(HAIR_PATH));
 
 console.log(`Base:   ${base.width}x${base.height}`);
 console.log(`Outfit: ${outfit.width}x${outfit.height}`);
 console.log(`Hair:   ${hair.width}x${hair.height}`);
 
-if (base.width !== outfit.width || base.width !== hair.width ||
-    base.height !== outfit.height || base.height !== hair.height) {
+if (
+  base.width !== outfit.width ||
+  base.width !== hair.width ||
+  base.height !== outfit.height ||
+  base.height !== hair.height
+) {
   throw new Error("Layer dimensions do not match!");
 }
 

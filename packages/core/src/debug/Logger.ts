@@ -76,11 +76,7 @@ export default class Logger {
     this.log(module, "error", message, ...args);
   }
 
-  static getEntries(filter?: {
-    module?: LogModule;
-    level?: LogLevel;
-    since?: number;
-  }): LogEntry[] {
+  static getEntries(filter?: { module?: LogModule; level?: LogLevel; since?: number }): LogEntry[] {
     if (!filter) {
       return [...this.#buffer];
     }

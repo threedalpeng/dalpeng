@@ -1,11 +1,5 @@
 import { vec3 } from "@dalpeng/math";
-import {
-  defineGameEntity,
-  Transform,
-  useComponent,
-  useMesh,
-  withName,
-} from "dalpeng";
+import { defineGameEntity, Transform, useComponent, useMesh, withName } from "dalpeng";
 
 export default defineGameEntity(() => {
   withName("Ground");

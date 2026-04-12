@@ -1,6 +1,6 @@
 import type { RendererBackend } from "../gfx/RendererBackend";
-import type GfxTexture from "../gfx/Texture";
 import type GfxSampler from "../gfx/Sampler";
+import type GfxTexture from "../gfx/Texture";
 
 export interface TextureLoadOptions {
   srgb?: boolean;
@@ -76,8 +76,7 @@ export default class TextureManager {
     const mipmaps = opts.mipmaps ?? true;
 
     const resp = await fetch(url);
-    if (!resp.ok)
-      throw new Error(`Failed to load texture: ${url} (${resp.status})`);
+    if (!resp.ok) throw new Error(`Failed to load texture: ${url} (${resp.status})`);
 
     const blob = await resp.blob();
     const bitmap = await createImageBitmap(blob, {

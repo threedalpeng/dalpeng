@@ -78,8 +78,10 @@ export default class WebGL2CubemapTexture implements GfxTexture {
     gl.texSubImage2D(
       gl.TEXTURE_CUBE_MAP_POSITIVE_X + face,
       mip,
-      0, 0,
-      size, size,
+      0,
+      0,
+      size,
+      size,
       info.format,
       info.type,
       data

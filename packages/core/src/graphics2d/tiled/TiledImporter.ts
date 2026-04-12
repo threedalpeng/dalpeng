@@ -1,5 +1,5 @@
-import type { TiledMap, TiledTilesetRef } from "./TiledTypes";
 import type { TriggerZone } from "../TriggerZone";
+import type { TiledMap, TiledTilesetRef } from "./TiledTypes";
 
 export interface ParsedTileset {
   firstGid: number;
@@ -15,7 +15,7 @@ export interface ParsedTileset {
 
 export interface ParsedTileLayer {
   name: string;
-  tiles: Uint32Array;  // GIDs, mapWidth * mapHeight
+  tiles: Uint32Array; // GIDs, mapWidth * mapHeight
   opacity: number;
   visible: boolean;
   isCollision: boolean;
@@ -64,8 +64,9 @@ export default class TiledImporter {
 
     for (const layer of json.layers) {
       if (layer.type === "tilelayer" && layer.data) {
-        const isCollision = layer.name.toLowerCase() === "collision" ||
-          (layer.properties?.some(p => p.name === "collision" && p.value === true) ?? false);
+        const isCollision =
+          layer.name.toLowerCase() === "collision" ||
+          (layer.properties?.some((p) => p.name === "collision" && p.value === true) ?? false);
         tileLayers.push({
           name: layer.name,
           tiles: new Uint32Array(layer.data),
@@ -78,7 +79,7 @@ export default class TiledImporter {
         const mapWorldH = json.height; // map height in world units (1 tile = 1 unit)
         objectLayers.push({
           name: layer.name,
-          objects: layer.objects.map(obj => ({
+          objects: layer.objects.map((obj) => ({
             id: obj.id,
             name: obj.name,
             type: obj.type,
@@ -86,9 +87,7 @@ export default class TiledImporter {
             worldY: mapWorldH - obj.y / ppu,
             worldW: obj.width / ppu,
             worldH: obj.height / ppu,
-            properties: Object.fromEntries(
-              (obj.properties ?? []).map(p => [p.name, p.value])
-            ),
+            properties: Object.fromEntries((obj.properties ?? []).map((p) => [p.name, p.value])),
           })),
         });
       }
@@ -116,10 +115,13 @@ export default class TiledImporter {
     if (ref.tiles) {
       for (const tile of ref.tiles) {
         if (tile.animation) {
-          animatedTiles.set(tile.id, tile.animation.map(a => ({
-            localId: a.tileid,
-            duration: a.duration / 1000, // ms → seconds
-          })));
+          animatedTiles.set(
+            tile.id,
+            tile.animation.map((a) => ({
+              localId: a.tileid,
+              duration: a.duration / 1000, // ms → seconds
+            }))
+          );
         }
       }
     }

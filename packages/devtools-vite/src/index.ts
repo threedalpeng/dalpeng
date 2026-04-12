@@ -15,9 +15,7 @@ export function devtools(opts: DevToolsViteOptions = {}): Plugin {
     name: "@dalpeng/devtools-vite",
 
     config(_userConfig, env) {
-      const active =
-        enabled === "always" ||
-        (enabled === "dev" && env.command === "serve");
+      const active = enabled === "always" || (enabled === "dev" && env.command === "serve");
       return {
         define: {
           __DALPENG_DEVTOOLS__: JSON.stringify(active),

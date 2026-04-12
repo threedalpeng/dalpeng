@@ -1,15 +1,15 @@
-import { vec3 } from "@dalpeng/math";
 import { Sprite2DRenderer, SpriteAtlas, Transform } from "@dalpeng/core";
+import { vec3 } from "@dalpeng/math";
 import type { DialogueLine } from "dalpeng";
 import {
   defineGameEntity,
-  useComponent,
-  useDialogueController,
   Dialogue,
-  useSceneSwitch,
-  useInput,
   onStart,
   onUpdate,
+  useComponent,
+  useDialogueController,
+  useInput,
+  useSceneSwitch,
   withName,
 } from "dalpeng";
 import FieldScene from "../FieldScene";

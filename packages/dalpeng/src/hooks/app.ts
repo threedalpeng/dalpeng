@@ -11,8 +11,8 @@ import {
   type ProjectionContext,
   type RenderConfig,
 } from "@dalpeng/core";
-import { requireApp, setThisApp, setThisEntity, setThisScene, setParentEntity } from "../context";
 import { domUIRenderer } from "@dalpeng/ui";
+import { requireApp, setParentEntity, setThisApp, setThisEntity, setThisScene } from "../context";
 import type { UseScene } from "./scene";
 
 type FeatureListener = (newVal: any, oldVal: any) => void;
@@ -112,8 +112,7 @@ function makeMaterializerHooks(app: Application): MaterializerHooks {
     },
 
     pushGameContext(entity, parent) {
-      const prevParent =
-        parent instanceof Scene ? null : (parent as GameInstance).entity;
+      const prevParent = parent instanceof Scene ? null : (parent as GameInstance).entity;
       setThisEntity(entity);
       setParentEntity(prevParent);
       const scene = entity.scene;
@@ -133,7 +132,9 @@ function makeMaterializerHooks(app: Application): MaterializerHooks {
       };
       return {
         doc: document,
-        get canvas() { return getCanvas(); },
+        get canvas() {
+          return getCanvas();
+        },
         viewport() {
           const c = getCanvas();
           const r = c.getBoundingClientRect();

@@ -57,6 +57,6 @@ export interface UIRenderer {
   materialize(
     descriptor: UIDescriptor,
     context: ProjectionContext,
-    owner: GameInstance | Scene,
+    owner: GameInstance | Scene
   ): UIInstance;
 }

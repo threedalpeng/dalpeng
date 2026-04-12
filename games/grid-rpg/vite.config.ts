@@ -1,5 +1,5 @@
-import { defineConfig, loadEnv } from "vite";
 import { devtools } from "@dalpeng/devtools-vite";
+import { defineConfig, loadEnv } from "vite";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");

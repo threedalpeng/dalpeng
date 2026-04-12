@@ -36,7 +36,8 @@
     "build:dev": "vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "test:ui": "vitest --ui --api.host 172.105.229.189 --api.port 5050"
+    "test:ui": "vitest --ui --api.host 172.105.229.189 --api.port 5050",
+    "lint": "eslint src/"
   },
   "devDependencies": {
     "@vitest/ui": "^4.1.2",

@@ -36,10 +36,14 @@ export function renderPlugin(): DevToolsPlugin {
             Range("ssaoRadius", "SSAO radius", { min: 0, max: 2, step: 0.05 }),
             Toggle("bloom", "bloom"),
             Range("bloomThreshold", "bloom threshold", {
-              min: 0, max: 4, step: 0.05,
+              min: 0,
+              max: 4,
+              step: 0.05,
             }),
             Range("bloomIntensity", "bloom intensity", {
-              min: 0, max: 2, step: 0.05,
+              min: 0,
+              max: 2,
+              step: 0.05,
             }),
             Toggle("fxaa", "FXAA"),
           ];

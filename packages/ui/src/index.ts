@@ -1,20 +1,20 @@
 export {
-  defineUI,
-  Text,
   Bar,
+  Button,
+  Floating,
+  For,
   Html,
-  Toggle,
+  List,
+  Menu,
   Range,
   Select,
-  Button,
-  Value,
-  Menu,
-  List,
+  Show,
   Split,
   Tabs,
-  For,
-  Show,
-  Floating,
+  Text,
+  Toggle,
+  Value,
+  defineUI,
   useFeature,
   useLayout,
   usePlacement,
@@ -24,37 +24,34 @@ export {
 export { createDialogueController } from "./dialogue/controller";
 export type { DialogueController } from "./dialogue/controller";
 export { Dialogue } from "./dialogue/Dialogue";
-export type {
-  DialogueLine,
-  DialogueChoice,
-} from "./dialogue/types";
+export type { DialogueChoice, DialogueLine } from "./dialogue/types";
 
 export {
   resolvePlacement,
-  type Placement,
   type Anchor,
+  type Placement,
+  type ResolvedPlacement,
   type Size,
   type Vec2,
   type ViewportCorner,
-  type ResolvedPlacement,
 } from "./placement";
 
 export { renderDescriptor, type RenderContext, type RenderResult } from "./domRenderer";
 
 export type {
-  NodeDescriptor,
-  TextOpts,
   BarOpts,
+  BindingSource,
+  FloatingOpts,
+  ForOpts,
+  MenuItem,
+  NodeDescriptor,
   RangeOpts,
   SelectOption,
-  MenuItem,
-  BindingSource,
-  SplitOpts,
-  TabsOpts,
-  TabSpec,
-  ForOpts,
   ShowOpts,
-  FloatingOpts,
+  SplitOpts,
+  TabSpec,
+  TabsOpts,
+  TextOpts,
 } from "./types";
 
 export { getThisUI, requireUI, type UIContext } from "./context";

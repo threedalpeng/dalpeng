@@ -12,11 +12,7 @@ function toDefault(desc?: SamplerDescriptor): Required<SamplerDescriptor> {
   };
 }
 
-function toGLMinFilter(
-  gl: WebGL2RenderingContext,
-  min: FilterMode,
-  mip: MipmapMode
-): number {
+function toGLMinFilter(gl: WebGL2RenderingContext, min: FilterMode, mip: MipmapMode): number {
   if (min === "nearest" && mip === "nearest") return gl.NEAREST_MIPMAP_NEAREST;
   if (min === "nearest" && mip === "linear") return gl.NEAREST_MIPMAP_LINEAR;
   if (min === "linear" && mip === "nearest") return gl.LINEAR_MIPMAP_NEAREST;
@@ -25,9 +21,12 @@ function toGLMinFilter(
 
 function toGLWrap(gl: WebGL2RenderingContext, mode: AddressMode): number {
   switch (mode) {
-    case "repeat": return gl.REPEAT;
-    case "mirrored-repeat": return gl.MIRRORED_REPEAT;
-    default: return gl.CLAMP_TO_EDGE;
+    case "repeat":
+      return gl.REPEAT;
+    case "mirrored-repeat":
+      return gl.MIRRORED_REPEAT;
+    default:
+      return gl.CLAMP_TO_EDGE;
   }
 }
 
@@ -42,8 +41,16 @@ export default class WebGL2Sampler implements GfxSampler {
     this.#sampler = gl.createSampler()!;
 
     const d = this.desc;
-    gl.samplerParameteri(this.#sampler, gl.TEXTURE_MIN_FILTER, toGLMinFilter(gl, d.minFilter, d.mipmapFilter));
-    gl.samplerParameteri(this.#sampler, gl.TEXTURE_MAG_FILTER, d.magFilter === "nearest" ? gl.NEAREST : gl.LINEAR);
+    gl.samplerParameteri(
+      this.#sampler,
+      gl.TEXTURE_MIN_FILTER,
+      toGLMinFilter(gl, d.minFilter, d.mipmapFilter)
+    );
+    gl.samplerParameteri(
+      this.#sampler,
+      gl.TEXTURE_MAG_FILTER,
+      d.magFilter === "nearest" ? gl.NEAREST : gl.LINEAR
+    );
     gl.samplerParameteri(this.#sampler, gl.TEXTURE_WRAP_S, toGLWrap(gl, d.addressModeU));
     gl.samplerParameteri(this.#sampler, gl.TEXTURE_WRAP_T, toGLWrap(gl, d.addressModeV));
 

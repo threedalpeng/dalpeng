@@ -21,24 +21,12 @@ export default class ErrorTracker {
   static #toastId = 0;
   static #listeners: ((toast: Toast) => void)[] = [];
 
-  static record(
-    tag: string,
-    name: string,
-    severity: "warning" | "error" = "error"
-  ): void {
+  static record(tag: string, name: string, severity: "warning" | "error" = "error"): void {
     const now = performance.now();
 
     // Dedup: check if same error in last 1 second
-    const last =
-      this.#errors.length > 0
-        ? this.#errors[this.#errors.length - 1]
-        : null;
-    if (
-      last &&
-      last.name === name &&
-      last.tag === tag &&
-      now - last.timestamp < 1000
-    ) {
+    const last = this.#errors.length > 0 ? this.#errors[this.#errors.length - 1] : null;
+    if (last && last.name === name && last.tag === tag && now - last.timestamp < 1000) {
       last.count++;
       last.timestamp = now;
       return;

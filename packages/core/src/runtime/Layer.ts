@@ -49,7 +49,7 @@ export class LayerRegistry {
     if (this.#userDeclared) {
       throw new Error(
         "withLayers: layer set was already declared for this Application. " +
-          "Call withLayers exactly once in defineApp setup.",
+          "Call withLayers exactly once in defineApp setup."
       );
     }
     this.#userDeclared = true;
@@ -76,7 +76,7 @@ export class LayerRegistry {
     if (layers.length === 0) {
       throw new Error(
         "withLayers: layer list cannot be empty. Provide at least one layer, " +
-          "or omit the call entirely to use the default layer set.",
+          "or omit the call entirely to use the default layer set."
       );
     }
 
@@ -99,7 +99,7 @@ export class LayerRegistry {
       } else if (l.backend === "canvas" && seenDom) {
         throw new Error(
           `withLayers: canvas layer "${l.name}" appears after a dom layer. ` +
-            `Reorder so all canvas layers come before all dom layers.`,
+            `Reorder so all canvas layers come before all dom layers.`
         );
       }
     }

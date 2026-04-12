@@ -16,8 +16,8 @@ export function worldToScreen(
   const [wx, wy, wz] = worldPos;
 
   // Multiply by view-projection matrix (column-major)
-  const clipX = viewProj[0] * wx + viewProj[4] * wy + viewProj[8]  * wz + viewProj[12];
-  const clipY = viewProj[1] * wx + viewProj[5] * wy + viewProj[9]  * wz + viewProj[13];
+  const clipX = viewProj[0] * wx + viewProj[4] * wy + viewProj[8] * wz + viewProj[12];
+  const clipY = viewProj[1] * wx + viewProj[5] * wy + viewProj[9] * wz + viewProj[13];
   const clipW = viewProj[3] * wx + viewProj[7] * wy + viewProj[11] * wz + viewProj[15];
 
   // Behind camera check

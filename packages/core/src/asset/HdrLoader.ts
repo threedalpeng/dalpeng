@@ -98,7 +98,8 @@ export function parseHdr(bytes: Uint8Array): HdrImage {
 function scanlineByteLength(bytes: Uint8Array, offset: number, width: number): number {
   // Check for new-style RLE
   if (
-    width >= 8 && width <= 0x7fff &&
+    width >= 8 &&
+    width <= 0x7fff &&
     bytes[offset] === 0x02 &&
     bytes[offset + 1] === 0x02 &&
     bytes[offset + 2] === ((width >> 8) & 0xff) &&
@@ -138,7 +139,8 @@ function decodeScanline(
 ): void {
   // Check for new-style RLE: 0x02 0x02 followed by width as 2 bytes
   if (
-    width >= 8 && width <= 0x7fff &&
+    width >= 8 &&
+    width <= 0x7fff &&
     bytes[offset] === 0x02 &&
     bytes[offset + 1] === 0x02 &&
     bytes[offset + 2] === ((width >> 8) & 0xff) &&

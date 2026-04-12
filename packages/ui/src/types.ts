@@ -1,12 +1,6 @@
-import type {
-  ReadonlyRef,
-  Ref,
-  UIDescriptor,
-} from "@dalpeng/core";
+import type { ReadonlyRef, Ref, UIDescriptor } from "@dalpeng/core";
 
-export type BindingSource<T> =
-  | { kind: "ref"; ref: Ref<T> }
-  | { kind: "feature"; key: string };
+export type BindingSource<T> = { kind: "ref"; ref: Ref<T> } | { kind: "feature"; key: string };
 
 export interface TextOpts {
   size?: number;

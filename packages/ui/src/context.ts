@@ -23,7 +23,7 @@ export function setThisUI(ui: UIContext | null): void {
 export function requireUI(hookName: string): UIContext {
   if (!thisUI) {
     throw new Error(
-      `${hookName}() requires an active UI context (must be called inside defineUI setup).`,
+      `${hookName}() requires an active UI context (must be called inside defineUI setup).`
     );
   }
   return thisUI;

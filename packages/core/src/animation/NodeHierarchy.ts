@@ -13,7 +13,7 @@ export function computeNodeGlobalTransforms(
   rootNodeIndices: number[],
   skeleton: Skeleton | null,
   jointToSkelIdx: Map<number, number>,
-  result: Map<number, Mat4>,
+  result: Map<number, Mat4>
 ): void {
   result.clear();
 

@@ -9,8 +9,7 @@ export default defineConfig({
       entry: path.resolve(__dirname, "src/index.ts"),
       name: "DalpengDevTools",
       formats: ["es", "umd"],
-      fileName: (format) =>
-        format === "es" ? "dalpeng-devtools.js" : "dalpeng-devtools.umd.cjs",
+      fileName: (format) => (format === "es" ? "dalpeng-devtools.js" : "dalpeng-devtools.umd.cjs"),
     },
     rollupOptions: {
       external: ["@dalpeng/core", "@dalpeng/ui"],

@@ -50,10 +50,7 @@ export class PluginRegistry {
     try {
       removed.teardown?.();
     } catch (err) {
-      console.error(
-        `[devtools] teardown failed for plugin "${removed.plugin.name}":`,
-        err,
-      );
+      console.error(`[devtools] teardown failed for plugin "${removed.plugin.name}":`, err);
     }
     this.#version.value++;
   }
@@ -64,10 +61,7 @@ export class PluginRegistry {
       try {
         teardown?.();
       } catch (err) {
-        console.error(
-          `[devtools] teardown failed for plugin "${plugin.name}":`,
-          err,
-        );
+        console.error(`[devtools] teardown failed for plugin "${plugin.name}":`, err);
       }
     }
     this.#registered = [];

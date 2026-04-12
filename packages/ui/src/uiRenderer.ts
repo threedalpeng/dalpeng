@@ -8,10 +8,7 @@ import {
   type UIRenderer,
 } from "@dalpeng/core";
 import { renderDescriptor } from "./domRenderer";
-import {
-  resolvePlacement,
-  type Placement,
-} from "./placement";
+import { resolvePlacement, type Placement } from "./placement";
 
 const DEFAULT_PLACEMENT: Placement = {
   anchor: { kind: "viewport", corner: "tl" },
@@ -22,7 +19,7 @@ export const domUIRenderer: UIRenderer = {
   materialize(
     descriptor: UIDescriptor,
     context: ProjectionContext,
-    owner: GameInstance | Scene,
+    owner: GameInstance | Scene
   ): UIInstance {
     const result = renderDescriptor(descriptor, {
       doc: context.doc,
@@ -42,13 +39,13 @@ export const domUIRenderer: UIRenderer = {
         `domUIRenderer: no layer "${resolvedLayerName}" in this app's ` +
           `layer registry. Did the UI call withLayer("${resolvedLayerName}") ` +
           `with a name that wasn't declared in withLayers([...])? ` +
-          `Known layers: ${known}.`,
+          `Known layers: ${known}.`
       );
     }
     if (layer.backend !== "dom") {
       throw new Error(
         `domUIRenderer: layer "${resolvedLayerName}" is a ${layer.backend} ` +
-          `layer; UI overlays can only mount onto dom layers.`,
+          `layer; UI overlays can only mount onto dom layers.`
       );
     }
     const zIndex = 1000 + layer.index;
@@ -62,8 +59,7 @@ export const domUIRenderer: UIRenderer = {
     overlay.style.overflow = "hidden";
     overlay.style.zIndex = String(zIndex);
     overlay.dataset.dalpengLayer = resolvedLayerName;
-    overlay.style.fontFamily =
-      "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+    overlay.style.fontFamily = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
     overlay.style.color = "#fff";
     overlay.style.textShadow = "0 1px 3px rgba(0,0,0,0.7)";
 
@@ -128,6 +124,6 @@ function defaultDomLayerName(layers: ProjectionContext["layers"]): string {
   }
   throw new Error(
     "domUIRenderer: no dom layer in the app's layer registry. " +
-      "Declare at least one dom layer via withLayers([...]).",
+      "Declare at least one dom layer via withLayers([...])."
   );
 }

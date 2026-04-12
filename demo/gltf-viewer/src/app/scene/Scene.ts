@@ -1,8 +1,8 @@
 import { defineScene, withName } from "dalpeng";
 import Camera from "./entities/Camera";
-import Light from "./entities/Light";
-import Ground from "./entities/Ground";
 import GLTFModel from "./entities/GLTFModel";
+import Ground from "./entities/Ground";
+import Light from "./entities/Light";
 
 export default defineScene(() => {
   withName("glTF Viewer Scene");

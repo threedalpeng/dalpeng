@@ -1,10 +1,5 @@
 import { vec3 } from "@dalpeng/math";
-import {
-  Transform,
-  useComponent,
-  useInput,
-  onUpdate,
-} from "dalpeng";
+import { onUpdate, Transform, useComponent, useInput } from "dalpeng";
 import { cameraDistance, cameraHeight } from "./characterConfig";
 
 export let cameraYaw = 0;

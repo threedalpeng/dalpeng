@@ -3,7 +3,8 @@ import { EPSILON } from "./utils";
 export class Vec2 extends Float32Array {
   constructor(values: ArrayLike<number>) {
     super(values);
-    if (this.length !== 2) throw new RangeError(`Vec2 requires exactly 2 elements, got ${this.length}`);
+    if (this.length !== 2)
+      throw new RangeError(`Vec2 requires exactly 2 elements, got ${this.length}`);
   }
 
   get x() {
@@ -131,7 +132,8 @@ export function vec2(x?: number | Float32List, y?: number): Vec2 {
 export class Vec3 extends Float32Array {
   constructor(values: ArrayLike<number>) {
     super(values);
-    if (this.length !== 3) throw new RangeError(`Vec3 requires exactly 3 elements, got ${this.length}`);
+    if (this.length !== 3)
+      throw new RangeError(`Vec3 requires exactly 3 elements, got ${this.length}`);
   }
 
   get x() {
@@ -289,7 +291,8 @@ export function vec3(x?: number | Float32List, y?: number, z?: number): Vec3 {
 export class Vec4 extends Float32Array {
   constructor(values: ArrayLike<number>) {
     super(values);
-    if (this.length !== 4) throw new RangeError(`Vec4 requires exactly 4 elements, got ${this.length}`);
+    if (this.length !== 4)
+      throw new RangeError(`Vec4 requires exactly 4 elements, got ${this.length}`);
   }
 
   get x() {
@@ -387,10 +390,20 @@ export class Vec4 extends Float32Array {
     return new Vec4([-this[0], -this[1], -this[2], -this[3]]);
   }
   min(v: Float32List) {
-    return new Vec4([Math.min(this[0], v[0]), Math.min(this[1], v[1]), Math.min(this[2], v[2]), Math.min(this[3], v[3])]);
+    return new Vec4([
+      Math.min(this[0], v[0]),
+      Math.min(this[1], v[1]),
+      Math.min(this[2], v[2]),
+      Math.min(this[3], v[3]),
+    ]);
   }
   max(v: Float32List) {
-    return new Vec4([Math.max(this[0], v[0]), Math.max(this[1], v[1]), Math.max(this[2], v[2]), Math.max(this[3], v[3])]);
+    return new Vec4([
+      Math.max(this[0], v[0]),
+      Math.max(this[1], v[1]),
+      Math.max(this[2], v[2]),
+      Math.max(this[3], v[3]),
+    ]);
   }
   clamp(lo: Float32List, hi: Float32List) {
     return this.max(lo).min(hi);

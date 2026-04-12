@@ -1,36 +1,36 @@
+import Animator from "./animation/Animator";
+import TweenManager from "./animation/TweenManager";
+import ModelManager from "./asset/ModelManager";
+import SpriteAtlasManager from "./asset/SpriteAtlasManager";
+import TextureManager from "./asset/TextureManager";
+import AudioManager from "./audio/AudioManager";
 import CanvasController from "./CanvasController";
 import type { CanvasOptions } from "./CanvasOptions";
+import { FrameProfiler } from "./debug";
 import Component, { type ComponentConstructor } from "./ecs/Component";
 import type GameEntity from "./ecs/GameEntity";
+import Script from "./ecs/Script";
+import Transform from "./ecs/Transform";
 import type { RendererBackend } from "./gfx/RendererBackend";
 import WebGL2Renderer from "./gfx/webgl2/WebGL2Renderer";
 import Camera from "./graphics/Camera";
 import ParticleEmitter from "./graphics/ParticleEmitter";
 import Shader from "./graphics/Shader";
 import View from "./graphics/View";
+import CameraFollow2D from "./graphics2d/CameraFollow2D";
+import SpriteAnimator from "./graphics2d/SpriteAnimator";
 import InputManager from "./InputManager";
 import type { RenderConfig } from "./RenderConfig";
 import RenderPipeline from "./rendering/RenderPipeline";
-import type Scene from "./Scene";
-import Script from "./ecs/Script";
-import Time from "./Time";
-import Transform from "./ecs/Transform";
-import Animator from "./animation/Animator";
-import TweenManager from "./animation/TweenManager";
-import SpriteAnimator from "./graphics2d/SpriteAnimator";
-import CameraFollow2D from "./graphics2d/CameraFollow2D";
-import AudioManager from "./audio/AudioManager";
-import TextureManager from "./asset/TextureManager";
-import ModelManager from "./asset/ModelManager";
-import SpriteAtlasManager from "./asset/SpriteAtlasManager";
-import { isNil } from "./utils/basic";
-import { FrameProfiler } from "./debug";
-import { ref, type ReadonlyRef } from "./runtime/reactive";
-import { LayerRegistry } from "./runtime/Layer";
-import type { UIRenderer } from "./runtime/UIRenderer";
 import { isGameDescriptor, type LogicalDescriptor } from "./runtime/Descriptor";
-import { type Materializer } from "./runtime/Materializer";
 import type { GameInstance } from "./runtime/Instance";
+import { LayerRegistry } from "./runtime/Layer";
+import { type Materializer } from "./runtime/Materializer";
+import { ref, type ReadonlyRef } from "./runtime/reactive";
+import type { UIRenderer } from "./runtime/UIRenderer";
+import type Scene from "./Scene";
+import Time from "./Time";
+import { isNil } from "./utils/basic";
 
 export interface FrameStatsSummary {
   fps: number;
@@ -101,7 +101,7 @@ export default class Application {
       throw new Error(
         "Application.registerUIRenderer: a UI renderer is already registered. " +
           "Each Application accepts exactly one renderer; call this once " +
-          "before mounting any UI.",
+          "before mounting any UI."
       );
     }
     this.#uiRenderer = renderer;
@@ -115,7 +115,7 @@ export default class Application {
     if (this.#materializer) {
       throw new Error(
         "Application.registerMaterializer: a Materializer is already registered. " +
-          "Call this once per Application instance.",
+          "Call this once per Application instance."
       );
     }
     this.#materializer = m;
@@ -282,7 +282,7 @@ export default class Application {
       if (!this.#materializer) {
         throw new Error(
           "Application.spawn(descriptor): no Materializer registered. " +
-            "Ensure `runApp` has been called before spawning descriptors.",
+            "Ensure `runApp` has been called before spawning descriptors."
         );
       }
       this.#lifecycleQueue.push({ kind: "spawn-descriptor", descriptor: arg, parent });
@@ -360,9 +360,7 @@ export default class Application {
 
     const gameInstance = entity._gameInstance;
     if (gameInstance && this.#materializer) {
-      this.#materializer.destroyCascade(gameInstance, (e) =>
-        this.#runOnDestroyScripts(e),
-      );
+      this.#materializer.destroyCascade(gameInstance, (e) => this.#runOnDestroyScripts(e));
     } else {
       const stack: GameEntity[] = [entity];
       const allEntities: GameEntity[] = [];
@@ -440,7 +438,7 @@ export default class Application {
     if (!this.#materializer) {
       throw new Error(
         "Application.switchScene: no Materializer registered. " +
-          "Ensure `runApp` has been called before switching scenes.",
+          "Ensure `runApp` has been called before switching scenes."
       );
     }
     const pending = newScene._pendingRootDescriptors;
@@ -605,5 +603,4 @@ export default class Application {
   static forEachActive(callback: (instance: Application) => void) {
     Application.#activeInstances.forEach(callback);
   }
-
 }

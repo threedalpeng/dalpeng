@@ -1,18 +1,11 @@
-import {
-  Text,
-  defineScene,
-  defineUI,
-  useLayout,
-  usePlacement,
-  withName,
-} from "dalpeng";
+import { Text, defineScene, defineUI, useLayout, usePlacement, withName } from "dalpeng";
+import { lives, message, score } from "../composables/useGameState";
 import Ball from "./entities/Ball";
 import BrickGrid from "./entities/BrickGrid";
 import Camera from "./entities/Camera";
 import GameManager from "./entities/GameManager";
 import MainLight from "./entities/MainLight";
 import Paddle from "./entities/Paddle";
-import { score, lives, message } from "../composables/useGameState";
 
 const ScoreHUD = defineUI(() => {
   usePlacement({
@@ -27,9 +20,7 @@ const LivesHUD = defineUI(() => {
     anchor: { kind: "viewport", corner: "tr" },
     offset: { x: 12, y: 12 },
   });
-  return [
-    Text(lives, (v) => "\u2665".repeat(Math.max(0, v)), { size: 24 }),
-  ];
+  return [Text(lives, (v) => "\u2665".repeat(Math.max(0, v)), { size: 24 })];
 });
 
 const MessageHUD = defineUI(() => {

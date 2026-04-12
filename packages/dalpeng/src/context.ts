@@ -15,7 +15,10 @@ export function setThisApp(app: Application | null) {
   currentThis = app;
 }
 export function requireApp(hookName: string): Application {
-  if (!thisApp) throw new Error(`${hookName}() requires an active Application context (must be called inside defineApp setup).`);
+  if (!thisApp)
+    throw new Error(
+      `${hookName}() requires an active Application context (must be called inside defineApp setup).`
+    );
   return thisApp;
 }
 
@@ -28,7 +31,10 @@ export function setThisScene(scene: Scene | null) {
   currentThis = scene;
 }
 export function requireScene(hookName: string): Scene {
-  if (!thisScene) throw new Error(`${hookName}() requires an active Scene context (must be called inside defineScene setup).`);
+  if (!thisScene)
+    throw new Error(
+      `${hookName}() requires an active Scene context (must be called inside defineScene setup).`
+    );
   return thisScene;
 }
 
@@ -49,7 +55,7 @@ export function requireEntity(hookName: string): GameEntity {
         `${hookName}() is a game-kind hook and cannot be called inside defineUI setup. ` +
           `Frame hooks (onUpdate / onFixedUpdate / onLateUpdate / onStart / onEnable / onDisable) ` +
           `are only available on game-kind nodes. ` +
-          `If you need to react to state changes inside a UI, use watch(ref, ...) instead.`,
+          `If you need to react to state changes inside a UI, use watch(ref, ...) instead.`
       );
     }
     throw new Error(`${hookName}() must be called inside defineGameEntity setup.`);
@@ -70,6 +76,6 @@ export function setParentEntity(entity: GameEntity | null) {
 export {
   beginCleanupScope,
   endCleanupScope,
-  registerCleanup,
   hasActiveCleanupScope,
+  registerCleanup,
 } from "@dalpeng/core";

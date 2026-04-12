@@ -28,11 +28,7 @@ export interface UIInstance extends Instance<"ui"> {
 }
 
 export function isInstance(value: unknown): value is GameInstance | UIInstance {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    INSTANCE_KIND in (value as object)
-  );
+  return value !== null && typeof value === "object" && INSTANCE_KIND in (value as object);
 }
 
 export function isGameInstance(value: unknown): value is GameInstance {

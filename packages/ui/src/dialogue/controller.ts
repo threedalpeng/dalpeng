@@ -23,7 +23,7 @@ export interface DialogueController {
 
 export function createDialogueController(
   lines: DialogueLine[],
-  options?: { charsPerSecond?: number },
+  options?: { charsPerSecond?: number }
 ): DialogueController {
   const msPerChar = 1000 / (options?.charsPerSecond ?? 33);
 

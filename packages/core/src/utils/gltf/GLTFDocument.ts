@@ -5,30 +5,30 @@
 
 /** Joints and weights for a skinned primitive. */
 export interface ParsedSkinVertexData {
-  joints: Uint8Array | Uint16Array;   // 4 joint indices per vertex (ivec4)
-  weights: Float32Array;               // 4 weights per vertex (vec4)
+  joints: Uint8Array | Uint16Array; // 4 joint indices per vertex (ivec4)
+  weights: Float32Array; // 4 weights per vertex (vec4)
 }
 
 /** A skin definition (maps joint nodes to inverse bind matrices). */
 export interface ParsedSkin {
   name: string;
-  joints: number[];                    // indices into nodes[]
-  inverseBindMatrices: Float32Array;   // N * 16 floats (N mat4s, column-major)
-  skeleton: number | null;             // optional skeleton root node index
+  joints: number[]; // indices into nodes[]
+  inverseBindMatrices: Float32Array; // N * 16 floats (N mat4s, column-major)
+  skeleton: number | null; // optional skeleton root node index
 }
 
 /** A parsed animation channel target. */
 export interface ParsedAnimationChannel {
   nodeIndex: number;
-  path: 'translation' | 'rotation' | 'scale' | 'weights';
+  path: "translation" | "rotation" | "scale" | "weights";
   samplerIndex: number;
 }
 
 /** A parsed animation sampler with resolved keyframe data. */
 export interface ParsedAnimationSampler {
-  input: Float32Array;                 // keyframe times
-  output: Float32Array;                // keyframe values
-  interpolation: 'STEP' | 'LINEAR' | 'CUBICSPLINE';
+  input: Float32Array; // keyframe times
+  output: Float32Array; // keyframe values
+  interpolation: "STEP" | "LINEAR" | "CUBICSPLINE";
 }
 
 /** A parsed animation clip. */
@@ -36,7 +36,7 @@ export interface ParsedAnimation {
   name: string;
   channels: ParsedAnimationChannel[];
   samplers: ParsedAnimationSampler[];
-  duration: number;                    // max keyframe time
+  duration: number; // max keyframe time
 }
 
 /** A single primitive within a mesh, fully resolved from accessor chain. */
@@ -49,7 +49,7 @@ export interface ParsedPrimitive {
   indices: Uint16Array | Uint32Array | null;
   materialIndex: number | null;
   mode: number;
-  skinData: ParsedSkinVertexData | null;  // NEW
+  skinData: ParsedSkinVertexData | null; // NEW
 }
 
 /** A mesh is a collection of primitives (each may have its own material). */
@@ -139,6 +139,6 @@ export interface ParsedGLTFDocument {
   cameras: ParsedCamera[];
   lights: ParsedLight[];
   defaultSceneRootNodes: number[];
-  skins: ParsedSkin[];                // NEW
-  animations: ParsedAnimation[];      // NEW
+  skins: ParsedSkin[]; // NEW
+  animations: ParsedAnimation[]; // NEW
 }

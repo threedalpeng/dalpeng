@@ -1,11 +1,11 @@
-import { runApp, MeshRenderer } from "dalpeng";
 import { setupDevTools } from "@dalpeng/devtools-vite/runtime";
+import { MeshRenderer, runApp } from "dalpeng";
 import App from "./app/App";
-import { hasExternalTextures, EXTERNAL_PRESETS } from "./app/textures/external";
+import { EXTERNAL_PRESETS, hasExternalTextures } from "./app/textures/external";
 import {
   makeBrickTextures,
-  makeWoodTextures,
   makeStoneTileTextures,
+  makeWoodTextures,
 } from "./app/textures/procedural";
 
 const app = await runApp(App, "#app", {

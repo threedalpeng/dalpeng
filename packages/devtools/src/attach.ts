@@ -1,9 +1,6 @@
 import { FrameProfiler, Logger, type Application } from "@dalpeng/core";
 import { createDevToolsHost } from "./createHost";
-import {
-  DevToolsRootHost,
-  type DevToolsRootHostOptions,
-} from "./hostFrame";
+import { DevToolsRootHost, type DevToolsRootHostOptions } from "./hostFrame";
 import type { DevToolsPlugin } from "./plugin";
 import { PluginRegistry } from "./registry";
 
@@ -29,10 +26,7 @@ export interface DevToolsHandle {
   popOut(): Window | null;
 }
 
-export function attachDevTools(
-  app: Application,
-  opts: AttachDevToolsOptions = {},
-): DevToolsHandle {
+export function attachDevTools(app: Application, opts: AttachDevToolsOptions = {}): DevToolsHandle {
   // FrameProfiler and Logger ship disabled by default. Flip them here so
   // `setupDevTools(app)` is the single switch the user touches.
   const prevProfiler = FrameProfiler.enabled;

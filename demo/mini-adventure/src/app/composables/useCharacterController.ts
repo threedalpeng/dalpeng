@@ -1,14 +1,14 @@
 import { Quaternion, Vec3, vec3 } from "@dalpeng/math";
+import type { GameEntity } from "dalpeng";
 import {
   Animator,
+  onUpdate,
   Time,
   Transform,
-  useComponent,
-  onUpdate,
   useActionDown,
   useActionState,
+  useComponent,
 } from "dalpeng";
-import type { GameEntity } from "dalpeng";
 import { moveSpeed, runSpeed, turnSpeed } from "./characterConfig";
 
 // Fox.glb clip indices: 0=Survey(idle), 1=Walk, 2=Run
@@ -77,10 +77,7 @@ export default function useCharacterController() {
 
       const camFwd = cameraTransform.forward;
       const fwdLen = Math.sqrt(camFwd.x * camFwd.x + camFwd.z * camFwd.z);
-      const fwd =
-        fwdLen > 1e-6
-          ? vec3(camFwd.x / fwdLen, 0, camFwd.z / fwdLen)
-          : vec3(0, 0, -1);
+      const fwd = fwdLen > 1e-6 ? vec3(camFwd.x / fwdLen, 0, camFwd.z / fwdLen) : vec3(0, 0, -1);
       const rgt = vec3(-fwd.z, 0, fwd.x);
 
       const moveDir = fwd.scale(inputFwd).add(rgt.scale(inputRight));

@@ -1,24 +1,24 @@
+import { Mat4 } from "@dalpeng/math";
+import { loadHdr } from "../asset/HdrLoader";
 import type GfxBuffer from "../gfx/Buffer";
 import type { RendererBackend } from "../gfx/RendererBackend";
 import type GfxTexture from "../gfx/Texture";
 import type GfxVertexArray from "../gfx/VertexArray";
-import { Mat4 } from "@dalpeng/math";
 import Shader from "../graphics/Shader";
-import { loadHdr } from "../asset/HdrLoader";
 import { f32ArrayToF16 } from "../utils/float16";
 
+import brdfLutFrag from "../shaders/ibl/brdf_lut.frag?raw";
 import cubeVert from "../shaders/ibl/cube.vert?raw";
 import equirectToCubeFrag from "../shaders/ibl/equirect_to_cube.frag?raw";
 import irradianceFrag from "../shaders/ibl/irradiance.frag?raw";
 import prefilterFrag from "../shaders/ibl/prefilter.frag?raw";
-import brdfLutFrag from "../shaders/ibl/brdf_lut.frag?raw";
 import mainVert from "../shaders/main.vert?raw";
 
 export interface IBLResources {
-  envCubemap: GfxTexture;        // 512 cube, rgba16f
+  envCubemap: GfxTexture; // 512 cube, rgba16f
   irradianceCubemap: GfxTexture; // 32 cube, rgba16f
   prefilteredCubemap: GfxTexture; // 128 cube, rgba16f, 5 mip levels
-  brdfLUT: GfxTexture;           // 512x512, rg16f, 2D
+  brdfLUT: GfxTexture; // 512x512, rg16f, 2D
 }
 
 // Unit cube: 36 vertices (6 faces x 2 triangles x 3 vertices), no index buffer needed.
@@ -61,11 +61,7 @@ function lookAt(eye: number[], center: number[], up: number[]): Float32Array {
   const sLen = Math.sqrt(sx * sx + sy * sy + sz * sz);
   const s = [sx / sLen, sy / sLen, sz / sLen];
 
-  const u = [
-    s[1] * f[2] - s[2] * f[1],
-    s[2] * f[0] - s[0] * f[2],
-    s[0] * f[1] - s[1] * f[0],
-  ];
+  const u = [s[1] * f[2] - s[2] * f[1], s[2] * f[0] - s[0] * f[2], s[0] * f[1] - s[1] * f[0]];
 
   const tx = -(s[0] * eye[0] + s[1] * eye[1] + s[2] * eye[2]);
   const ty = -(u[0] * eye[0] + u[1] * eye[1] + u[2] * eye[2]);
@@ -74,10 +70,22 @@ function lookAt(eye: number[], center: number[], up: number[]): Float32Array {
   // Column-major layout (WebGL convention):
   // col0: s,  col1: u,  col2: -f,  col3: translation
   return new Float32Array([
-    s[0],  u[0], -f[0], 0,  // column 0
-    s[1],  u[1], -f[1], 0,  // column 1
-    s[2],  u[2], -f[2], 0,  // column 2
-    tx,    ty,    tz,   1,  // column 3
+    s[0],
+    u[0],
+    -f[0],
+    0, // column 0
+    s[1],
+    u[1],
+    -f[1],
+    0, // column 1
+    s[2],
+    u[2],
+    -f[2],
+    0, // column 2
+    tx,
+    ty,
+    tz,
+    1, // column 3
   ]);
 }
 
@@ -87,12 +95,12 @@ function lookAt(eye: number[], center: number[], up: number[]): Float32Array {
  */
 function cubemapViewMatrices(): Float32Array[] {
   return [
-    lookAt([0, 0, 0], [ 1,  0,  0], [0, -1,  0]), // +X
-    lookAt([0, 0, 0], [-1,  0,  0], [0, -1,  0]), // -X
-    lookAt([0, 0, 0], [ 0,  1,  0], [0,  0,  1]), // +Y
-    lookAt([0, 0, 0], [ 0, -1,  0], [0,  0, -1]), // -Y
-    lookAt([0, 0, 0], [ 0,  0,  1], [0, -1,  0]), // +Z
-    lookAt([0, 0, 0], [ 0,  0, -1], [0, -1,  0]), // -Z
+    lookAt([0, 0, 0], [1, 0, 0], [0, -1, 0]), // +X
+    lookAt([0, 0, 0], [-1, 0, 0], [0, -1, 0]), // -X
+    lookAt([0, 0, 0], [0, 1, 0], [0, 0, 1]), // +Y
+    lookAt([0, 0, 0], [0, -1, 0], [0, 0, -1]), // -Y
+    lookAt([0, 0, 0], [0, 0, 1], [0, -1, 0]), // +Z
+    lookAt([0, 0, 0], [0, 0, -1], [0, -1, 0]), // -Z
   ];
 }
 

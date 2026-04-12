@@ -81,10 +81,10 @@ export function sampleChannel(
 
     // p0: value of key i, m0: out-tangent of key i
     // p1: value of key i+1, m1: in-tangent of key i+1
-    const p0Offset = i * stride + componentCount;       // value portion of key i
-    const m0Offset = i * stride + componentCount * 2;   // out-tangent of key i
+    const p0Offset = i * stride + componentCount; // value portion of key i
+    const m0Offset = i * stride + componentCount * 2; // out-tangent of key i
     const p1Offset = (i + 1) * stride + componentCount; // value portion of key i+1
-    const m1Offset = (i + 1) * stride;                  // in-tangent of key i+1
+    const m1Offset = (i + 1) * stride; // in-tangent of key i+1
 
     for (let c = 0; c < componentCount; c++) {
       const p0 = output[p0Offset + c];

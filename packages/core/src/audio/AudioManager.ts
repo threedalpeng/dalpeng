@@ -42,8 +42,7 @@ export default class AudioManager {
     const ctx = this.#ensureContext();
     const promise = fetch(url)
       .then((res) => {
-        if (!res.ok)
-          throw new Error(`Failed to load audio: ${url} (${res.status})`);
+        if (!res.ok) throw new Error(`Failed to load audio: ${url} (${res.status})`);
         return res.arrayBuffer();
       })
       .then((data) => ctx.decodeAudioData(data))

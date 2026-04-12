@@ -1,14 +1,14 @@
-import { Vec3 } from "@dalpeng/math";
 import type GfxTexture from "@/gfx/Texture";
+import { Vec3 } from "@dalpeng/math";
 
 export const enum MaterialTexFlag {
-  NONE           = 0,
-  BASE_COLOR     = 1 << 0,
-  NORMAL         = 1 << 1,
+  NONE = 0,
+  BASE_COLOR = 1 << 0,
+  NORMAL = 1 << 1,
   METALLIC_ROUGH = 1 << 2,
-  EMISSIVE       = 1 << 3,
-  HAS_TANGENT    = 1 << 4,
-  OCCLUSION      = 1 << 5,
+  EMISSIVE = 1 << 3,
+  HAS_TANGENT = 1 << 4,
+  OCCLUSION = 1 << 5,
 }
 
 export type AlphaMode = "OPAQUE" | "MASK";

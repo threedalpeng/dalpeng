@@ -1,19 +1,19 @@
+import { Vec3 } from "@dalpeng/math";
 import type { RendererBackend } from "../gfx/RendererBackend";
 import type GfxTexture from "../gfx/Texture";
-import { GLTFParser } from "../utils/gltf/GLTFParser";
+import Material from "../graphics/Material";
 import type {
+  ParsedAnimation,
+  ParsedCamera,
   ParsedGLTFDocument,
+  ParsedLight,
   ParsedMaterial,
   ParsedMesh,
   ParsedNode,
-  ParsedCamera,
-  ParsedLight,
   ParsedSkin,
-  ParsedAnimation,
 } from "../utils/gltf/GLTFDocument";
-import Material from "../graphics/Material";
+import { GLTFParser } from "../utils/gltf/GLTFParser";
 import type { Mesh } from "../utils/mesh";
-import { Vec3 } from "@dalpeng/math";
 
 export interface GPUPrimitive {
   mesh: Mesh;
@@ -93,9 +93,7 @@ export default class ModelManager {
     );
 
     // 3. Build GPU meshes from parsed meshes
-    const meshes = doc.meshes.map((parsedMesh) =>
-      this.#buildMesh(parsedMesh, materials)
-    );
+    const meshes = doc.meshes.map((parsedMesh) => this.#buildMesh(parsedMesh, materials));
 
     return {
       meshes,
@@ -109,9 +107,7 @@ export default class ModelManager {
     };
   }
 
-  async #uploadTextures(
-    doc: ParsedGLTFDocument
-  ): Promise<(GfxTexture | null)[]> {
+  async #uploadTextures(doc: ParsedGLTFDocument): Promise<(GfxTexture | null)[]> {
     if (doc.images.length === 0) return [];
 
     // Determine which images need sRGB vs linear
@@ -130,20 +126,16 @@ export default class ModelManager {
       // normal and metallic-roughness are linear (don't override sRGB if already set)
       if (mat.normalTextureIndex !== null) {
         const imgIdx = doc.textures[mat.normalTextureIndex]?.imageIndex;
-        if (imgIdx !== undefined && !imageUsage.has(imgIdx))
-          imageUsage.set(imgIdx, "linear");
+        if (imgIdx !== undefined && !imageUsage.has(imgIdx)) imageUsage.set(imgIdx, "linear");
       }
       if (mat.metallicRoughnessTextureIndex !== null) {
-        const imgIdx =
-          doc.textures[mat.metallicRoughnessTextureIndex]?.imageIndex;
-        if (imgIdx !== undefined && !imageUsage.has(imgIdx))
-          imageUsage.set(imgIdx, "linear");
+        const imgIdx = doc.textures[mat.metallicRoughnessTextureIndex]?.imageIndex;
+        if (imgIdx !== undefined && !imageUsage.has(imgIdx)) imageUsage.set(imgIdx, "linear");
       }
       // occlusion texture is linear
       if (mat.occlusionTextureIndex !== null) {
         const imgIdx = doc.textures[mat.occlusionTextureIndex]?.imageIndex;
-        if (imgIdx !== undefined && !imageUsage.has(imgIdx))
-          imageUsage.set(imgIdx, "linear");
+        if (imgIdx !== undefined && !imageUsage.has(imgIdx)) imageUsage.set(imgIdx, "linear");
       }
     }
 
@@ -199,8 +191,7 @@ export default class ModelManager {
     }
     if (parsed.metallicRoughnessTextureIndex !== null) {
       const glTFTex = doc.textures[parsed.metallicRoughnessTextureIndex];
-      if (glTFTex)
-        mat.metallicRoughnessMap = textures[glTFTex.imageIndex] ?? null;
+      if (glTFTex) mat.metallicRoughnessMap = textures[glTFTex.imageIndex] ?? null;
     }
     if (parsed.emissiveTextureIndex !== null) {
       const glTFTex = doc.textures[parsed.emissiveTextureIndex];
@@ -223,9 +214,15 @@ export default class ModelManager {
       const s = Math.sin(t.rotation);
       // Column-major 3x3: rotation+scale then offset
       mat.texTransform = new Float32Array([
-        c * t.scale[0],  s * t.scale[0], 0,
-        -s * t.scale[1], c * t.scale[1], 0,
-        t.offset[0],     t.offset[1],    1,
+        c * t.scale[0],
+        s * t.scale[0],
+        0,
+        -s * t.scale[1],
+        c * t.scale[1],
+        0,
+        t.offset[0],
+        t.offset[1],
+        1,
       ]);
     }
 
@@ -246,20 +243,18 @@ export default class ModelManager {
             texcoord: prim.texcoord ?? new Float32Array(vertexCount * 2),
             ...(prim.tangent ? { tangent: prim.tangent } : {}),
           },
-          index:
-            prim.indices ?? this.#generateSequentialIndices(vertexCount),
+          index: prim.indices ?? this.#generateSequentialIndices(vertexCount),
         };
 
         const material =
-          prim.materialIndex !== null &&
-          prim.materialIndex < materials.length
+          prim.materialIndex !== null && prim.materialIndex < materials.length
             ? materials[prim.materialIndex]
             : new Material();
 
         return {
           mesh,
           material,
-          skinData: prim.skinData ?? null,  // NEW: pass through skin vertex data
+          skinData: prim.skinData ?? null, // NEW: pass through skin vertex data
         };
       }),
     };

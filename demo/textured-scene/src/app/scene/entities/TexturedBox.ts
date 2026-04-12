@@ -1,12 +1,12 @@
 import { vec3 } from "@dalpeng/math";
 import {
   defineGameEntity,
+  onStart,
   Transform,
   useComponent,
   useMesh,
   useTexture,
   withName,
-  onStart,
 } from "dalpeng";
 import { makeWoodTextures } from "../../textures/procedural";
 

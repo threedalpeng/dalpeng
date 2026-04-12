@@ -1,12 +1,12 @@
 import {
   defineGameEntity,
   onStart,
+  spawnModelEntities,
   Transform,
   useComponent,
   useModel,
-  spawnModelEntities,
-  withName,
   vec3,
+  withName,
 } from "dalpeng";
 
 export default defineGameEntity(() => {

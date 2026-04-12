@@ -40,9 +40,12 @@ export default class TileCollider {
 
   // Axis-separated AABB vs tile grid sweep
   resolveAABB(
-    worldX: number, worldY: number,
-    halfW: number, halfH: number,
-    dx: number, dy: number
+    worldX: number,
+    worldY: number,
+    halfW: number,
+    halfH: number,
+    dx: number,
+    dy: number
   ): { x: number; y: number; hitX: boolean; hitY: boolean } {
     let newX = worldX + dx;
     let newY = worldY + dy;
@@ -107,5 +110,7 @@ export default class TileCollider {
     return result;
   }
 
-  get triggerZones(): TriggerZone[] { return this.#triggerZones; }
+  get triggerZones(): TriggerZone[] {
+    return this.#triggerZones;
+  }
 }

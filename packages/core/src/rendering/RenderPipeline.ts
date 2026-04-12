@@ -1,41 +1,41 @@
-import type Application from "../Application";
-import type { RendererBackend } from "../gfx/RendererBackend";
-import type GfxBuffer from "../gfx/Buffer";
-import type GfxVertexArray from "../gfx/VertexArray";
 import { Vec3 } from "@dalpeng/math";
+import type Application from "../Application";
+import { FrameProfiler } from "../debug";
+import type GfxBuffer from "../gfx/Buffer";
+import type { RendererBackend } from "../gfx/RendererBackend";
+import type GfxVertexArray from "../gfx/VertexArray";
 import Camera from "../graphics/Camera";
 import Light from "../graphics/Light";
 import MeshRenderer from "../graphics/MeshRenderer";
-import SkinnedMeshRenderer from "../graphics/SkinnedMeshRenderer";
 import ParticleEmitter from "../graphics/ParticleEmitter";
 import Shader from "../graphics/Shader";
 import DirectionalShadowSystem from "../graphics/shadows/DirectionalShadow";
+import SkinnedMeshRenderer from "../graphics/SkinnedMeshRenderer";
 import SpriteRenderer from "../graphics/SpriteRenderer";
 import FrameResources from "./FrameResources";
 import PostProcessing from "./PostProcessing";
-import { FrameProfiler } from "../debug";
 
+import { Mat4 } from "@dalpeng/math";
+import type GfxTexture from "../gfx/Texture";
+import CameraFollow2D from "../graphics2d/CameraFollow2D";
+import Sprite2DRenderer from "../graphics2d/Sprite2DRenderer";
+import TilemapRenderer, { type TilemapLayerBatch } from "../graphics2d/TilemapRenderer";
+import blitfrag from "../shaders/blit.frag?raw";
+import blitvert from "../shaders/blit.vert?raw";
+import fxaafrag from "../shaders/fxaa.frag?raw";
 import gbuffrag from "../shaders/g_buf.frag?raw";
 import gbufvert from "../shaders/g_buf.vert?raw";
 import mainfrag from "../shaders/main.frag?raw";
 import mainvert from "../shaders/main.vert?raw";
-import { dummyQuadForLight } from "../utils/mesh";
-import type GfxTexture from "../gfx/Texture";
-import IBLPrecompute from "./IBLPrecompute";
-import { f32ArrayToF16 } from "../utils/float16";
+import skyboxfrag from "../shaders/skybox.frag?raw";
+import skyboxvert from "../shaders/skybox.vert?raw";
+import sprite2dfrag from "../shaders/sprite2d.frag?raw";
+import sprite2dvert from "../shaders/sprite2d.vert?raw";
 import ssaofrag from "../shaders/ssao.frag?raw";
 import ssaoblurfrag from "../shaders/ssao_blur.frag?raw";
-import skyboxvert from "../shaders/skybox.vert?raw";
-import skyboxfrag from "../shaders/skybox.frag?raw";
-import fxaafrag from "../shaders/fxaa.frag?raw";
-import sprite2dvert from "../shaders/sprite2d.vert?raw";
-import sprite2dfrag from "../shaders/sprite2d.frag?raw";
-import blitvert from "../shaders/blit.vert?raw";
-import blitfrag from "../shaders/blit.frag?raw";
-import Sprite2DRenderer from "../graphics2d/Sprite2DRenderer";
-import CameraFollow2D from "../graphics2d/CameraFollow2D";
-import TilemapRenderer, { type TilemapLayerBatch } from "../graphics2d/TilemapRenderer";
-import { Mat4 } from "@dalpeng/math";
+import { f32ArrayToF16 } from "../utils/float16";
+import { dummyQuadForLight } from "../utils/mesh";
+import IBLPrecompute from "./IBLPrecompute";
 
 export default class RenderPipeline {
   shader = {
@@ -99,8 +99,14 @@ export default class RenderPipeline {
     ]);
 
     await Promise.allSettled([
-      this.shader.bloomBright.loadFrom(mainvert, (await import("../shaders/bloom_bright.frag?raw")).default),
-      this.shader.bloomBlur.loadFrom(mainvert, (await import("../shaders/bloom_blur.frag?raw")).default),
+      this.shader.bloomBright.loadFrom(
+        mainvert,
+        (await import("../shaders/bloom_bright.frag?raw")).default
+      ),
+      this.shader.bloomBlur.loadFrom(
+        mainvert,
+        (await import("../shaders/bloom_blur.frag?raw")).default
+      ),
       this.shader.particle.loadFrom(
         (await import("../shaders/particle.vert?raw")).default,
         (await import("../shaders/particle.frag?raw")).default
@@ -178,7 +184,9 @@ export default class RenderPipeline {
 
     if (features.ibl && features.iblHdrUrl && !this.#iblPrecompute.resources && !this.#iblPending) {
       this.#iblPending = true;
-      this.initIBL(renderer, features.iblHdrUrl).then(() => { this.#iblPending = false; });
+      this.initIBL(renderer, features.iblHdrUrl).then(() => {
+        this.#iblPending = false;
+      });
     }
 
     FrameProfiler.beginPass("shadow");
@@ -313,11 +321,14 @@ export default class RenderPipeline {
     // Height is fixed from camera.size * 2 * ppu (always integer).
     // Width is rounded to nearest integer; the 2D projection is then derived FROM the FBO size.
     {
-      let pixelArtWidth = 0, pixelArtHeight = 0;
+      let pixelArtWidth = 0,
+        pixelArtHeight = 0;
       app.forEachActiveComponent(Camera, (camera) => {
         if (camera.isOrthographic) {
           let ppu = 16;
-          app.forEachActiveComponent(CameraFollow2D, (cf) => { ppu = cf.pixelsPerUnit; });
+          app.forEachActiveComponent(CameraFollow2D, (cf) => {
+            ppu = cf.pixelsPerUnit;
+          });
           pixelArtHeight = Math.round(camera.size * 2 * ppu);
           pixelArtWidth = Math.round(pixelArtHeight * camera.aspectRatio);
         }
@@ -357,12 +368,17 @@ export default class RenderPipeline {
       resources.ensureFxaa(renderer);
     }
     FrameProfiler.beginPass("post");
-    this.#postProcessing.render(renderer, resources, {
-      post: this.shader.post,
-      bloomBright: this.shader.bloomBright,
-      bloomBlur: this.shader.bloomBlur,
-      fxaa: this.shader.fxaa,
-    }, features);
+    this.#postProcessing.render(
+      renderer,
+      resources,
+      {
+        post: this.shader.post,
+        bloomBright: this.shader.bloomBright,
+        bloomBlur: this.shader.bloomBlur,
+        fxaa: this.shader.fxaa,
+      },
+      features
+    );
     FrameProfiler.endPass();
   }
 
@@ -412,10 +428,18 @@ export default class RenderPipeline {
       const posSizeLoc = particleShader.getAttribLocation("aInstancePosSize");
       const colorLoc = particleShader.getAttribLocation("aInstanceColor");
       this.#particleQuadVao!.setVertexBufferInstanced?.(
-        posSizeLoc, this.#particleInstanceVbo!, 4, 1, { stride: 32, offset: 0 }
+        posSizeLoc,
+        this.#particleInstanceVbo!,
+        4,
+        1,
+        { stride: 32, offset: 0 }
       );
       this.#particleQuadVao!.setVertexBufferInstanced?.(
-        colorLoc, this.#particleInstanceVbo!, 4, 1, { stride: 32, offset: 16 }
+        colorLoc,
+        this.#particleInstanceVbo!,
+        4,
+        1,
+        { stride: 32, offset: 16 }
       );
 
       particleShader.setUniformMat4("uModel", RenderPipeline.#IDENTITY_MAT4);
@@ -523,7 +547,10 @@ export default class RenderPipeline {
       this.shader.skybox.setUniformMat4("uView", camera.viewMatrix);
       this.shader.skybox.setUniformMat4("uProjection", camera.glProjectionMatrix);
     });
-    this.shader.skybox.setUniform1f("uExposure", features.skyboxExposure ?? features.toneExposure ?? 1.0);
+    this.shader.skybox.setUniform1f(
+      "uExposure",
+      features.skyboxExposure ?? features.toneExposure ?? 1.0
+    );
 
     renderer.beginPass({
       target: resources.lighting.rt,
@@ -584,11 +611,29 @@ export default class RenderPipeline {
       const tintLoc = this.shader.sprite2d.getAttribLocation("aInstTint");
       const depthLoc = this.shader.sprite2d.getAttribLocation("aInstDepth");
 
-      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(posLoc, this.#sprite2dInstanceVbo!, 2, 1, { stride, offset: 0 });
-      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(sizeLoc, this.#sprite2dInstanceVbo!, 2, 1, { stride, offset: 8 });
-      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(uvLoc, this.#sprite2dInstanceVbo!, 4, 1, { stride, offset: 16 });
-      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(tintLoc, this.#sprite2dInstanceVbo!, 4, 1, { stride, offset: 32 });
-      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(depthLoc, this.#sprite2dInstanceVbo!, 1, 1, { stride, offset: 48 });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(posLoc, this.#sprite2dInstanceVbo!, 2, 1, {
+        stride,
+        offset: 0,
+      });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(sizeLoc, this.#sprite2dInstanceVbo!, 2, 1, {
+        stride,
+        offset: 8,
+      });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(uvLoc, this.#sprite2dInstanceVbo!, 4, 1, {
+        stride,
+        offset: 16,
+      });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(tintLoc, this.#sprite2dInstanceVbo!, 4, 1, {
+        stride,
+        offset: 32,
+      });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(
+        depthLoc,
+        this.#sprite2dInstanceVbo!,
+        1,
+        1,
+        { stride, offset: 48 }
+      );
 
       batch.atlas.texture.bind(0);
 
@@ -622,9 +667,7 @@ export default class RenderPipeline {
         // Build projection from FBO dimensions so 1 world unit = exactly ppu pixels
         const halfW = pa.width / ppu / 2;
         const halfH = pa.height / ppu / 2;
-        const proj = Mat4.toWebGL(
-          Mat4.orthographic(halfW, halfH, camera.dNear, camera.dFar)
-        );
+        const proj = Mat4.toWebGL(Mat4.orthographic(halfW, halfH, camera.dNear, camera.dFar));
         viewProj = proj.mul(viewMatrix);
       }
     });
@@ -655,10 +698,7 @@ export default class RenderPipeline {
       this.#sprite2dInstanceBuf = new Float32Array(totalFloats);
     }
     for (let i = 0; i < sprites.length; i++) {
-      sprites[i].renderer.writeInstanceData(
-        this.#sprite2dInstanceBuf,
-        i * floatsPerSprite,
-      );
+      sprites[i].renderer.writeInstanceData(this.#sprite2dInstanceBuf, i * floatsPerSprite);
     }
 
     if (!this.#sprite2dQuadVao) {
@@ -710,11 +750,29 @@ export default class RenderPipeline {
       const tintLoc = this.shader.sprite2d.getAttribLocation("aInstTint");
       const depthLoc = this.shader.sprite2d.getAttribLocation("aInstDepth");
 
-      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(posLoc, this.#sprite2dInstanceVbo!, 2, 1, { stride, offset: 0 });
-      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(sizeLoc, this.#sprite2dInstanceVbo!, 2, 1, { stride, offset: 8 });
-      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(uvLoc, this.#sprite2dInstanceVbo!, 4, 1, { stride, offset: 16 });
-      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(tintLoc, this.#sprite2dInstanceVbo!, 4, 1, { stride, offset: 32 });
-      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(depthLoc, this.#sprite2dInstanceVbo!, 1, 1, { stride, offset: 48 });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(posLoc, this.#sprite2dInstanceVbo!, 2, 1, {
+        stride,
+        offset: 0,
+      });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(sizeLoc, this.#sprite2dInstanceVbo!, 2, 1, {
+        stride,
+        offset: 8,
+      });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(uvLoc, this.#sprite2dInstanceVbo!, 4, 1, {
+        stride,
+        offset: 16,
+      });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(tintLoc, this.#sprite2dInstanceVbo!, 4, 1, {
+        stride,
+        offset: 32,
+      });
+      this.#sprite2dQuadVao!.setVertexBufferInstanced?.(
+        depthLoc,
+        this.#sprite2dInstanceVbo!,
+        1,
+        1,
+        { stride, offset: 48 }
+      );
 
       currentAtlas.texture.bind(0);
 
@@ -796,12 +854,16 @@ export default class RenderPipeline {
 
       // Normalize
       const len = Math.sqrt(x * x + y * y + z * z);
-      x /= len; y /= len; z /= len;
+      x /= len;
+      y /= len;
+      z /= len;
 
       // Scale to distribute more samples closer to origin
       let scale = i / size;
       scale = 0.1 + scale * scale * 0.9; // lerp(0.1, 1.0, scale^2)
-      x *= scale; y *= scale; z *= scale;
+      x *= scale;
+      y *= scale;
+      z *= scale;
 
       kernel[i * 3] = x;
       kernel[i * 3 + 1] = y;

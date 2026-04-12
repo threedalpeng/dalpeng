@@ -1,4 +1,4 @@
-import { requireEntity, registerCleanup } from "../context";
+import { registerCleanup, requireEntity } from "../context";
 import { ref, type Ref } from "../reactive";
 
 export function useInput() {

@@ -1,5 +1,5 @@
-import type { Vec3 } from "@dalpeng/math";
 import type { GameEntity } from "@dalpeng/core";
+import type { Vec3 } from "@dalpeng/math";
 
 export interface Placement {
   anchor: Anchor;
@@ -17,10 +17,7 @@ export interface Vec2 {
  * 9-position viewport corner key. Format: `{vertical}{horizontal}`.
  * Vertical: `t` / `c` / `b`. Horizontal: `l` / `c` / `r`. Center: `c` alone.
  */
-export type ViewportCorner =
-  | "tl" | "tc" | "tr"
-  | "cl" | "c"  | "cr"
-  | "bl" | "bc" | "br";
+export type ViewportCorner = "tl" | "tc" | "tr" | "cl" | "c" | "cr" | "bl" | "bc" | "br";
 
 export type Anchor =
   | { kind: "viewport"; corner: ViewportCorner }
@@ -40,7 +37,7 @@ export interface ResolvedPlacement {
 
 export function resolvePlacement(
   placement: Placement,
-  viewport: { width: number; height: number },
+  viewport: { width: number; height: number }
 ): ResolvedPlacement {
   const style: Partial<CSSStyleDeclaration> = {
     position: "absolute",
@@ -58,7 +55,7 @@ export function resolvePlacement(
   } else if (anchor.kind === "world" || anchor.kind === "entity") {
     throw new Error(
       `Placement: anchor kind "${anchor.kind}" is not supported in Phase 1. ` +
-        `It will be implemented when the 3D milestone introduces world-space UI.`,
+        `It will be implemented when the 3D milestone introduces world-space UI.`
     );
   }
 
@@ -86,7 +83,7 @@ export function resolvePlacement(
 function applyViewportCorner(
   style: Partial<CSSStyleDeclaration>,
   corner: ViewportCorner,
-  offset: Vec2,
+  offset: Vec2
 ): void {
   switch (corner[0]) {
     case "t":

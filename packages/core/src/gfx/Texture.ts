@@ -1,8 +1,13 @@
 export type TextureKind = "2d" | "cube";
 
 export type TextureFormat =
-  | "rgba8unorm" | "srgba8unorm" | "rgba16f" | "rg16f" | "r16f"
-  | "depth16" | "depth24unorm";
+  | "rgba8unorm"
+  | "srgba8unorm"
+  | "rgba16f"
+  | "rg16f"
+  | "r16f"
+  | "depth16"
+  | "depth24unorm";
 
 export type SamplerHint = "nearest" | "linear" | "depth" | "linear-mipmap";
 
@@ -19,7 +24,7 @@ export interface TextureDescriptorCube {
   kind: "cube";
   size: number;
   format: TextureFormat;
-  mipLevels?: number;     // 0 = auto full chain
+  mipLevels?: number; // 0 = auto full chain
   samplerHint?: SamplerHint;
 }
 

@@ -47,14 +47,10 @@ export function definePlugin(plugin: DevToolsPlugin): DevToolsPlugin {
     const seen = new Set<string>();
     for (const panel of plugin.panels) {
       if (!panel.id) {
-        throw new Error(
-          `definePlugin(${plugin.name}): every panel needs an \`id\`.`,
-        );
+        throw new Error(`definePlugin(${plugin.name}): every panel needs an \`id\`.`);
       }
       if (seen.has(panel.id)) {
-        throw new Error(
-          `definePlugin(${plugin.name}): duplicate panel id "${panel.id}".`,
-        );
+        throw new Error(`definePlugin(${plugin.name}): duplicate panel id "${panel.id}".`);
       }
       seen.add(panel.id);
     }

@@ -1,5 +1,5 @@
 import { vec3 } from "@dalpeng/math";
-import { Time, Transform, useComponent, onUpdate, useInput } from "dalpeng";
+import { onUpdate, Time, Transform, useComponent, useInput } from "dalpeng";
 
 const SPEED = 10;
 const BOUNDS_X = 7;

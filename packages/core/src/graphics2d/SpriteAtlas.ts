@@ -19,8 +19,12 @@ export default class SpriteAtlas {
     this.#frames = new Map();
   }
 
-  get texture(): GfxTexture { return this.#texture; }
-  get frameCount(): number { return this.#frames.size; }
+  get texture(): GfxTexture {
+    return this.#texture;
+  }
+  get frameCount(): number {
+    return this.#frames.size;
+  }
 
   getUV(frame: number | string): Float32Array {
     const uv = this.#frames.get(frame);
@@ -32,7 +36,13 @@ export default class SpriteAtlas {
     return this.#frames.has(frame);
   }
 
-  static fromUniform(texture: GfxTexture, texWidth: number, texHeight: number, frameW: number, frameH: number): SpriteAtlas {
+  static fromUniform(
+    texture: GfxTexture,
+    texWidth: number,
+    texHeight: number,
+    frameW: number,
+    frameH: number
+  ): SpriteAtlas {
     const atlas = new SpriteAtlas(texture);
     atlas.framePixelWidth = frameW;
     atlas.framePixelHeight = frameH;
@@ -43,19 +53,19 @@ export default class SpriteAtlas {
     let index = 0;
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
-        atlas.#frames.set(index, new Float32Array([
-          col * uvW,
-          row * uvH,
-          uvW,
-          uvH,
-        ]));
+        atlas.#frames.set(index, new Float32Array([col * uvW, row * uvH, uvW, uvH]));
         index++;
       }
     }
     return atlas;
   }
 
-  static fromFrames(texture: GfxTexture, texWidth: number, texHeight: number, frames: AtlasFrame[]): SpriteAtlas {
+  static fromFrames(
+    texture: GfxTexture,
+    texWidth: number,
+    texHeight: number,
+    frames: AtlasFrame[]
+  ): SpriteAtlas {
     const atlas = new SpriteAtlas(texture);
     for (let i = 0; i < frames.length; i++) {
       const f = frames[i];

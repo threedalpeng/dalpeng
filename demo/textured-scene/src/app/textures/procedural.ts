@@ -81,7 +81,7 @@ export function makeBrickTextures(size: number = 512): TextureSet {
     if (localY < mortarWidth) return true;
 
     // Vertical mortar
-    const relX = ((px - offset) % colW + colW) % colW;
+    const relX = (((px - offset) % colW) + colW) % colW;
     if (relX < mortarWidth) return true;
 
     return false;
@@ -90,7 +90,9 @@ export function makeBrickTextures(size: number = 512): TextureSet {
   function brickIndex(px: number, py: number): [number, number] {
     const row = Math.floor(py / rowH);
     const offset = row % 2 === 0 ? 0 : colW / 2;
-    const col = Math.floor(((px - offset) % (size + colW) + (size + colW)) % (size + colW) / colW);
+    const col = Math.floor(
+      ((((px - offset) % (size + colW)) + (size + colW)) % (size + colW)) / colW
+    );
     return [row, col];
   }
 
@@ -199,7 +201,7 @@ export function makeWoodTextures(size: number = 512): TextureSet {
         const grain1 = Math.sin(yf * Math.PI * 2 * 18 + plankCol * 2.7) * 0.5 + 0.5;
         const grain2 = Math.sin(yf * Math.PI * 2 * 42 + plankCol * 5.3) * 0.5 + 0.5;
         const grain3 = Math.sin(yf * Math.PI * 2 * 3 + plankCol * 1.1) * 0.5 + 0.5;
-        const grain = grain1 * 0.55 + grain2 * 0.25 + grain3 * 0.20;
+        const grain = grain1 * 0.55 + grain2 * 0.25 + grain3 * 0.2;
         const plankVariation = (hash2(plankCol, 0) - 0.5) * 30;
         const delta = Math.round((grain - 0.5) * 50) + Math.round(plankVariation);
 

@@ -1,7 +1,7 @@
-import { deflateSync } from "node:zlib";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { deflateSync } from "node:zlib";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
@@ -96,7 +96,7 @@ function blendPixel(pixels, imgWidth, x, y, r, g, b, alpha) {
   const idx = (y * imgWidth + x) * 4;
   const a = alpha / 255;
   const ia = 1 - a;
-  pixels[idx]     = Math.round(pixels[idx]     * ia + r * a);
+  pixels[idx] = Math.round(pixels[idx] * ia + r * a);
   pixels[idx + 1] = Math.round(pixels[idx + 1] * ia + g * a);
   pixels[idx + 2] = Math.round(pixels[idx + 2] * ia + b * a);
   pixels[idx + 3] = 255;
@@ -104,13 +104,14 @@ function blendPixel(pixels, imgWidth, x, y, r, g, b, alpha) {
 
 // Seeded LCG random — returns value in [0, 1), advances seed
 function makeRng(initSeed) {
-  let seed = (initSeed & 0x7fffffff) || 1;
+  let seed = initSeed & 0x7fffffff || 1;
   return {
     next() {
       seed = (seed * 16807) % 2147483647;
       return (seed - 1) / 2147483646;
     },
-    nextInt(lo, hi) { // inclusive
+    nextInt(lo, hi) {
+      // inclusive
       return lo + Math.floor(this.next() * (hi - lo + 1));
     },
   };
@@ -134,8 +135,15 @@ function drawGrass(pixels, imgWidth, tx, ty, rng, dark = false) {
   for (let y = 0; y < T; y++) {
     for (let x = 0; x < T; x++) {
       const noise = rng.nextInt(-8, 8);
-      setPixel(pixels, imgWidth, tx + x, ty + y,
-        clamp(baseR + noise), clamp(baseG + noise), clamp(baseB + noise));
+      setPixel(
+        pixels,
+        imgWidth,
+        tx + x,
+        ty + y,
+        clamp(baseR + noise),
+        clamp(baseG + noise),
+        clamp(baseB + noise)
+      );
     }
   }
 
@@ -148,7 +156,7 @@ function drawGrass(pixels, imgWidth, tx, ty, rng, dark = false) {
     const bright = rng.next() > 0.5;
     const br = bright ? clamp(baseR + 20) : clamp(baseR - 20);
     const bg = bright ? clamp(baseG + 30) : clamp(baseG - 20);
-    const bb = bright ? clamp(baseB + 5)  : clamp(baseB - 10);
+    const bb = bright ? clamp(baseB + 5) : clamp(baseB - 10);
     for (let dy = 0; dy < bh; dy++) {
       setPixel(pixels, imgWidth, tx + bx, ty + by + dy, br, bg, bb);
     }
@@ -179,7 +187,11 @@ function drawGrass(pixels, imgWidth, tx, ty, rng, dark = false) {
     for (let i = 0; i < clusterCount; i++) {
       const cx = rng.nextInt(1, T - 4);
       const cy = rng.nextInt(1, T - 4);
-      const colors = [[0xff, 0xee, 0x22], [0xff, 0x88, 0xaa], [0xff, 0xff, 0xff]];
+      const colors = [
+        [0xff, 0xee, 0x22],
+        [0xff, 0x88, 0xaa],
+        [0xff, 0xff, 0xff],
+      ];
       const col = colors[rng.nextInt(0, 2)];
       setPixel(pixels, imgWidth, tx + cx, ty + cy, col[0], col[1], col[2]);
       setPixel(pixels, imgWidth, tx + cx + 1, ty + cy, col[0], col[1], col[2]);
@@ -191,16 +203,23 @@ function drawGrass(pixels, imgWidth, tx, ty, rng, dark = false) {
 }
 
 function drawDirt(pixels, imgWidth, tx, ty, rng) {
-  const baseR = 0xcc, baseG = 0xaa, baseB = 0x88;
+  const baseR = 0xcc,
+    baseG = 0xaa,
+    baseB = 0x88;
 
   for (let y = 0; y < T; y++) {
     for (let x = 0; x < T; x++) {
-      const centerBoost = (y >= 12 && y <= 19) ? -6 : 0;
+      const centerBoost = y >= 12 && y <= 19 ? -6 : 0;
       const noise = rng.nextInt(-6, 6);
-      setPixel(pixels, imgWidth, tx + x, ty + y,
+      setPixel(
+        pixels,
+        imgWidth,
+        tx + x,
+        ty + y,
         clamp(baseR + noise + centerBoost),
         clamp(baseG + noise + centerBoost),
-        clamp(baseB + noise + centerBoost));
+        clamp(baseB + noise + centerBoost)
+      );
     }
   }
 
@@ -221,18 +240,44 @@ function drawDirt(pixels, imgWidth, tx, ty, rng) {
   for (let i = 0; i < fpCount; i++) {
     const fx = rng.nextInt(3, T - 8);
     const fy = rng.nextInt(3, T - 8);
-    fillRect(pixels, imgWidth, tx + fx, ty + fy, 3, 2,
-      clamp(baseR - 18), clamp(baseG - 15), clamp(baseB - 12));
-    fillRect(pixels, imgWidth, tx + fx + 1, ty + fy + 3, 3, 2,
-      clamp(baseR - 18), clamp(baseG - 15), clamp(baseB - 12));
+    fillRect(
+      pixels,
+      imgWidth,
+      tx + fx,
+      ty + fy,
+      3,
+      2,
+      clamp(baseR - 18),
+      clamp(baseG - 15),
+      clamp(baseB - 12)
+    );
+    fillRect(
+      pixels,
+      imgWidth,
+      tx + fx + 1,
+      ty + fy + 3,
+      3,
+      2,
+      clamp(baseR - 18),
+      clamp(baseG - 15),
+      clamp(baseB - 12)
+    );
   }
 
   // Worn lines
   for (let y = 5; y < T; y += 7) {
     for (let x = 0; x < T; x++) {
       if (rng.next() > 0.5) {
-        blendPixel(pixels, imgWidth, tx + x, ty + y,
-          clamp(baseR - 15), clamp(baseG - 12), clamp(baseB - 8), 80);
+        blendPixel(
+          pixels,
+          imgWidth,
+          tx + x,
+          ty + y,
+          clamp(baseR - 15),
+          clamp(baseG - 12),
+          clamp(baseB - 8),
+          80
+        );
       }
     }
   }
@@ -247,7 +292,9 @@ function drawStoneWall(pixels, imgWidth, tx, ty, rng) {
     }
   }
 
-  const mortarR = 0x55, mortarG = 0x55, mortarB = 0x55;
+  const mortarR = 0x55,
+    mortarG = 0x55,
+    mortarB = 0x55;
   // 3 rows of stones: mortar at y=10, y=21
   for (let x = 0; x < T; x++) {
     setPixel(pixels, imgWidth, tx + x, ty + 10, mortarR, mortarG, mortarB);
@@ -256,7 +303,7 @@ function drawStoneWall(pixels, imgWidth, tx, ty, rng) {
 
   // Vertical mortar — brick offset pattern
   const brickRows = [
-    { yStart: 0,  yEnd: 9,  xs: [16] },
+    { yStart: 0, yEnd: 9, xs: [16] },
     { yStart: 11, yEnd: 20, xs: [8, 24] },
     { yStart: 22, yEnd: 31, xs: [16] },
   ];
@@ -269,7 +316,9 @@ function drawStoneWall(pixels, imgWidth, tx, ty, rng) {
   }
 
   // Highlight on top-left of each stone
-  const hlR = 0xaa, hlG = 0xaa, hlB = 0xaa;
+  const hlR = 0xaa,
+    hlG = 0xaa,
+    hlB = 0xaa;
   for (const bx of [1, 17]) {
     for (let dx = 0; dx < 3; dx++) {
       if (bx + dx < T) setPixel(pixels, imgWidth, tx + bx + dx, ty + 1, hlR, hlG, hlB);
@@ -283,22 +332,32 @@ function drawStoneWall(pixels, imgWidth, tx, ty, rng) {
 }
 
 function drawWater(pixels, imgWidth, tx, ty, rng) {
-  const baseR = 0x22, baseG = 0x66, baseB = 0xcc;
+  const baseR = 0x22,
+    baseG = 0x66,
+    baseB = 0xcc;
 
   for (let y = 0; y < T; y++) {
     for (let x = 0; x < T; x++) {
       // Deeper color variation
       const depthShift = Math.sin(x * 0.3 + y * 0.2) * 8;
       const noise = rng.nextInt(-8, 8);
-      setPixel(pixels, imgWidth, tx + x, ty + y,
+      setPixel(
+        pixels,
+        imgWidth,
+        tx + x,
+        ty + y,
         clamp(baseR + noise + depthShift),
         clamp(baseG + noise + depthShift),
-        clamp(baseB + noise));
+        clamp(baseB + noise)
+      );
     }
   }
 
   // Animated wave lines at y=7, y=15, y=23
-  const waveOffsets = [0,0,1,1,0,-1,-1,0,0,1,1,0,-1,-1,0,0,0,1,1,0,-1,-1,0,0,1,1,0,-1,-1,0,0,0];
+  const waveOffsets = [
+    0, 0, 1, 1, 0, -1, -1, 0, 0, 1, 1, 0, -1, -1, 0, 0, 0, 1, 1, 0, -1, -1, 0, 0, 1, 1, 0, -1, -1,
+    0, 0, 0,
+  ];
   for (const waveY of [7, 15, 23]) {
     for (let x = 0; x < T; x++) {
       const wy = waveY + (waveOffsets[x] || 0);
@@ -326,13 +385,22 @@ function drawWater(pixels, imgWidth, tx, ty, rng) {
 }
 
 function drawSand(pixels, imgWidth, tx, ty, rng) {
-  const baseR = 0xdd, baseG = 0xcc, baseB = 0x88;
+  const baseR = 0xdd,
+    baseG = 0xcc,
+    baseB = 0x88;
 
   for (let y = 0; y < T; y++) {
     for (let x = 0; x < T; x++) {
       const noise = rng.nextInt(-6, 6);
-      setPixel(pixels, imgWidth, tx + x, ty + y,
-        clamp(baseR + noise), clamp(baseG + noise), clamp(baseB + noise));
+      setPixel(
+        pixels,
+        imgWidth,
+        tx + x,
+        ty + y,
+        clamp(baseR + noise),
+        clamp(baseG + noise),
+        clamp(baseB + noise)
+      );
     }
   }
 
@@ -343,7 +411,15 @@ function drawSand(pixels, imgWidth, tx, ty, rng) {
     const sy = rng.nextInt(2, T - 4);
     const shellColor = rng.next() > 0.5 ? [0xee, 0xdd, 0xcc] : [0xcc, 0xbb, 0xaa];
     fillRect(pixels, imgWidth, tx + sx, ty + sy, 3, 2, shellColor[0], shellColor[1], shellColor[2]);
-    setPixel(pixels, imgWidth, tx + sx + 1, ty + sy, clamp(shellColor[0] + 20), clamp(shellColor[1] + 20), clamp(shellColor[2] + 20));
+    setPixel(
+      pixels,
+      imgWidth,
+      tx + sx + 1,
+      ty + sy,
+      clamp(shellColor[0] + 20),
+      clamp(shellColor[1] + 20),
+      clamp(shellColor[2] + 20)
+    );
   }
 
   // Ripple patterns — curved lines
@@ -355,8 +431,16 @@ function drawSand(pixels, imgWidth, tx, ty, rng) {
     for (let dx = 0; dx < rl && rx + dx < T; dx++) {
       const curveY = ry + Math.round(Math.sin(dx * 0.5) * 1);
       if (curveY >= 0 && curveY < T) {
-        blendPixel(pixels, imgWidth, tx + rx + dx, ty + curveY,
-          clamp(baseR - 25), clamp(baseG - 22), clamp(baseB - 18), 100);
+        blendPixel(
+          pixels,
+          imgWidth,
+          tx + rx + dx,
+          ty + curveY,
+          clamp(baseR - 25),
+          clamp(baseG - 22),
+          clamp(baseB - 18),
+          100
+        );
       }
     }
   }
@@ -366,13 +450,22 @@ function drawSand(pixels, imgWidth, tx, ty, rng) {
   for (let i = 0; i < dotCount; i++) {
     const dx = rng.nextInt(0, T - 1);
     const dy = rng.nextInt(0, T - 1);
-    setPixel(pixels, imgWidth, tx + dx, ty + dy,
-      clamp(baseR - 20), clamp(baseG - 18), clamp(baseB - 15));
+    setPixel(
+      pixels,
+      imgWidth,
+      tx + dx,
+      ty + dy,
+      clamp(baseR - 20),
+      clamp(baseG - 18),
+      clamp(baseB - 15)
+    );
   }
 }
 
 function drawWoodFloor(pixels, imgWidth, tx, ty, rng) {
-  const baseR = 0xaa, baseG = 0x77, baseB = 0x44;
+  const baseR = 0xaa,
+    baseG = 0x77,
+    baseB = 0x44;
 
   for (let y = 0; y < T; y++) {
     const plankRow = Math.floor(y / 8);
@@ -380,30 +473,56 @@ function drawWoodFloor(pixels, imgWidth, tx, ty, rng) {
     const plankShade = intraY === 0 ? 15 : intraY === 1 ? 8 : intraY === 2 ? 3 : 0;
     for (let x = 0; x < T; x++) {
       const noise = rng.nextInt(-5, 5);
-      setPixel(pixels, imgWidth, tx + x, ty + y,
+      setPixel(
+        pixels,
+        imgWidth,
+        tx + x,
+        ty + y,
         clamp(baseR + noise + plankShade),
         clamp(baseG + noise + plankShade),
-        clamp(baseB + noise + plankShade));
+        clamp(baseB + noise + plankShade)
+      );
     }
   }
 
   // Plank divider lines
   for (const lineY of [0, 8, 16, 24]) {
     for (let x = 0; x < T; x++) {
-      if (lineY < T) setPixel(pixels, imgWidth, tx + x, ty + lineY,
-        clamp(baseR - 35), clamp(baseG - 30), clamp(baseB - 20));
+      if (lineY < T)
+        setPixel(
+          pixels,
+          imgWidth,
+          tx + x,
+          ty + lineY,
+          clamp(baseR - 35),
+          clamp(baseG - 30),
+          clamp(baseB - 20)
+        );
     }
   }
 
   // Clear grain lines
   for (let plank = 0; plank < 4; plank++) {
     const py = plank * 8;
-    for (const [dy, alpha] of [[3, 60], [4, 40], [5, 50], [6, 30]]) {
+    for (const [dy, alpha] of [
+      [3, 60],
+      [4, 40],
+      [5, 50],
+      [6, 30],
+    ]) {
       if (py + dy < T) {
         for (let x = 0; x < T; x++) {
           if (rng.next() > 0.35) {
-            blendPixel(pixels, imgWidth, tx + x, ty + py + dy,
-              clamp(baseR - 18), clamp(baseG - 14), clamp(baseB - 10), alpha);
+            blendPixel(
+              pixels,
+              imgWidth,
+              tx + x,
+              ty + py + dy,
+              clamp(baseR - 18),
+              clamp(baseG - 14),
+              clamp(baseB - 10),
+              alpha
+            );
           }
         }
       }
@@ -414,10 +533,25 @@ function drawWoodFloor(pixels, imgWidth, tx, ty, rng) {
   for (const knotX of [7, 15, 23]) {
     for (const knotY of [4, 12, 20, 28]) {
       if (knotX < T && knotY < T) {
-        setPixel(pixels, imgWidth, tx + knotX, ty + knotY,
-          clamp(baseR - 40), clamp(baseG - 35), clamp(baseB - 25));
-        if (knotX + 1 < T) setPixel(pixels, imgWidth, tx + knotX + 1, ty + knotY,
-          clamp(baseR - 35), clamp(baseG - 30), clamp(baseB - 20));
+        setPixel(
+          pixels,
+          imgWidth,
+          tx + knotX,
+          ty + knotY,
+          clamp(baseR - 40),
+          clamp(baseG - 35),
+          clamp(baseB - 25)
+        );
+        if (knotX + 1 < T)
+          setPixel(
+            pixels,
+            imgWidth,
+            tx + knotX + 1,
+            ty + knotY,
+            clamp(baseR - 35),
+            clamp(baseG - 30),
+            clamp(baseB - 20)
+          );
       }
     }
   }
@@ -433,14 +567,25 @@ function drawWoodFloor(pixels, imgWidth, tx, ty, rng) {
 }
 
 function drawBrick(pixels, imgWidth, tx, ty, rng) {
-  const baseR = 0xaa, baseG = 0x55, baseB = 0x33;
-  const mortarR = 0x88, mortarG = 0x77, mortarB = 0x66;
+  const baseR = 0xaa,
+    baseG = 0x55,
+    baseB = 0x33;
+  const mortarR = 0x88,
+    mortarG = 0x77,
+    mortarB = 0x66;
 
   for (let y = 0; y < T; y++) {
     for (let x = 0; x < T; x++) {
       const noise = rng.nextInt(-8, 8);
-      setPixel(pixels, imgWidth, tx + x, ty + y,
-        clamp(baseR + noise), clamp(baseG + noise), clamp(baseB + noise));
+      setPixel(
+        pixels,
+        imgWidth,
+        tx + x,
+        ty + y,
+        clamp(baseR + noise),
+        clamp(baseG + noise),
+        clamp(baseB + noise)
+      );
     }
   }
 
@@ -474,7 +619,9 @@ function drawBrick(pixels, imgWidth, tx, ty, rng) {
   }
 
   // Highlight — top-left of each brick
-  const hlR = clamp(baseR + 25), hlG = clamp(baseG + 20), hlB = clamp(baseB + 15);
+  const hlR = clamp(baseR + 25),
+    hlG = clamp(baseG + 20),
+    hlB = clamp(baseB + 15);
   for (const bx of [1, 17]) {
     setPixel(pixels, imgWidth, tx + bx, ty + 1, hlR, hlG, hlB);
     setPixel(pixels, imgWidth, tx + bx + 1, ty + 1, hlR, hlG, hlB);
@@ -518,28 +665,44 @@ const BASE_TILE_COLORS = [
 ];
 
 const HUE_SHIFTS = [
-  [0,   0,   0  ], // row 0: original
-  [20, -10, -20 ], // row 1: warmer
-  [-20, 20,  10 ], // row 2: cooler
-  [10,  10, -15 ], // row 3: golden
-  [-10, -5,  20 ], // row 4: bluish
-  [15, -15,  5  ], // row 5: reddish
-  [-15, 15, -10 ], // row 6: greenish
-  [0,   10,  20 ], // row 7: teal
+  [0, 0, 0], // row 0: original
+  [20, -10, -20], // row 1: warmer
+  [-20, 20, 10], // row 2: cooler
+  [10, 10, -15], // row 3: golden
+  [-10, -5, 20], // row 4: bluish
+  [15, -15, 5], // row 5: reddish
+  [-15, 15, -10], // row 6: greenish
+  [0, 10, 20], // row 7: teal
 ];
 
 function drawDetailedTile(pixels, imgWidth, tx, ty, tileType, seed) {
   const rng = makeRng(seed * 7919 + tileType * 31 + tx * 3 + ty * 17);
 
   switch (tileType) {
-    case 0: drawGrass(pixels, imgWidth, tx, ty, rng, false); break;
-    case 1: drawDirt(pixels, imgWidth, tx, ty, rng); break;
-    case 2: drawStoneWall(pixels, imgWidth, tx, ty, rng); break;
-    case 3: drawWater(pixels, imgWidth, tx, ty, rng); break;
-    case 4: drawGrass(pixels, imgWidth, tx, ty, rng, true); break;
-    case 5: drawSand(pixels, imgWidth, tx, ty, rng); break;
-    case 6: drawWoodFloor(pixels, imgWidth, tx, ty, rng); break;
-    case 7: drawBrick(pixels, imgWidth, tx, ty, rng); break;
+    case 0:
+      drawGrass(pixels, imgWidth, tx, ty, rng, false);
+      break;
+    case 1:
+      drawDirt(pixels, imgWidth, tx, ty, rng);
+      break;
+    case 2:
+      drawStoneWall(pixels, imgWidth, tx, ty, rng);
+      break;
+    case 3:
+      drawWater(pixels, imgWidth, tx, ty, rng);
+      break;
+    case 4:
+      drawGrass(pixels, imgWidth, tx, ty, rng, true);
+      break;
+    case 5:
+      drawSand(pixels, imgWidth, tx, ty, rng);
+      break;
+    case 6:
+      drawWoodFloor(pixels, imgWidth, tx, ty, rng);
+      break;
+    case 7:
+      drawBrick(pixels, imgWidth, tx, ty, rng);
+      break;
   }
 }
 
@@ -548,7 +711,7 @@ function tintTile(pixels, imgWidth, tx, ty, dr, dg, db) {
   for (let y = 0; y < T; y++) {
     for (let x = 0; x < T; x++) {
       const idx = ((ty + y) * imgWidth + (tx + x)) * 4;
-      pixels[idx]     = clamp(pixels[idx]     + dr);
+      pixels[idx] = clamp(pixels[idx] + dr);
       pixels[idx + 1] = clamp(pixels[idx + 1] + dg);
       pixels[idx + 2] = clamp(pixels[idx + 2] + db);
     }
@@ -587,29 +750,29 @@ function generateTileset() {
 // =====================================================================
 
 // Palette — anime girl, white & blue dress with pink hair
-const OUTLINE  = [0x22, 0x11, 0x33];
-const HAIR     = [0xf0, 0x95, 0xb5];
-const HAIR_SH  = [0xc5, 0x67, 0x89];
-const HAIR_HL  = [0xff, 0xb8, 0xd0];
+const OUTLINE = [0x22, 0x11, 0x33];
+const HAIR = [0xf0, 0x95, 0xb5];
+const HAIR_SH = [0xc5, 0x67, 0x89];
+const HAIR_HL = [0xff, 0xb8, 0xd0];
 const HAIR_RIM = [0xff, 0xff, 0xff];
-const SKIN     = [0xff, 0xe4, 0xd0];
-const SKIN_SH  = [0xf0, 0xc8, 0xb0];
-const EYE_W    = [0xff, 0xff, 0xff];
+const SKIN = [0xff, 0xe4, 0xd0];
+const SKIN_SH = [0xf0, 0xc8, 0xb0];
+const EYE_W = [0xff, 0xff, 0xff];
 const EYE_IRIS = [0x55, 0x88, 0xdd];
-const EYE_D    = [0x22, 0x22, 0x44];
-const EYE_HL   = [0xff, 0xff, 0xff];
-const BLUSH    = [0xff, 0xb0, 0xb0];
-const MOUTH    = [0xc0, 0x60, 0x70];
-const WHITE    = [0xff, 0xff, 0xff];
+const EYE_D = [0x22, 0x22, 0x44];
+const EYE_HL = [0xff, 0xff, 0xff];
+const BLUSH = [0xff, 0xb0, 0xb0];
+const MOUTH = [0xc0, 0x60, 0x70];
+const WHITE = [0xff, 0xff, 0xff];
 const WHITE_SH = [0xdd, 0xdd, 0xee];
-const BLUE     = [0x55, 0x77, 0xcc];
-const BLUE_SH  = [0x33, 0x55, 0xaa];
-const BLUE_HL  = [0x88, 0xaa, 0xee];
-const RIBBON   = [0xff, 0x66, 0x88];
-const RIBBON_SH= [0xc8, 0x44, 0x66];
-const BOOT     = [0x55, 0x33, 0x22];
-const BOOT_SH  = [0x33, 0x11, 0x00];
-const STOCK    = [0xf0, 0xf0, 0xf0];
+const BLUE = [0x55, 0x77, 0xcc];
+const BLUE_SH = [0x33, 0x55, 0xaa];
+const BLUE_HL = [0x88, 0xaa, 0xee];
+const RIBBON = [0xff, 0x66, 0x88];
+const RIBBON_SH = [0xc8, 0x44, 0x66];
+const BOOT = [0x55, 0x33, 0x22];
+const BOOT_SH = [0x33, 0x11, 0x00];
+const STOCK = [0xf0, 0xf0, 0xf0];
 const STOCK_SH = [0xc8, 0xc8, 0xd8];
 
 const FRAME_W = 32;
@@ -658,12 +821,7 @@ function outlineSilhouette(pixels, w, fx, fy) {
   for (let y = 0; y < FRAME_H; y++) {
     for (let x = 0; x < FRAME_W; x++) {
       if (get(x, y) !== 0) continue;
-      if (
-        get(x - 1, y) > 0 ||
-        get(x + 1, y) > 0 ||
-        get(x, y - 1) > 0 ||
-        get(x, y + 1) > 0
-      ) {
+      if (get(x - 1, y) > 0 || get(x + 1, y) > 0 || get(x, y - 1) > 0 || get(x, y + 1) > 0) {
         sp(pixels, w, fx, fy, x, y, OUTLINE);
       }
     }
@@ -690,7 +848,7 @@ function drawShadow(pixels, w, fx, fy) {
 // DOWN (front view)
 // =====================================================================
 function drawDown(pixels, w, fx, fy, phase) {
-  const bob = (phase === 1 || phase === 3) ? -1 : 0; // body bobs UP on step
+  const bob = phase === 1 || phase === 3 ? -1 : 0; // body bobs UP on step
 
   // ============ HEAD (skin base, y=4..15) ============
   // Round head shape, 14 wide, 12 tall, centered
@@ -739,8 +897,8 @@ function drawDown(pixels, w, fx, fy, phase) {
   // Two front bang clumps with parted center
   spRect(pixels, w, fx, fy, 10, 4 + bob, 12, 1, HAIR);
   // y=5: leave a 2px center skin gap (parted bangs)
-  spRect(pixels, w, fx, fy, 9, 5 + bob, 4, 1, HAIR);   // x9..12
-  spRect(pixels, w, fx, fy, 19, 5 + bob, 4, 1, HAIR);  // x19..22
+  spRect(pixels, w, fx, fy, 9, 5 + bob, 4, 1, HAIR); // x9..12
+  spRect(pixels, w, fx, fy, 19, 5 + bob, 4, 1, HAIR); // x19..22
   sp(pixels, w, fx, fy, 13, 5 + bob, HAIR);
   sp(pixels, w, fx, fy, 18, 5 + bob, HAIR);
   // y=6: bang fringe lower
@@ -793,7 +951,7 @@ function drawDown(pixels, w, fx, fy, phase) {
   // ============ NOSE & MOUTH ============
   sp(pixels, w, fx, fy, 15, 11 + bob, SKIN_SH); // nose dot
   sp(pixels, w, fx, fy, 16, 11 + bob, SKIN_SH);
-  sp(pixels, w, fx, fy, 15, 13 + bob, MOUTH);   // small mouth
+  sp(pixels, w, fx, fy, 15, 13 + bob, MOUTH); // small mouth
   sp(pixels, w, fx, fy, 16, 13 + bob, MOUTH);
 
   // ============ BLUSH ============
@@ -937,7 +1095,7 @@ function drawDown(pixels, w, fx, fy, phase) {
 // UP (back view — all hair, no face)
 // =====================================================================
 function drawUp(pixels, w, fx, fy, phase) {
-  const bob = (phase === 1 || phase === 3) ? -1 : 0;
+  const bob = phase === 1 || phase === 3 ? -1 : 0;
 
   // ============ HAIR back of head (y=0..15) ============
   // Crown ahoge
@@ -1100,7 +1258,7 @@ function drawUp(pixels, w, fx, fy, phase) {
 // Character profile is centered around x=14..15, face points toward x=8.
 // =====================================================================
 function drawLeft(pixels, w, fx, fy, phase) {
-  const bob = (phase === 1 || phase === 3) ? -1 : 0;
+  const bob = phase === 1 || phase === 3 ? -1 : 0;
 
   // ============ HEAD (side profile) ============
   // Face occupies x=10..19, slightly narrower than front
@@ -1239,7 +1397,7 @@ function drawLeft(pixels, w, fx, fy, phase) {
   // ============ ARMS (side: front + back) ============
   // Front arm (closer to viewer = more visible, swings opposite to leg)
   const frontArmOff = phase === 1 ? 1 : phase === 3 ? -1 : 0;
-  const backArmOff  = -frontArmOff;
+  const backArmOff = -frontArmOff;
   // Back arm (mostly hidden, peeks at shoulder)
   for (let y = 19; y <= 22; y++) {
     sp(pixels, w, fx, fy, 16, y + backArmOff, WHITE_SH);
@@ -1258,7 +1416,7 @@ function drawLeft(pixels, w, fx, fy, phase) {
   // ============ LEGS / STOCKINGS (front + back distinction) ============
   // Front leg occupies x=13..15, back leg x=15..17
   const frontLegOff = phase === 1 ? -1 : phase === 3 ? 1 : 0;
-  const backLegOff  = -frontLegOff;
+  const backLegOff = -frontLegOff;
 
   for (let y = 33; y <= 40; y++) {
     // back leg
@@ -1307,11 +1465,16 @@ function drawRight(pixels, w, fx, fy, phase) {
       const srcIdx = (y * FRAME_W + (FRAME_W - 1 - x)) * 4;
       const a = tempPixels[srcIdx + 3];
       if (a > 0) {
-        setPixel(pixels, w, fx + x, fy + y,
+        setPixel(
+          pixels,
+          w,
+          fx + x,
+          fy + y,
           tempPixels[srcIdx],
           tempPixels[srcIdx + 1],
           tempPixels[srcIdx + 2],
-          a);
+          a
+        );
       }
     }
   }
@@ -1319,10 +1482,18 @@ function drawRight(pixels, w, fx, fy, phase) {
 
 function drawPixelCharacter(pixels, imgWidth, frameX, frameY, facing, walkPhase) {
   switch (facing) {
-    case "down":  drawDown (pixels, imgWidth, frameX, frameY, walkPhase); break;
-    case "up":    drawUp   (pixels, imgWidth, frameX, frameY, walkPhase); break;
-    case "left":  drawLeft (pixels, imgWidth, frameX, frameY, walkPhase); break;
-    case "right": drawRight(pixels, imgWidth, frameX, frameY, walkPhase); break;
+    case "down":
+      drawDown(pixels, imgWidth, frameX, frameY, walkPhase);
+      break;
+    case "up":
+      drawUp(pixels, imgWidth, frameX, frameY, walkPhase);
+      break;
+    case "left":
+      drawLeft(pixels, imgWidth, frameX, frameY, walkPhase);
+      break;
+    case "right":
+      drawRight(pixels, imgWidth, frameX, frameY, walkPhase);
+      break;
   }
 }
 

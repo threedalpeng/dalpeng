@@ -10,7 +10,7 @@ export default class Particle {
   vz = 0;
 
   // Life
-  life = 0;       // remaining life in ms
+  life = 0; // remaining life in ms
   maxLife = 1000; // total life in ms
 
   // Visual

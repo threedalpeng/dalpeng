@@ -2,10 +2,10 @@ import { vec3 } from "@dalpeng/math";
 import {
   defineGameEntity,
   onStart,
+  spawnModelEntities,
   Transform,
   useComponent,
   useModel,
-  spawnModelEntities,
   withName,
   withTag,
 } from "dalpeng";

@@ -123,9 +123,10 @@ export class Quaternion extends Float32Array {
   toAxisAngle(): AxisAngle {
     const angle = 2 * Math.acos(this.w);
     const s = Math.sqrt(1 - this.w * this.w);
-    const axis = s < 1e-5
-      ? new Vec3([this.x, this.y, this.z])
-      : new Vec3([this.x / s, this.y / s, this.z / s]);
+    const axis =
+      s < 1e-5
+        ? new Vec3([this.x, this.y, this.z])
+        : new Vec3([this.x / s, this.y / s, this.z / s]);
     return [axis, angle];
   }
   toMat3() {

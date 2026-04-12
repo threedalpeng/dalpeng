@@ -1,10 +1,10 @@
+import { Mat4, Quaternion, Vec3 } from "@dalpeng/math";
 import Component from "../ecs/Component";
 import type GameEntity from "../ecs/GameEntity";
 import type { ParsedAnimation, ParsedNode } from "../utils/gltf/GLTFDocument";
-import type Skeleton from "./Skeleton";
 import { sampleChannel, sampleRotation } from "./AnimationClip";
 import { computeNodeGlobalTransforms } from "./NodeHierarchy";
-import { Vec3, Quaternion, Mat4 } from "@dalpeng/math";
+import type Skeleton from "./Skeleton";
 
 export default class Animator extends Component {
   skeleton!: Skeleton;
@@ -42,7 +42,6 @@ export default class Animator extends Component {
     }
     return map;
   }
-
 
   play(clipIndex: number, options?: { loop?: boolean; speed?: number }): void {
     this.#currentClip = clipIndex;
@@ -104,7 +103,6 @@ export default class Animator extends Component {
     }
   }
 
-
   get currentClipIndex(): number {
     return this.#currentClip;
   }
@@ -120,7 +118,6 @@ export default class Animator extends Component {
   get clipCount(): number {
     return this.clips.length;
   }
-
 
   tick(dt: number): void {
     if (!this.#playing) return;
@@ -219,7 +216,13 @@ export default class Animator extends Component {
       }
     }
 
-    computeNodeGlobalTransforms(this.nodes, this.rootNodeIndices, this.skeleton, this.#nodeToJointIdx!, this.#globalTransforms);
+    computeNodeGlobalTransforms(
+      this.nodes,
+      this.rootNodeIndices,
+      this.skeleton,
+      this.#nodeToJointIdx!,
+      this.#globalTransforms
+    );
     this.skeleton.computeJointMatrices(this.#globalTransforms);
   }
 
@@ -234,15 +237,11 @@ export default class Animator extends Component {
       if (jointIdx === undefined) continue;
 
       if (channel.path === "translation") {
-        this.skeleton.jointLocalTranslation[jointIdx] = new Vec3(
-          sampleChannel(sampler, time, 3)
-        );
+        this.skeleton.jointLocalTranslation[jointIdx] = new Vec3(sampleChannel(sampler, time, 3));
       } else if (channel.path === "rotation") {
         this.skeleton.jointLocalRotation[jointIdx] = sampleRotation(sampler, time);
       } else if (channel.path === "scale") {
-        this.skeleton.jointLocalScale[jointIdx] = new Vec3(
-          sampleChannel(sampler, time, 3)
-        );
+        this.skeleton.jointLocalScale[jointIdx] = new Vec3(sampleChannel(sampler, time, 3));
       }
       // 'weights' (morph targets) — deferred
     }

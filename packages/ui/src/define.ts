@@ -8,30 +8,37 @@ import {
 } from "@dalpeng/core";
 import { requireUI } from "./context";
 import type {
-  NodeDescriptor,
-  TextOpts,
   BarOpts,
+  BindingSource,
+  FloatingOpts,
+  ForOpts,
+  MenuItem,
+  NodeDescriptor,
   RangeOpts,
   SelectOption,
-  MenuItem,
-  BindingSource,
+  ShowOpts,
   SplitOpts,
   TabsOpts,
-  ForOpts,
-  ShowOpts,
-  FloatingOpts,
+  TextOpts,
 } from "./types";
 
 export function defineUI(setup: () => NodeDescriptor[]): () => UIDescriptor;
 export function defineUI<P>(setup: (props: P) => NodeDescriptor[]): (props: P) => UIDescriptor<P>;
 export function defineUI<P = void>(setup: (props?: P) => NodeDescriptor[]) {
-  return ((props?: P) =>
-    createUIDescriptor(setup as any, props as any)) as any;
+  return ((props?: P) => createUIDescriptor(setup as any, props as any)) as any;
 }
 
 export function Text(content: string, opts?: TextOpts): NodeDescriptor;
-export function Text<T>(source: Ref<T>, formatter: (v: T) => string, opts?: TextOpts): NodeDescriptor;
-export function Text(contentOrSource: string | Ref<any>, formatterOrOpts?: any, opts?: TextOpts): NodeDescriptor {
+export function Text<T>(
+  source: Ref<T>,
+  formatter: (v: T) => string,
+  opts?: TextOpts
+): NodeDescriptor;
+export function Text(
+  contentOrSource: string | Ref<any>,
+  formatterOrOpts?: any,
+  opts?: TextOpts
+): NodeDescriptor {
   if (typeof contentOrSource === "string") {
     return { type: "text", content: contentOrSource, opts: formatterOrOpts };
   }
@@ -40,7 +47,11 @@ export function Text(contentOrSource: string | Ref<any>, formatterOrOpts?: any, 
 
 export function Bar(opts: BarOpts): NodeDescriptor;
 export function Bar<T>(source: Ref<T>, formatter: (v: T) => number, opts: BarOpts): NodeDescriptor;
-export function Bar(sourceOrOpts: Ref<any> | BarOpts, formatter?: any, opts?: BarOpts): NodeDescriptor {
+export function Bar(
+  sourceOrOpts: Ref<any> | BarOpts,
+  formatter?: any,
+  opts?: BarOpts
+): NodeDescriptor {
   if (isRef(sourceOrOpts)) {
     return { type: "bar", source: sourceOrOpts, formatter, opts: opts! };
   }
@@ -62,7 +73,11 @@ export function Toggle(valueOrKey: Ref<boolean> | string, label: string): NodeDe
 
 export function Range(value: Ref<number>, label: string, opts: RangeOpts): NodeDescriptor;
 export function Range(featureKey: string, label: string, opts: RangeOpts): NodeDescriptor;
-export function Range(valueOrKey: Ref<number> | string, label: string, opts: RangeOpts): NodeDescriptor {
+export function Range(
+  valueOrKey: Ref<number> | string,
+  label: string,
+  opts: RangeOpts
+): NodeDescriptor {
   const source: BindingSource<number> = isRef(valueOrKey)
     ? { kind: "ref", ref: valueOrKey }
     : { kind: "feature", key: valueOrKey };
@@ -71,7 +86,11 @@ export function Range(valueOrKey: Ref<number> | string, label: string, opts: Ran
 
 export function Select(value: Ref<string>, label: string, options: SelectOption[]): NodeDescriptor;
 export function Select(featureKey: string, label: string, options: SelectOption[]): NodeDescriptor;
-export function Select(valueOrKey: Ref<string> | string, label: string, options: SelectOption[]): NodeDescriptor {
+export function Select(
+  valueOrKey: Ref<string> | string,
+  label: string,
+  options: SelectOption[]
+): NodeDescriptor {
   const source: BindingSource<string> = isRef(valueOrKey)
     ? { kind: "ref", ref: valueOrKey }
     : { kind: "feature", key: valueOrKey };

@@ -1,8 +1,8 @@
 import type Application from "@/Application";
-import type FrameResources from "@/rendering/FrameResources";
 import Light from "@/graphics/Light";
 import MeshRenderer from "@/graphics/MeshRenderer";
 import SkinnedMeshRenderer from "@/graphics/SkinnedMeshRenderer";
+import type FrameResources from "@/rendering/FrameResources";
 import { Mat4, Vec3 } from "@dalpeng/math";
 
 /** Directional shadow system using scene-based auto-fitting. */
@@ -149,10 +149,7 @@ export default class DirectionalShadowSystem {
     resources.shadow.depth.bind(shadowUnit);
     shader.setUniformMat4("uLightViewProj", this.lastLightVP);
     shader.setUniform1f("uShadowBias", app.features.shadowBias ?? 0.005);
-    shader.setUniform1f(
-      "uShadowSlopeScale",
-      Math.max(0.0, app.features.shadowSlopeScale ?? 1.0)
-    );
+    shader.setUniform1f("uShadowSlopeScale", Math.max(0.0, app.features.shadowSlopeScale ?? 1.0));
     shader.setUniform1f(
       "uShadowStrength",
       Math.max(0.0, Math.min(1.0, app.features.shadowStrength ?? 1.0))

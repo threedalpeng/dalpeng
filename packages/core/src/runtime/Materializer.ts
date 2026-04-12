@@ -8,11 +8,7 @@ import {
   type LogicalDescriptor,
   type UIDescriptor,
 } from "./Descriptor";
-import {
-  INSTANCE_KIND,
-  type GameInstance,
-  type UIInstance,
-} from "./Instance";
+import { INSTANCE_KIND, type GameInstance, type UIInstance } from "./Instance";
 import type { ProjectionContext } from "./ProjectionContext";
 
 export interface MaterializerHooks {
@@ -32,7 +28,7 @@ export class Materializer {
 
   materializeRoots(
     scene: Scene,
-    rootDescriptors: readonly LogicalDescriptor[],
+    rootDescriptors: readonly LogicalDescriptor[]
   ): { gameInstances: GameInstance[]; uiInstances: UIInstance[] } {
     const gameInstances: GameInstance[] = [];
     const uiInstances: UIInstance[] = [];
@@ -49,7 +45,7 @@ export class Materializer {
 
   materialize(
     descriptor: LogicalDescriptor,
-    parent: GameInstance | Scene,
+    parent: GameInstance | Scene
   ): GameInstance | UIInstance {
     if (isGameDescriptor(descriptor)) {
       return this.#materializeGame(descriptor, parent);
@@ -58,14 +54,11 @@ export class Materializer {
       return this.#materializeUI(descriptor, parent);
     }
     throw new Error(
-      `Materializer: unknown descriptor kind. Expected game or ui, got ${JSON.stringify(descriptor)}`,
+      `Materializer: unknown descriptor kind. Expected game or ui, got ${JSON.stringify(descriptor)}`
     );
   }
 
-  #materializeGame(
-    descriptor: GameDescriptor,
-    parent: GameInstance | Scene,
-  ): GameInstance {
+  #materializeGame(descriptor: GameDescriptor, parent: GameInstance | Scene): GameInstance {
     const entity = this.#hooks.createGameEntity(parent);
 
     const instance: GameInstance = {
@@ -102,17 +95,14 @@ export class Materializer {
     return instance;
   }
 
-  #materializeUI(
-    descriptor: UIDescriptor,
-    parent: GameInstance | Scene,
-  ): UIInstance {
+  #materializeUI(descriptor: UIDescriptor, parent: GameInstance | Scene): UIInstance {
     const renderer = this.#app.getUIRenderer();
     if (!renderer) {
       throw new Error(
         "Materializer: no UI renderer registered for this Application. " +
           "Call `app.registerUIRenderer(domUIRenderer)` before materialising " +
           "any UI descriptor. The dalpeng `runApp` wrapper does this " +
-          "automatically; standalone Application users must register manually.",
+          "automatically; standalone Application users must register manually."
       );
     }
 

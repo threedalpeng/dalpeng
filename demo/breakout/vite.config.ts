@@ -1,6 +1,6 @@
+import { devtools } from "@dalpeng/devtools-vite";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
-import { devtools } from "@dalpeng/devtools-vite";
 
 export default defineConfig({
   plugins: [devtools()],

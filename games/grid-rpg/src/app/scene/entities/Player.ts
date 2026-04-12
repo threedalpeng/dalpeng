@@ -1,21 +1,21 @@
-import { vec3 } from "@dalpeng/math";
-import { Sprite2DRenderer, SpriteAnimator, SpriteAtlas } from "@dalpeng/core";
 import type { SpriteAnimationClip } from "@dalpeng/core";
+import { Sprite2DRenderer, SpriteAnimator, SpriteAtlas } from "@dalpeng/core";
+import { vec3 } from "@dalpeng/math";
 import {
   defineGameEntity,
-  Transform,
+  onStart,
+  onUpdate,
   Time,
+  Transform,
   useComponent,
   useInput,
   useSceneSwitch,
   useTriggerZone,
-  onStart,
-  onUpdate,
   withName,
   withTag,
 } from "dalpeng";
-import { tileCollider } from "../shared";
 import FieldScene from "../FieldScene";
+import { tileCollider } from "../shared";
 
 const MOVE_SPEED = 4;
 const SPRITE_URL = "/assets/sprites/player.png";
@@ -57,19 +57,14 @@ export default defineGameEntity(() => {
   let facing = "down";
   let exitTriggered = false;
 
-  useTriggerZone(
-    () => tileCollider,
-    0.35,
-    0.35,
-    {
-      onEnter: (zone) => {
-        if (zone.type === "trigger" && !exitTriggered) {
-          exitTriggered = true;
-          sceneSwitch.switchTo(FieldScene, { type: "fade", duration: 400 });
-        }
-      },
+  useTriggerZone(() => tileCollider, 0.35, 0.35, {
+    onEnter: (zone) => {
+      if (zone.type === "trigger" && !exitTriggered) {
+        exitTriggered = true;
+        sceneSwitch.switchTo(FieldScene, { type: "fade", duration: 400 });
+      }
     },
-  );
+  });
 
   onStart(async () => {
     try {

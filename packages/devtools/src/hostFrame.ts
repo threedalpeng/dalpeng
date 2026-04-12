@@ -67,11 +67,7 @@ export class DevToolsRootHost {
   #poppedWindow: Window | null = null;
   #onPopupBeforeUnload: (() => void) | null = null;
 
-  constructor(
-    app: Application,
-    registry: PluginRegistry,
-    opts: DevToolsRootHostOptions = {},
-  ) {
+  constructor(app: Application, registry: PluginRegistry, opts: DevToolsRootHostOptions = {}) {
     this.#app = app;
     this.#registry = registry;
     this.#ownerDoc = opts.ownerDoc ?? document;
@@ -91,7 +87,7 @@ export class DevToolsRootHost {
     this.#unwatchPanels = watch(
       this.#registry.panels,
       (panels) => this.#syncWorkspaceWithPanels(panels),
-      { immediate: true },
+      { immediate: true }
     );
 
     this.#unwatchSettings.push(
@@ -105,7 +101,7 @@ export class DevToolsRootHost {
         this.#tabsActiveRefs.clear();
         this.#splitSizesRefs.clear();
         this.#mountHostUI();
-      }),
+      })
     );
   }
 
@@ -113,8 +109,7 @@ export class DevToolsRootHost {
     return {
       background: "var(--dt-bg)",
       color: "var(--dt-fg)",
-      fontFamily:
-        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+      fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
       fontSize: "var(--dt-font-size)",
       display: "flex",
       flexDirection: "column",
@@ -137,7 +132,7 @@ export class DevToolsRootHost {
     applySizingVariables(
       this.#rootDiv,
       this.#settings.fontSize.value,
-      this.#settings.density.value,
+      this.#settings.density.value
     );
   }
 
@@ -223,9 +218,7 @@ export class DevToolsRootHost {
   }
 
   #findPanel(key: string): RegisteredPanel | null {
-    return (
-      this.#registry.panels.value.find((p) => p.key === key) ?? null
-    );
+    return this.#registry.panels.value.find((p) => p.key === key) ?? null;
   }
 
   #mountHostUI(): void {
@@ -254,30 +247,18 @@ export class DevToolsRootHost {
   }
 
   #defineHostFrame(): UIDescriptor {
-    const self = this;
+    const emptyPanel = (): UIDescriptor =>
+      defineUI(() => [Text("(missing panel)")])();
 
-    function renderLayout(node: LayoutNode): UIDescriptor {
-      if (node.kind === "split") return renderSplit(node);
-      return renderTabs(node);
-    }
-
-    function renderSplit(node: SplitNode): UIDescriptor {
-      const sizes = self.#getSizesRef(node);
-      const slots = node.children.map((c) => renderLayout(c));
-      return defineUI(() => [
-        Split({ direction: node.direction, sizes, slots }),
-      ])();
-    }
-
-    function renderTabs(node: TabsNode): UIDescriptor {
-      const active = self.#getActiveRef(node);
+    const renderTabs = (node: TabsNode): UIDescriptor => {
+      const active = this.#getActiveRef(node);
       const tabsRef: ReadonlyRef<TabSpec[]> = computed(() => {
         const out: TabSpec[] = [];
         for (const key of node.panelKeys) {
-          const reg = self.#findPanel(key);
+          const reg = this.#findPanel(key);
           out.push({
             id: key,
-            title: reg ? reg.panel.title : key.split(":").pop() ?? key,
+            title: reg ? reg.panel.title : (key.split(":").pop() ?? key),
             body: reg ? reg.panel.ui() : emptyPanel(),
           });
         }
@@ -287,17 +268,22 @@ export class DevToolsRootHost {
         Tabs({
           tabs: tabsRef,
           active,
-          onDragStart: (panelKey, ev) => self.#beginTabDrag(panelKey, ev),
+          onDragStart: (panelKey, ev) => this.#beginTabDrag(panelKey, ev),
           dataAttrs: { devtoolsTabs: node.id },
         }),
       ])();
-    }
+    };
 
-    function emptyPanel(): UIDescriptor {
-      return defineUI(() => [Text("(missing panel)")])();
-    }
+    const renderLayout = (node: LayoutNode): UIDescriptor => {
+      if (node.kind === "split") {
+        const sizes = this.#getSizesRef(node);
+        const slots = node.children.map((c) => renderLayout(c));
+        return defineUI(() => [Split({ direction: node.direction, sizes, slots })])();
+      }
+      return renderTabs(node);
+    };
 
-    const footerEl = self.#buildFooterElement();
+    const footerEl = this.#buildFooterElement();
 
     const SettingsPopover = defineUI(() => {
       const themes = listThemes();
@@ -311,7 +297,7 @@ export class DevToolsRootHost {
                 type: "button",
                 label: name,
                 onClick: () => {
-                  self.#settings.theme.value = name as never;
+                  this.#settings.theme.value = name as never;
                 },
               },
             ])(),
@@ -325,7 +311,7 @@ export class DevToolsRootHost {
                 type: "button",
                 label: name,
                 onClick: () => {
-                  self.#settings.fontSize.value = name as never;
+                  this.#settings.fontSize.value = name as never;
                 },
               },
             ])(),
@@ -339,7 +325,7 @@ export class DevToolsRootHost {
                 type: "button",
                 label: name,
                 onClick: () => {
-                  self.#settings.density.value = name as never;
+                  this.#settings.density.value = name as never;
                 },
               },
             ])(),
@@ -348,7 +334,7 @@ export class DevToolsRootHost {
     });
 
     return defineUI(() => {
-      const ws = self.#settings.workspace.value;
+      const ws = this.#settings.workspace.value;
       const workspaceNode: NodeDescriptor = {
         type: "ui",
         descriptor: renderLayout(ws.main),
@@ -359,7 +345,7 @@ export class DevToolsRootHost {
       };
       const popoverNode = Floating({
         body: SettingsPopover(),
-        visible: self.#settingsPopoverOpen,
+        visible: this.#settingsPopoverOpen,
         x: 12,
         y: 60,
         closeOnEsc: true,
@@ -414,15 +400,12 @@ export class DevToolsRootHost {
       this.#settingsPopoverOpen.value = !this.#settingsPopoverOpen.value;
     });
     const flipBtn = btn("⇤", "Flip dock side", () => {
-      this.#settings.side.value =
-        this.#settings.side.value === "right" ? "left" : "right";
+      this.#settings.side.value = this.#settings.side.value === "right" ? "left" : "right";
     });
     const updateFlipLabel = () => {
       const onRight = this.#settings.side.value === "right";
       flipBtn.textContent = onRight ? "⇤" : "⇥";
-      flipBtn.title = onRight
-        ? "Move dock to left side"
-        : "Move dock to right side";
+      flipBtn.title = onRight ? "Move dock to left side" : "Move dock to right side";
     };
     updateFlipLabel();
     this.#unwatchSettings.push(watch(this.#settings.side, updateFlipLabel));
@@ -475,10 +458,7 @@ export class DevToolsRootHost {
 
       // elementsFromPoint returns a z-ordered list; walk it to find the
       // nearest ancestor with a devtoolsTabs dataset attribute.
-      const targets = this.#ownerDoc.elementsFromPoint(
-        upEv.clientX,
-        upEv.clientY,
-      );
+      const targets = this.#ownerDoc.elementsFromPoint(upEv.clientX, upEv.clientY);
       let targetEl: HTMLElement | null = null;
       for (const el of targets) {
         const e = el as HTMLElement;
@@ -506,11 +486,7 @@ export class DevToolsRootHost {
       if (targetTabsId === sourceTabs.id) return;
 
       const rect = targetEl.getBoundingClientRect();
-      const zone = this.#computeDropZone(
-        upEv.clientX,
-        upEv.clientY,
-        rect,
-      );
+      const zone = this.#computeDropZone(upEv.clientX, upEv.clientY, rect);
 
       removePanel(ws, panelKey);
       dropPanelOnTabs(ws, panelKey, targetTabsId, zone);
@@ -521,11 +497,7 @@ export class DevToolsRootHost {
     window.addEventListener("mouseup", onUp);
   }
 
-  #computeDropZone(
-    cx: number,
-    cy: number,
-    rect: DOMRect,
-  ): DropZone {
+  #computeDropZone(cx: number, cy: number, rect: DOMRect): DropZone {
     // Normalise cursor to [0,1] within the target rect.
     const x = (cx - rect.left) / rect.width;
     const y = (cy - rect.top) / rect.height;
@@ -581,7 +553,7 @@ export class DevToolsRootHost {
     const popup = window.open(
       "about:blank",
       "dalpeng-devtools",
-      `width=${width},height=${height},resizable=yes,scrollbars=no`,
+      `width=${width},height=${height},resizable=yes,scrollbars=no`
     );
     if (!popup) return null;
     popup.document.title = "Dalpeng DevTools";
@@ -623,10 +595,7 @@ export class DevToolsRootHost {
     this.#unmountHostUI();
     if (this.#poppedWindow && !this.#poppedWindow.closed) {
       if (this.#onPopupBeforeUnload) {
-        this.#poppedWindow.removeEventListener(
-          "beforeunload",
-          this.#onPopupBeforeUnload,
-        );
+        this.#poppedWindow.removeEventListener("beforeunload", this.#onPopupBeforeUnload);
       }
       this.#poppedWindow.close();
       this.#poppedWindow = null;

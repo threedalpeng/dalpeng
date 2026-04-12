@@ -94,9 +94,7 @@ export default class FrameProfiler {
   }
 
   static getLastFrame(): FrameStats | null {
-    return this.#history.length > 0
-      ? this.#history[this.#history.length - 1]
-      : null;
+    return this.#history.length > 0 ? this.#history[this.#history.length - 1] : null;
   }
 
   static getHistory(): readonly FrameStats[] {

@@ -1,5 +1,5 @@
-import { CameraFollow2D } from "@dalpeng/core";
 import type { GameEntity } from "@dalpeng/core";
+import { CameraFollow2D } from "@dalpeng/core";
 import { useComponent } from "./gameEntity";
 
 export interface CameraFollow2DOptions {
@@ -21,7 +21,7 @@ export interface CameraFollow2DOptions {
  */
 export function useCameraFollow(
   targetFn: () => GameEntity | null,
-  options?: CameraFollow2DOptions,
+  options?: CameraFollow2DOptions
 ): CameraFollow2D {
   const follow = useComponent(CameraFollow2D, (comp) => {
     if (options?.lerpFactor !== undefined) comp.lerpFactor = options.lerpFactor;

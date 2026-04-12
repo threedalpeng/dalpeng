@@ -33,8 +33,8 @@ export default defineGameEntity(() => {
 
     const scene = t.gameEntity.scene;
     if (scene && !leftPaddle) {
-      leftPaddle = scene.findByTag("paddle-left")[0]?.getComponent(Transform)!;
-      rightPaddle = scene.findByTag("paddle-right")[0]?.getComponent(Transform)!;
+      leftPaddle = scene.findByTag("paddle-left")[0]?.getComponent(Transform) ?? null;
+      rightPaddle = scene.findByTag("paddle-right")[0]?.getComponent(Transform) ?? null;
     }
 
     const radius = t.scale.x * 0.5;

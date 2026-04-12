@@ -60,12 +60,10 @@ export function createTabs(panelKeys: string[]): TabsNode {
 export function createSplit(
   direction: SplitDirection,
   children: LayoutNode[],
-  sizes?: number[],
+  sizes?: number[]
 ): SplitNode {
   const sz =
-    sizes && sizes.length === children.length
-      ? [...sizes]
-      : new Array(children.length).fill(1);
+    sizes && sizes.length === children.length ? [...sizes] : new Array(children.length).fill(1);
   return {
     kind: "split",
     id: nextId("s"),
@@ -82,17 +80,14 @@ export function defaultWorkspace(): Workspace {
       "col",
       [
         createTabs(["@dalpeng/devtools/scene:scene"]),
-        createTabs([
-          "@dalpeng/devtools/scene:inspector",
-          "@dalpeng/devtools/render:render",
-        ]),
+        createTabs(["@dalpeng/devtools/scene:inspector", "@dalpeng/devtools/render:render"]),
         createTabs([
           "@dalpeng/devtools/console:console",
           "@dalpeng/devtools/performance:perf",
           "@dalpeng/devtools/layers:layers",
         ]),
       ],
-      [200, 280, 240],
+      [200, 280, 240]
     ),
     floating: [],
     mainPoppedOut: false,
@@ -103,7 +98,7 @@ export function walk(
   node: LayoutNode,
   visit: (n: LayoutNode, parent: SplitNode | null, idxInParent: number) => void,
   parent: SplitNode | null = null,
-  idxInParent = 0,
+  idxInParent = 0
 ): void {
   visit(node, parent, idxInParent);
   if (node.kind === "split") {
@@ -114,7 +109,7 @@ export function walk(
 /** Walk every layout root in the workspace (main + each floating window). */
 export function walkWorkspace(
   ws: Workspace,
-  visit: (n: LayoutNode, parent: SplitNode | null, idxInParent: number) => void,
+  visit: (n: LayoutNode, parent: SplitNode | null, idxInParent: number) => void
 ): void {
   walk(ws.main, visit);
   for (const f of ws.floating) walk(f.layout, visit);
@@ -130,10 +125,7 @@ export function collectAllKeys(ws: Workspace): Set<string> {
 }
 
 /** Find the `TabsNode` containing a given panel key, anywhere in the workspace. */
-export function findTabsForPanel(
-  ws: Workspace,
-  panelKey: string,
-): TabsNode | null {
+export function findTabsForPanel(ws: Workspace, panelKey: string): TabsNode | null {
   let found: TabsNode | null = null;
   walkWorkspace(ws, (n) => {
     if (found) return;
@@ -145,7 +137,7 @@ export function findTabsForPanel(
 /** Find a tabs node by id. */
 export function findTabsById(
   ws: Workspace,
-  id: string,
+  id: string
 ): { node: TabsNode; root: "main" | string } | null {
   let result: { node: TabsNode; root: "main" | string } | null = null;
   const search = (n: LayoutNode, root: "main" | string): boolean => {
@@ -193,7 +185,7 @@ export function removePanel(ws: Workspace, panelKey: string): string | null {
 
 function _removePanelRec(
   node: LayoutNode,
-  panelKey: string,
+  panelKey: string
 ): { newRoot: LayoutNode; removed: boolean } {
   if (node.kind === "tabs") {
     const idx = node.panelKeys.indexOf(panelKey);
@@ -247,10 +239,9 @@ export function dropPanelOnTabs(
   ws: Workspace,
   panelKey: string,
   targetTabsId: string,
-  zone: DropZone,
+  zone: DropZone
 ): void {
-  const insertInto = (root: LayoutNode): LayoutNode =>
-    _dropRec(root, panelKey, targetTabsId, zone);
+  const insertInto = (root: LayoutNode): LayoutNode => _dropRec(root, panelKey, targetTabsId, zone);
   const beforeMain = JSON.stringify(ws.main);
   ws.main = insertInto(ws.main);
   if (JSON.stringify(ws.main) !== beforeMain) return;
@@ -265,7 +256,7 @@ function _dropRec(
   node: LayoutNode,
   panelKey: string,
   targetId: string,
-  zone: DropZone,
+  zone: DropZone
 ): LayoutNode {
   if (node.kind === "tabs") {
     if (node.id !== targetId) return node;
@@ -275,8 +266,7 @@ function _dropRec(
     }
     // Edge drop — wrap target in a new split with a fresh single-tab group.
     const newTabs = createTabs([panelKey]);
-    const direction: SplitDirection =
-      zone === "left" || zone === "right" ? "row" : "col";
+    const direction: SplitDirection = zone === "left" || zone === "right" ? "row" : "col";
     const newFirst = zone === "left" || zone === "top" ? newTabs : node;
     const newSecond = zone === "left" || zone === "top" ? node : newTabs;
     return createSplit(direction, [newFirst, newSecond], [1, 1]);
@@ -298,7 +288,7 @@ function _dropRec(
 export function ensurePanelInWorkspace(
   ws: Workspace,
   panelKey: string,
-  fallbackZone: DropZone = "center",
+  fallbackZone: DropZone = "center"
 ): void {
   if (findTabsForPanel(ws, panelKey)) return;
   let target: TabsNode | null = null;
@@ -325,7 +315,7 @@ export function detachPanelToFloating(
   x: number,
   y: number,
   width = 360,
-  height = 320,
+  height = 320
 ): FloatingWindow | null {
   if (!findTabsForPanel(ws, panelKey)) return null;
   removePanel(ws, panelKey);
@@ -346,7 +336,7 @@ export function resizeSplitChildren(
   split: SplitNode,
   idx: number,
   newFirstSize: number,
-  newSecondSize: number,
+  newSecondSize: number
 ): void {
   if (idx < 0 || idx >= split.sizes.length - 1) return;
   split.sizes[idx] = newFirstSize;

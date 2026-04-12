@@ -1,6 +1,6 @@
+import { isNil } from "../utils/basic.js";
 import Entity from "./Entity.js";
 import type GameEntity from "./GameEntity.js";
-import { isNil } from "../utils/basic.js";
 
 export type ComponentConstructor<Type extends Component> = new (gameEntity: GameEntity) => Type;
 type ComponentGroup<Type extends Component> = Map<number, Type[]>;

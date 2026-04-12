@@ -12,10 +12,7 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 export function consolePlugin(): DevToolsPlugin {
@@ -24,8 +21,7 @@ export function consolePlugin(): DevToolsPlugin {
   const container = document.createElement("div");
   container.style.cssText =
     "font-family:inherit;font-size:11px;line-height:1.5;max-height:100%;overflow:auto";
-  container.innerHTML =
-    '<div style="color:#6b7280">no log entries yet</div>';
+  container.innerHTML = '<div style="color:#6b7280">no log entries yet</div>';
 
   const cleanups = new Set<() => void>();
   const liveNode: NodeDescriptor = { type: "live", element: container, cleanups };
@@ -39,8 +35,7 @@ export function consolePlugin(): DevToolsPlugin {
         host.logs,
         (entries) => {
           if (entries.length === 0) {
-            container.innerHTML =
-              '<div style="color:#6b7280">no log entries yet</div>';
+            container.innerHTML = '<div style="color:#6b7280">no log entries yet</div>';
             return;
           }
           const rows = entries
@@ -54,7 +49,7 @@ export function consolePlugin(): DevToolsPlugin {
           container.innerHTML = rows;
           container.scrollTop = container.scrollHeight;
         },
-        { immediate: true },
+        { immediate: true }
       );
       cleanups.add(unwatch);
       return () => {

@@ -67,8 +67,7 @@ export default class Tween {
     if (effectiveTime < 0) return true; // still in delay
 
     // Handle zero duration: jump immediately to completion
-    const progress =
-      this.duration <= 0 ? 1 : Math.min(effectiveTime / this.duration, 1);
+    const progress = this.duration <= 0 ? 1 : Math.min(effectiveTime / this.duration, 1);
     const easedProgress = this.easing(progress);
 
     // Interpolate all properties

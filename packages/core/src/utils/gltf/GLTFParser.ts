@@ -1,28 +1,22 @@
 import type { GLTF } from "./gltf";
 import type {
+  ParsedAnimation,
+  ParsedAnimationChannel,
+  ParsedAnimationSampler,
+  ParsedCamera,
   ParsedGLTFDocument,
   ParsedImage,
+  ParsedLight,
   ParsedMaterial,
   ParsedMesh,
   ParsedNode,
   ParsedPrimitive,
-  ParsedCamera,
-  ParsedLight,
-  ParsedTexTransform,
   ParsedSkin,
-  ParsedAnimation,
-  ParsedAnimationChannel,
-  ParsedAnimationSampler,
   ParsedSkinVertexData,
+  ParsedTexTransform,
 } from "./GLTFDocument";
 
-type TypedArray =
-  | Int8Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Uint32Array
-  | Float32Array;
+type TypedArray = Int8Array | Uint8Array | Int16Array | Uint16Array | Uint32Array | Float32Array;
 
 interface ResolvedAccessor {
   data: TypedArray;
@@ -101,7 +95,7 @@ function getTypedArrayConstructor(componentType: number): TypedArrayConstructor 
 function resolveAccessor(
   json: GLTF,
   buffers: ArrayBuffer[],
-  accessorIndex: number,
+  accessorIndex: number
 ): ResolvedAccessor {
   const accessor = json.accessors![accessorIndex];
   const componentCount = getComponentCount(accessor.type);
@@ -157,10 +151,9 @@ function resolveAccessor(
     const valuesBV = json.bufferViews![sparse.values.bufferView];
     const valuesBuffer = buffers[valuesBV.buffer];
     const valuesOffset = (valuesBV.byteOffset ?? 0) + (sparse.values.byteOffset ?? 0);
-    const valuesByteLen = sparse.count * componentCount * getBytesPerComponent(accessor.componentType);
-    const sparseValues = new Ctor(
-      valuesBuffer.slice(valuesOffset, valuesOffset + valuesByteLen)
-    );
+    const valuesByteLen =
+      sparse.count * componentCount * getBytesPerComponent(accessor.componentType);
+    const sparseValues = new Ctor(valuesBuffer.slice(valuesOffset, valuesOffset + valuesByteLen));
 
     for (let i = 0; i < sparse.count; i++) {
       const targetIndex = sparseIndices[i];
@@ -179,48 +172,35 @@ function parseMeshes(json: GLTF, buffers: ArrayBuffer[]): ParsedMesh[] {
   return json.meshes.map((mesh, i) => {
     const name = mesh.name ?? `mesh_${i}`;
     const primitives: ParsedPrimitive[] = mesh.primitives.map((prim) => {
-      const positionAccessor = resolveAccessor(
-        json,
-        buffers,
-        prim.attributes["POSITION"],
-      );
+      const positionAccessor = resolveAccessor(json, buffers, prim.attributes["POSITION"]);
       const position = positionAccessor.data as Float32Array;
 
       let normal: Float32Array | null = null;
       if (prim.attributes["NORMAL"] !== undefined) {
-        normal = resolveAccessor(json, buffers, prim.attributes["NORMAL"])
-          .data as Float32Array;
+        normal = resolveAccessor(json, buffers, prim.attributes["NORMAL"]).data as Float32Array;
       }
 
       let texcoord: Float32Array | null = null;
       if (prim.attributes["TEXCOORD_0"] !== undefined) {
-        texcoord = resolveAccessor(
-          json,
-          buffers,
-          prim.attributes["TEXCOORD_0"],
-        ).data as Float32Array;
+        texcoord = resolveAccessor(json, buffers, prim.attributes["TEXCOORD_0"])
+          .data as Float32Array;
       }
 
       let tangent: Float32Array | null = null;
       if (prim.attributes["TANGENT"] !== undefined) {
-        tangent = resolveAccessor(json, buffers, prim.attributes["TANGENT"])
-          .data as Float32Array;
+        tangent = resolveAccessor(json, buffers, prim.attributes["TANGENT"]).data as Float32Array;
       }
 
       let texcoord1: Float32Array | null = null;
       if (prim.attributes["TEXCOORD_1"] !== undefined) {
-        texcoord1 = resolveAccessor(
-          json,
-          buffers,
-          prim.attributes["TEXCOORD_1"],
-        ).data as Float32Array;
+        texcoord1 = resolveAccessor(json, buffers, prim.attributes["TEXCOORD_1"])
+          .data as Float32Array;
       }
 
       let skinData: ParsedSkinVertexData | null = null;
-      if (prim.attributes['JOINTS_0'] !== undefined &&
-          prim.attributes['WEIGHTS_0'] !== undefined) {
-        const jointsResolved = resolveAccessor(json, buffers, prim.attributes['JOINTS_0']);
-        const weightsResolved = resolveAccessor(json, buffers, prim.attributes['WEIGHTS_0']);
+      if (prim.attributes["JOINTS_0"] !== undefined && prim.attributes["WEIGHTS_0"] !== undefined) {
+        const jointsResolved = resolveAccessor(json, buffers, prim.attributes["JOINTS_0"]);
+        const weightsResolved = resolveAccessor(json, buffers, prim.attributes["WEIGHTS_0"]);
         skinData = {
           joints: jointsResolved.data as Uint8Array | Uint16Array,
           weights: weightsResolved.data as Float32Array,
@@ -241,7 +221,17 @@ function parseMeshes(json: GLTF, buffers: ArrayBuffer[]): ParsedMesh[] {
       const materialIndex = prim.material ?? null;
       const mode = prim.mode ?? 4;
 
-      return { position, normal, texcoord, texcoord1, tangent, indices, materialIndex, mode, skinData };
+      return {
+        position,
+        normal,
+        texcoord,
+        texcoord1,
+        tangent,
+        indices,
+        materialIndex,
+        mode,
+        skinData,
+      };
     });
 
     return { name, primitives };
@@ -274,8 +264,7 @@ function parseMaterials(json: GLTF): ParsedMaterial[] {
       baseColorTextureIndex: pbr?.baseColorTexture?.index ?? null,
       normalTextureIndex: mat.normalTexture?.index ?? null,
       normalTextureScale: mat.normalTexture?.scale ?? 1.0,
-      metallicRoughnessTextureIndex:
-        pbr?.metallicRoughnessTexture?.index ?? null,
+      metallicRoughnessTextureIndex: pbr?.metallicRoughnessTexture?.index ?? null,
       emissiveTextureIndex: mat.emissiveTexture?.index ?? null,
       occlusionTextureIndex: mat.occlusionTexture?.index ?? null,
       occlusionStrength: mat.occlusionTexture?.strength ?? 1.0,
@@ -309,7 +298,7 @@ function dataURIToArrayBuffer(dataURI: string): {
 async function parseImages(
   json: GLTF,
   buffers: ArrayBuffer[],
-  baseURL?: string,
+  baseURL?: string
 ): Promise<ParsedImage[]> {
   if (!json.images) return [];
 
@@ -333,18 +322,13 @@ async function parseImages(
           const fetchURL = baseURL ? new URL(uri, baseURL).href : uri;
           const response = await fetch(fetchURL);
           const data = await response.arrayBuffer();
-          const mimeType =
-            response.headers.get("Content-Type") ??
-            img.mimeType ??
-            "image/png";
+          const mimeType = response.headers.get("Content-Type") ?? img.mimeType ?? "image/png";
           return { name, mimeType, data };
         }
       } else {
-        throw new Error(
-          `[GLTFParser] Image at index ${i} has neither bufferView nor uri.`,
-        );
+        throw new Error(`[GLTFParser] Image at index ${i} has neither bufferView nor uri.`);
       }
-    }),
+    })
   );
 }
 
@@ -370,9 +354,15 @@ function matrixToTRS(matrix: number[]): {
   //                      r[3]=m[4]/sy, r[4]=m[5]/sy, r[5]=m[6]/sy (col 1)
   //                      r[6]=m[8]/sz, r[7]=m[9]/sz, r[8]=m[10]/sz (col 2)
   const r = [
-    m[0] / sx,  m[1] / sx,  m[2] / sx,
-    m[4] / sy,  m[5] / sy,  m[6] / sy,
-    m[8] / sz,  m[9] / sz,  m[10] / sz,
+    m[0] / sx,
+    m[1] / sx,
+    m[2] / sx,
+    m[4] / sy,
+    m[5] / sy,
+    m[6] / sy,
+    m[8] / sz,
+    m[9] / sz,
+    m[10] / sz,
   ];
 
   // Shepperd's method: quaternion from rotation matrix
@@ -488,13 +478,21 @@ function parseNodes(json: GLTF): ParsedNode[] {
     }
 
     const skinIndex = node.skin ?? null;
-    return { name, translation, rotation, scale, meshIndex, cameraIndex, lightIndex, children, skinIndex };
+    return {
+      name,
+      translation,
+      rotation,
+      scale,
+      meshIndex,
+      cameraIndex,
+      lightIndex,
+      children,
+      skinIndex,
+    };
   });
 }
 
-function parseTextures(
-  json: GLTF,
-): Array<{ imageIndex: number; samplerIndex: number | null }> {
+function parseTextures(json: GLTF): Array<{ imageIndex: number; samplerIndex: number | null }> {
   if (!json.textures) return [];
 
   return json.textures.map((tex) => ({
@@ -537,15 +535,15 @@ function parseAnimations(json: GLTF, buffers: ArrayBuffer[]): ParsedAnimation[] 
     const samplers: ParsedAnimationSampler[] = anim.samplers.map((s) => {
       const input = resolveAccessor(json, buffers, s.input).data as Float32Array;
       const output = resolveAccessor(json, buffers, s.output).data as Float32Array;
-      const interpolation = (s.interpolation ?? 'LINEAR') as 'STEP' | 'LINEAR' | 'CUBICSPLINE';
+      const interpolation = (s.interpolation ?? "LINEAR") as "STEP" | "LINEAR" | "CUBICSPLINE";
       return { input, output, interpolation };
     });
 
     const channels: ParsedAnimationChannel[] = anim.channels
-      .filter(c => c.target.node !== undefined)
+      .filter((c) => c.target.node !== undefined)
       .map((c) => ({
         nodeIndex: c.target.node!,
-        path: c.target.path as 'translation' | 'rotation' | 'scale' | 'weights',
+        path: c.target.path as "translation" | "rotation" | "scale" | "weights",
         samplerIndex: c.sampler,
       }));
 
@@ -564,7 +562,7 @@ function parseAnimations(json: GLTF, buffers: ArrayBuffer[]): ParsedAnimation[] 
 async function parse(
   json: GLTF,
   buffers: ArrayBuffer[],
-  baseURL?: string,
+  baseURL?: string
 ): Promise<ParsedGLTFDocument> {
   const meshes = parseMeshes(json, buffers);
   const materials = parseMaterials(json);
@@ -580,7 +578,18 @@ async function parse(
   const sceneDesc = json.scenes?.[defaultScene];
   const defaultSceneRootNodes = sceneDesc?.nodes ?? [];
 
-  return { nodes, meshes, materials, images, textures, cameras, lights, defaultSceneRootNodes, skins, animations };
+  return {
+    nodes,
+    meshes,
+    materials,
+    images,
+    textures,
+    cameras,
+    lights,
+    defaultSceneRootNodes,
+    skins,
+    animations,
+  };
 }
 
 export class GLTFParser {
@@ -611,13 +620,11 @@ export class GLTFParser {
 
     if (magic !== GLB_MAGIC) {
       throw new Error(
-        `[GLTFParser] Invalid GLB magic: expected 0x${GLB_MAGIC.toString(16)}, got 0x${magic.toString(16)}`,
+        `[GLTFParser] Invalid GLB magic: expected 0x${GLB_MAGIC.toString(16)}, got 0x${magic.toString(16)}`
       );
     }
     if (version !== GLB_VERSION) {
-      throw new Error(
-        `[GLTFParser] Unsupported GLB version: ${version}. Expected ${GLB_VERSION}.`,
-      );
+      throw new Error(`[GLTFParser] Unsupported GLB version: ${version}. Expected ${GLB_VERSION}.`);
     }
 
     let json: GLTF | null = null;

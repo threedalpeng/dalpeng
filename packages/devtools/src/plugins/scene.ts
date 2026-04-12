@@ -13,10 +13,7 @@ function entityLabel(e: GameEntity): string {
 }
 
 function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 export function scenePlugin(): DevToolsPlugin {
@@ -27,10 +24,8 @@ export function scenePlugin(): DevToolsPlugin {
     "font-family:inherit;font-size:11px;line-height:1.6;max-height:100%;overflow:auto";
 
   const inspectorContainer = document.createElement("div");
-  inspectorContainer.style.cssText =
-    "font-family:inherit;font-size:11px;line-height:1.5";
-  inspectorContainer.innerHTML =
-    '<div style="color:#6b7280">no entity selected</div>';
+  inspectorContainer.style.cssText = "font-family:inherit;font-size:11px;line-height:1.5";
+  inspectorContainer.innerHTML = '<div style="color:#6b7280">no entity selected</div>';
 
   const treeNode: NodeDescriptor = {
     type: "live",
@@ -45,8 +40,7 @@ export function scenePlugin(): DevToolsPlugin {
 
   function renderInspector(entity: GameEntity | null): void {
     if (!entity) {
-      inspectorContainer.innerHTML =
-        '<div style="color:#6b7280">no entity selected</div>';
+      inspectorContainer.innerHTML = '<div style="color:#6b7280">no entity selected</div>';
       return;
     }
     const components = entity.getAllComponents();
@@ -55,9 +49,7 @@ export function scenePlugin(): DevToolsPlugin {
         const typeName = c.constructor.name;
         // Avoid JSON.stringify — components may hold cyclic refs (e.g. `gameEntity` back-pointer).
         const fields = Object.getOwnPropertyNames(c)
-          .filter(
-            (k) => !k.startsWith("_") && !k.startsWith("#") && k !== "gameEntity",
-          )
+          .filter((k) => !k.startsWith("_") && !k.startsWith("#") && k !== "gameEntity")
           .slice(0, 8)
           .map((k) => {
             const v = (c as unknown as Record<string, unknown>)[k];
@@ -78,8 +70,7 @@ export function scenePlugin(): DevToolsPlugin {
 
   function renderTree(entities: readonly GameEntity[]): void {
     if (entities.length === 0) {
-      treeContainer.innerHTML =
-        '<div style="color:#6b7280">no entities</div>';
+      treeContainer.innerHTML = '<div style="color:#6b7280">no entities</div>';
       return;
     }
     // `entitiesRef` is a flat list; filter to roots and walk children.
@@ -123,7 +114,7 @@ export function scenePlugin(): DevToolsPlugin {
           }
           renderTree(entities);
         },
-        { immediate: true },
+        { immediate: true }
       );
 
       const unwatchSelection = watch(
@@ -132,7 +123,7 @@ export function scenePlugin(): DevToolsPlugin {
           renderInspector(entity);
           renderTree(host.entities.value);
         },
-        { immediate: true },
+        { immediate: true }
       );
 
       return () => {

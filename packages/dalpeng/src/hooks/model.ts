@@ -1,5 +1,13 @@
-import { Camera, GameEntity, Light, MeshRenderer, Transform } from "@dalpeng/core";
-import { SkinnedMeshRenderer, Animator, Skeleton } from "@dalpeng/core";
+import {
+  Animator,
+  Camera,
+  GameEntity,
+  Light,
+  MeshRenderer,
+  Skeleton,
+  SkinnedMeshRenderer,
+  Transform,
+} from "@dalpeng/core";
 import { Quaternion, Vec3 } from "@dalpeng/math";
 import { requireEntity } from "../context";
 
@@ -17,23 +25,23 @@ export function useModel(url: string): ModelHandle {
   const handle: ModelHandle = {
     asset: null,
     isLoaded: false,
-    ready: models.load(url).then((asset: any) => {
-      handle.asset = asset;
-      handle.isLoaded = true;
-      return asset;
-    }).catch((err: any) => {
-      console.error("useModel failed:", url, err);
-      throw err;
-    }),
+    ready: models
+      .load(url)
+      .then((asset: any) => {
+        handle.asset = asset;
+        handle.isLoaded = true;
+        return asset;
+      })
+      .catch((err: any) => {
+        console.error("useModel failed:", url, err);
+        throw err;
+      }),
   };
 
   return handle;
 }
 
-export function spawnModelEntities(
-  asset: any,
-  parentEntity: GameEntity,
-): void {
+export function spawnModelEntities(asset: any, parentEntity: GameEntity): void {
   const app = parentEntity.scene?.app;
   if (!app) {
     console.warn("[spawnModelEntities] Parent entity has no scene/app.");
@@ -49,7 +57,7 @@ function buildNodeTree(
   asset: any,
   nodeIndex: number,
   parent: GameEntity,
-  skeletonCache: Map<number, any>,
+  skeletonCache: Map<number, any>
 ): GameEntity {
   const node = asset.nodes[nodeIndex];
   const entity = new GameEntity();
