@@ -1,5 +1,6 @@
 import Animator from "./animation/Animator";
 import TweenManager from "./animation/TweenManager";
+import type { AppNode } from "./AppNode";
 import ModelManager from "./asset/ModelManager";
 import SpriteAtlasManager from "./asset/SpriteAtlasManager";
 import TextureManager from "./asset/TextureManager";
@@ -274,8 +275,8 @@ export default class Application {
   > = [];
 
   spawn(factory: () => GameEntity): void;
-  spawn(descriptor: LogicalDescriptor, parent?: GameEntity): void;
-  spawn(arg: (() => GameEntity) | LogicalDescriptor, parent?: GameEntity): void {
+  spawn(node: AppNode, parent?: GameEntity): void;
+  spawn(arg: (() => GameEntity) | AppNode, parent?: GameEntity): void {
     if (typeof arg === "function") {
       this.#lifecycleQueue.push({ kind: "spawn-entity", factory: arg });
     } else {
@@ -285,7 +286,11 @@ export default class Application {
             "Ensure `runApp` has been called before spawning descriptors."
         );
       }
-      this.#lifecycleQueue.push({ kind: "spawn-descriptor", descriptor: arg, parent });
+      this.#lifecycleQueue.push({
+        kind: "spawn-descriptor",
+        descriptor: arg as LogicalDescriptor,
+        parent,
+      });
     }
   }
 

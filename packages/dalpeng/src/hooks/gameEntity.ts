@@ -1,12 +1,12 @@
 import {
+  createEntityNode,
   GameEntity,
   MeshBuilder,
   MeshRenderer,
   Script,
-  createGameDescriptor,
+  type AppNode,
   type Component,
-  type GameDescriptor,
-  type LogicalDescriptor,
+  type EntityNode,
 } from "@dalpeng/core";
 import { getThisEntity, hasActiveCleanupScope, registerCleanup, requireEntity } from "../context";
 // withLayer works in both entity AND UI scope; dispatch to the UI hook when
@@ -17,19 +17,17 @@ function uiHasActiveScope(): boolean {
   return uiGetActiveScope() !== null;
 }
 
-export type GameFactory = () => GameDescriptor;
-export type GameFactoryWithProps<P> = (props: P) => GameDescriptor<P>;
+export type GameFactory = () => EntityNode;
+export type GameFactoryWithProps<P> = (props: P) => EntityNode;
 
-export function defineGameEntity(setup: () => LogicalDescriptor[] | void): GameFactory;
+export function defineGameEntity(setup: () => AppNode[] | void): GameFactory;
+export function defineGameEntity<P>(setup: (props: P) => AppNode[] | void): GameFactoryWithProps<P>;
 export function defineGameEntity<P>(
-  setup: (props: P) => LogicalDescriptor[] | void
-): GameFactoryWithProps<P>;
-export function defineGameEntity<P>(
-  setup: (props: P) => LogicalDescriptor[] | void
-): (props: P) => GameDescriptor<P> {
+  setup: (props: P) => AppNode[] | void
+): (props: P) => EntityNode {
   // Passing undefined for P=void is sound at runtime; the public overloads
   // declare the correct external types.
-  return (props: P) => createGameDescriptor<P>(setup, props);
+  return (props: P) => createEntityNode<P>(setup as any, props) as unknown as EntityNode;
 }
 
 type ComponentConstructor<Type extends Component> = new (gameEntity: GameEntity) => Type;

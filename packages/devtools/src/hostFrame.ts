@@ -5,7 +5,7 @@ import {
   type Application,
   type ReadonlyRef,
   type Ref,
-  type UIDescriptor,
+  type UINode,
 } from "@dalpeng/core";
 import {
   Floating,
@@ -14,9 +14,9 @@ import {
   Tabs,
   Text,
   defineUI,
-  renderDescriptor,
-  type NodeDescriptor,
+  renderUI,
   type TabSpec,
+  type UIChild,
 } from "@dalpeng/ui";
 import {
   collectAllKeys,
@@ -223,7 +223,7 @@ export class DevToolsRootHost {
 
   #mountHostUI(): void {
     const HostFrame = this.#defineHostFrame();
-    const result = renderDescriptor(HostFrame, {
+    const result = renderUI(HostFrame, {
       doc: this.#ownerDoc,
       features: this.#app.features as Record<string, any>,
       watchFeature: this.#app.watchFeature,
@@ -246,11 +246,10 @@ export class DevToolsRootHost {
     this.#uiCleanups = new Set();
   }
 
-  #defineHostFrame(): UIDescriptor {
-    const emptyPanel = (): UIDescriptor =>
-      defineUI(() => [Text("(missing panel)")])();
+  #defineHostFrame(): UINode {
+    const emptyPanel = (): UINode => defineUI(() => [Text("(missing panel)")])();
 
-    const renderTabs = (node: TabsNode): UIDescriptor => {
+    const renderTabs = (node: TabsNode): UINode => {
       const active = this.#getActiveRef(node);
       const tabsRef: ReadonlyRef<TabSpec[]> = computed(() => {
         const out: TabSpec[] = [];
@@ -274,7 +273,7 @@ export class DevToolsRootHost {
       ])();
     };
 
-    const renderLayout = (node: LayoutNode): UIDescriptor => {
+    const renderLayout = (node: LayoutNode): UINode => {
       if (node.kind === "split") {
         const sizes = this.#getSizesRef(node);
         const slots = node.children.map((c) => renderLayout(c));
@@ -335,11 +334,11 @@ export class DevToolsRootHost {
 
     return defineUI(() => {
       const ws = this.#settings.workspace.value;
-      const workspaceNode: NodeDescriptor = {
+      const workspaceNode: UIChild = {
         type: "ui",
         descriptor: renderLayout(ws.main),
       };
-      const footerNode: NodeDescriptor = {
+      const footerNode: UIChild = {
         type: "live",
         element: footerEl,
       };
@@ -518,11 +517,11 @@ export class DevToolsRootHost {
   }
 
   /**
-   * Drop an arbitrary `UIDescriptor` into a free-floating overlay above the
+   * Drop an arbitrary `UINode` into a free-floating overlay above the
    * dock. Most plugins should use `panels: []` instead — this path does not
    * participate in the saved workspace layout.
    */
-  attachOverlay(descriptor: UIDescriptor): { detach(): void } {
+  attachOverlay(descriptor: UINode): { detach(): void } {
     const wrap = this.#ownerDoc.createElement("div");
     Object.assign(wrap.style, {
       position: "absolute",
@@ -531,7 +530,7 @@ export class DevToolsRootHost {
       zIndex: "5",
     } satisfies Partial<CSSStyleDeclaration>);
     this.#rootDiv.appendChild(wrap);
-    const result = renderDescriptor(descriptor, {
+    const result = renderUI(descriptor, {
       doc: this.#ownerDoc,
       features: this.#app.features as Record<string, any>,
       watchFeature: this.#app.watchFeature,

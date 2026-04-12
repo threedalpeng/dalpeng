@@ -36,7 +36,7 @@ export {
   type ViewportCorner,
 } from "./placement";
 
-export { renderDescriptor, type RenderContext, type RenderResult } from "./domRenderer";
+export { renderUI, type RenderContext, type RenderResult } from "./domRenderer";
 
 export type {
   BarOpts,
@@ -52,6 +52,7 @@ export type {
   TabSpec,
   TabsOpts,
   TextOpts,
+  UIChild,
 } from "./types";
 
 export { getThisUI, requireUI, type UIContext } from "./context";

@@ -1,4 +1,4 @@
-import type { ReadonlyRef, Ref, UIDescriptor } from "@dalpeng/core";
+import type { ReadonlyRef, Ref, UINode } from "@dalpeng/core";
 
 export type BindingSource<T> = { kind: "ref"; ref: Ref<T> } | { kind: "feature"; key: string };
 
@@ -38,13 +38,13 @@ export interface SplitOpts {
   direction: "row" | "col";
   /** Reactive size weights — one entry per child slot. Proportional; renderer normalises to fill parent. */
   sizes: Ref<number[]>;
-  slots: UIDescriptor[];
+  slots: UINode[];
 }
 
 export interface TabSpec {
   id: string;
   title: string;
-  body: UIDescriptor;
+  body: UINode;
 }
 
 export interface TabsOpts {
@@ -64,18 +64,18 @@ export interface TabsOpts {
 
 export interface ForOpts<T> {
   items: ReadonlyRef<readonly T[]>;
-  render: (item: T, idx: number) => UIDescriptor;
-  empty?: UIDescriptor;
+  render: (item: T, idx: number) => UINode;
+  empty?: UINode;
 }
 
 export interface ShowOpts {
   when: ReadonlyRef<boolean>;
-  body: UIDescriptor;
-  fallback?: UIDescriptor;
+  body: UINode;
+  fallback?: UINode;
 }
 
 export interface FloatingOpts {
-  body: UIDescriptor;
+  body: UINode;
   visible: Ref<boolean>;
   x: number | Ref<number>;
   y: number | Ref<number>;
@@ -96,7 +96,7 @@ export type NodeDescriptor =
   | { type: "select"; source: BindingSource<string>; label: string; options: SelectOption[] }
   | { type: "button"; label: string; onClick: () => void }
   | { type: "value"; label: string; content: string | Ref<string> }
-  | { type: "ui"; descriptor: UIDescriptor }
+  | { type: "ui"; descriptor: UINode }
   | { type: "menu"; items: MenuItem[]; onSelect: (item: MenuItem) => void; focusIndex: Ref<number> }
   | { type: "list"; children: NodeDescriptor[] }
   | { type: "split"; opts: SplitOpts }
@@ -105,3 +105,6 @@ export type NodeDescriptor =
   | { type: "show"; opts: ShowOpts }
   | { type: "floating"; opts: FloatingOpts }
   | { type: "live"; element: HTMLElement; cleanups?: Set<() => void> };
+
+/** Public alias for NodeDescriptor — use this in authoring APIs. */
+export type UIChild = NodeDescriptor;

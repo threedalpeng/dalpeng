@@ -1,12 +1,10 @@
-import { createUIDescriptor, registerCleanup, type UIDescriptor } from "@dalpeng/core";
+import { createUINode, registerCleanup, type UINode } from "@dalpeng/core";
 import { usePlacement } from "../define";
 import type { DialogueController } from "./controller";
 import type { DialogueLine } from "./types";
 
-export function Dialogue(
-  controller: DialogueController
-): UIDescriptor<{ controller: DialogueController }> {
-  return createUIDescriptor(
+export function Dialogue(controller: DialogueController): UINode {
+  return createUINode(
     (props: { controller: DialogueController }) => {
       const { controller } = props;
 

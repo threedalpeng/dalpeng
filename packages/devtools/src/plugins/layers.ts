@@ -1,5 +1,5 @@
 import { watch } from "@dalpeng/core";
-import { defineUI, type NodeDescriptor } from "@dalpeng/ui";
+import { defineUI, type UIChild } from "@dalpeng/ui";
 import type { DevToolsPlugin } from "../plugin";
 import { definePlugin } from "../plugin";
 
@@ -13,7 +13,7 @@ export function layersPlugin(): DevToolsPlugin {
     "font-family:inherit;font-size:11px;line-height:1.6;max-height:100%;overflow:auto";
   container.innerHTML = '<div style="color:var(--dt-fg-dim)">no app yet</div>';
 
-  const liveNode: NodeDescriptor = {
+  const liveNode: UIChild = {
     type: "live",
     element: container,
     cleanups: new Set(),

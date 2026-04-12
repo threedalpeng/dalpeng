@@ -31,6 +31,8 @@ export function isInstance(value: unknown): value is GameInstance | UIInstance {
   return value !== null && typeof value === "object" && INSTANCE_KIND in (value as object);
 }
 
+export type EntityInstance = GameInstance;
+
 export function isGameInstance(value: unknown): value is GameInstance {
   return isInstance(value) && value[INSTANCE_KIND] === "game";
 }

@@ -1,11 +1,4 @@
-import {
-  createUIDescriptor,
-  isRef,
-  ref,
-  type Ref,
-  type RenderConfig,
-  type UIDescriptor,
-} from "@dalpeng/core";
+import { createUINode, isRef, ref, type Ref, type RenderConfig, type UINode } from "@dalpeng/core";
 import { requireUI } from "./context";
 import type {
   BarOpts,
@@ -22,10 +15,10 @@ import type {
   TextOpts,
 } from "./types";
 
-export function defineUI(setup: () => NodeDescriptor[]): () => UIDescriptor;
-export function defineUI<P>(setup: (props: P) => NodeDescriptor[]): (props: P) => UIDescriptor<P>;
+export function defineUI(setup: () => NodeDescriptor[]): () => UINode;
+export function defineUI<P>(setup: (props: P) => NodeDescriptor[]): (props: P) => UINode;
 export function defineUI<P = void>(setup: (props?: P) => NodeDescriptor[]) {
-  return ((props?: P) => createUIDescriptor(setup as any, props as any)) as any;
+  return ((props?: P) => createUINode(setup as any, props as any)) as any;
 }
 
 export function Text(content: string, opts?: TextOpts): NodeDescriptor;

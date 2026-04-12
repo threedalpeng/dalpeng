@@ -50,7 +50,16 @@ export {
   type AppRunOptions,
 } from "./hooks/app";
 
-export type { Layer, LayerBackend, LayerMember, LayerSort, ResolvedLayer } from "@dalpeng/core";
+export type {
+  AppNode,
+  EntityNode,
+  Layer,
+  LayerBackend,
+  LayerMember,
+  LayerSort,
+  ResolvedLayer,
+  UINode,
+} from "@dalpeng/core";
 export * from "./hooks/index";
 
 export { computed, isRef, ref, watch, type ReadonlyRef, type Ref } from "./reactive";
@@ -65,7 +74,7 @@ export {
   List,
   Menu,
   Range,
-  renderDescriptor,
+  renderUI,
   Select,
   Text,
   Toggle,

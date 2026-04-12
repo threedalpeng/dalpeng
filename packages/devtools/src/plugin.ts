@@ -1,8 +1,8 @@
-import type { UIDescriptor } from "@dalpeng/core";
+import type { UINode } from "@dalpeng/core";
 import type { DevToolsHost } from "./host";
 
 /** No-props `defineUI(...)` result. */
-export type UIFactory = () => UIDescriptor;
+export type UIFactory = () => UINode;
 
 /** Where a panel prefers to dock. The host may override based on its layout. */
 export type PanelDock = "right" | "left" | "bottom" | "top" | "floating";

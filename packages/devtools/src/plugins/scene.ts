@@ -1,5 +1,5 @@
 import { ref, watch, type GameEntity } from "@dalpeng/core";
-import { defineUI, type NodeDescriptor } from "@dalpeng/ui";
+import { defineUI, type UIChild } from "@dalpeng/ui";
 import type { DevToolsPlugin } from "../plugin";
 import { definePlugin } from "../plugin";
 
@@ -27,12 +27,12 @@ export function scenePlugin(): DevToolsPlugin {
   inspectorContainer.style.cssText = "font-family:inherit;font-size:11px;line-height:1.5";
   inspectorContainer.innerHTML = '<div style="color:#6b7280">no entity selected</div>';
 
-  const treeNode: NodeDescriptor = {
+  const treeNode: UIChild = {
     type: "live",
     element: treeContainer,
     cleanups: new Set(),
   };
-  const inspectorNode: NodeDescriptor = {
+  const inspectorNode: UIChild = {
     type: "live",
     element: inspectorContainer,
     cleanups: new Set(),

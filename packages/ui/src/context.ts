@@ -4,9 +4,9 @@ import type { NodeDescriptor } from "./types";
 export interface UIContext {
   nodes: NodeDescriptor[];
   layout: { direction: "column" | "row"; gap: number; align?: string };
-  /** Written by `usePlacement`. Read back by `renderDescriptor`. */
+  /** Written by `usePlacement`. Read back by `renderUI`. */
   placement?: Placement;
-  /** Written by `withLayer` (UI scope). Read back by `renderDescriptor`. */
+  /** Written by `withLayer` (UI scope). Read back by `renderUI`. */
   layer?: string;
 }
 

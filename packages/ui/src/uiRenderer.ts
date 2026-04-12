@@ -3,11 +3,11 @@ import {
   type GameInstance,
   type ProjectionContext,
   type Scene,
-  type UIDescriptor,
   type UIInstance,
+  type UINode,
   type UIRenderer,
 } from "@dalpeng/core";
-import { renderDescriptor } from "./domRenderer";
+import { renderUI } from "./domRenderer";
 import { resolvePlacement, type Placement } from "./placement";
 
 const DEFAULT_PLACEMENT: Placement = {
@@ -17,11 +17,11 @@ const DEFAULT_PLACEMENT: Placement = {
 
 export const domUIRenderer: UIRenderer = {
   materialize(
-    descriptor: UIDescriptor,
+    descriptor: UINode,
     context: ProjectionContext,
     owner: GameInstance | Scene
   ): UIInstance {
-    const result = renderDescriptor(descriptor, {
+    const result = renderUI(descriptor, {
       doc: context.doc,
       features: context.features,
       watchFeature: context.watchFeature,

@@ -1,5 +1,5 @@
 import { watch } from "@dalpeng/core";
-import { defineUI, type NodeDescriptor } from "@dalpeng/ui";
+import { defineUI, type UIChild } from "@dalpeng/ui";
 import type { DevToolsPlugin } from "../plugin";
 import { definePlugin } from "../plugin";
 
@@ -24,7 +24,7 @@ export function consolePlugin(): DevToolsPlugin {
   container.innerHTML = '<div style="color:#6b7280">no log entries yet</div>';
 
   const cleanups = new Set<() => void>();
-  const liveNode: NodeDescriptor = { type: "live", element: container, cleanups };
+  const liveNode: UIChild = { type: "live", element: container, cleanups };
 
   return definePlugin({
     name: "@dalpeng/devtools/console",

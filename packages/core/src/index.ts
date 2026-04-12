@@ -82,23 +82,19 @@ export {
 } from "./runtime/Layer";
 
 export {
-  createGameDescriptor,
-  createUIDescriptor,
-  DESCRIPTOR_KIND,
-  isDescriptor,
-  isGameDescriptor,
-  isUIDescriptor,
-  type Descriptor,
-  type DescriptorKind,
-  type GameDescriptor,
-  type LogicalDescriptor,
-  type UIDescriptor,
-} from "./runtime/Descriptor";
+  APP_NODE_KIND,
+  createEntityNode,
+  createUINode,
+  type AppNode,
+  type EntityNode,
+  type UINode,
+} from "./AppNode";
 export {
   INSTANCE_KIND,
   isGameInstance,
   isInstance,
   isUIInstance,
+  type EntityInstance,
   type GameInstance,
   type Instance,
   type InstanceKind,

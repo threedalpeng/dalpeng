@@ -20,16 +20,17 @@ import type Scene from "../src/Scene";
 import type GameEntity from "../src/ecs/GameEntity";
 import {
   Materializer,
-  createGameDescriptor,
-  createUIDescriptor,
+  type MaterializerHooks,
+  type ProjectionContext,
+  type UIRenderer,
+} from "../src/index";
+import { createGameDescriptor, createUIDescriptor } from "../src/runtime/Descriptor";
+import {
   isGameInstance,
   isUIInstance,
   type GameInstance,
-  type MaterializerHooks,
-  type ProjectionContext,
   type UIInstance,
-  type UIRenderer,
-} from "../src/index";
+} from "../src/runtime/Instance";
 
 // ─────────────────────────────────────────────────────────────────────
 // Mocks

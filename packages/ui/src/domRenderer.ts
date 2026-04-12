@@ -6,7 +6,7 @@ import {
   leaveUIScope,
   ref,
   type Ref,
-  type UIDescriptor,
+  type UINode,
 } from "@dalpeng/core";
 import { getThisUI, setThisUI, type UIContext } from "./context";
 import type { Placement } from "./placement";
@@ -31,7 +31,7 @@ export interface RenderResult {
   layer?: string;
 }
 
-export function renderDescriptor(descriptor: UIDescriptor, ctx: RenderContext): RenderResult {
+export function renderUI(node: UINode, ctx: RenderContext): RenderResult {
   const prevUI = getThisUI();
   const uiCtx: UIContext = {
     nodes: [] as NodeDescriptor[],
@@ -47,7 +47,7 @@ export function renderDescriptor(descriptor: UIDescriptor, ctx: RenderContext): 
   let layout: { direction: "column" | "row"; gap: number; align?: string };
 
   try {
-    nodes = (descriptor.setup as (p: unknown) => NodeDescriptor[])(descriptor.props);
+    nodes = (node.setup as (p: unknown) => NodeDescriptor[])(node.props);
     placement = uiCtx.placement;
     layerName = uiCtx.layer;
     layout = { ...uiCtx.layout };
@@ -91,7 +91,7 @@ function renderNode(node: NodeDescriptor, ctx: RenderContext): RenderResult {
     case "value":
       return renderValue(node, ctx);
     case "ui":
-      return renderDescriptor(node.descriptor, ctx);
+      return renderUI(node.descriptor, ctx);
     case "menu":
       return renderMenu(node, ctx);
     case "list":
@@ -577,7 +577,7 @@ function renderSplit(
     container.appendChild(slotEl);
     slotEls.push(slotEl);
 
-    const slotResult = renderDescriptor(opts.slots[i], ctx);
+    const slotResult = renderUI(opts.slots[i], ctx);
     slotResult.element.style.flex = "1";
     slotResult.element.style.minWidth = "0";
     slotResult.element.style.minHeight = "0";
@@ -642,7 +642,7 @@ function renderTabs(
     const idx = Math.max(0, Math.min(opts.active.value, tabs.length - 1));
     const active = tabs[idx];
     if (!active) return;
-    const result = renderDescriptor(active.body, ctx);
+    const result = renderUI(active.body, ctx);
     body.appendChild(result.element);
     bodyCleanups = result.cleanups;
   };
@@ -718,14 +718,14 @@ function renderFor(
     childCleanups = new Set();
     const items = opts.items.value;
     if (items.length === 0 && opts.empty) {
-      const r = renderDescriptor(opts.empty, ctx);
+      const r = renderUI(opts.empty, ctx);
       wrap.appendChild(r.element);
       r.cleanups.forEach((fn) => childCleanups.add(fn));
       return;
     }
     items.forEach((item, idx) => {
       const desc = opts.render(item, idx);
-      const r = renderDescriptor(desc, ctx);
+      const r = renderUI(desc, ctx);
       wrap.appendChild(r.element);
       r.cleanups.forEach((fn) => childCleanups.add(fn));
     });
@@ -760,7 +760,7 @@ function renderShow(
     clearMount();
     const target = opts.when.value ? opts.body : opts.fallback;
     if (!target) return;
-    const r = renderDescriptor(target, ctx);
+    const r = renderUI(target, ctx);
     wrap.appendChild(r.element);
     mounted = { cleanups: r.cleanups };
   };
@@ -815,7 +815,7 @@ function renderFloating(
   let mounted: { cleanups: Set<() => void> } | null = null;
   const mount = () => {
     if (mounted) return;
-    const r = renderDescriptor(opts.body, ctx);
+    const r = renderUI(opts.body, ctx);
     floater.appendChild(r.element);
     doc.body.appendChild(floater);
     floater.style.display = "block";
