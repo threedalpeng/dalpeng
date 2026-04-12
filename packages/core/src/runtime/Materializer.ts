@@ -8,13 +8,13 @@ import {
   type LogicalDescriptor,
   type UIDescriptor,
 } from "./Descriptor";
-import { INSTANCE_KIND, type GameInstance, type UIInstance } from "./Instance";
+import { INSTANCE_KIND, type EntityInstance, type UIInstance } from "./Instance";
 import type { ProjectionContext } from "./ProjectionContext";
 
 export interface MaterializerHooks {
-  createGameEntity(parent: GameInstance | Scene): GameEntity;
-  pushGameContext(entity: GameEntity, parent: GameInstance | Scene): () => void;
-  buildProjectionContext(owner: GameInstance | Scene): ProjectionContext;
+  createGameEntity(parent: EntityInstance | Scene): GameEntity;
+  pushGameContext(entity: GameEntity, parent: EntityInstance | Scene): () => void;
+  buildProjectionContext(owner: EntityInstance | Scene): ProjectionContext;
 }
 
 export class Materializer {
@@ -29,13 +29,13 @@ export class Materializer {
   materializeRoots(
     scene: Scene,
     rootDescriptors: readonly LogicalDescriptor[]
-  ): { gameInstances: GameInstance[]; uiInstances: UIInstance[] } {
-    const gameInstances: GameInstance[] = [];
+  ): { gameInstances: EntityInstance[]; uiInstances: UIInstance[] } {
+    const gameInstances: EntityInstance[] = [];
     const uiInstances: UIInstance[] = [];
     for (const descriptor of rootDescriptors) {
       const result = this.materialize(descriptor, scene);
       if (result[INSTANCE_KIND] === "game") {
-        gameInstances.push(result as GameInstance);
+        gameInstances.push(result as EntityInstance);
       } else {
         uiInstances.push(result as UIInstance);
       }
@@ -45,8 +45,8 @@ export class Materializer {
 
   materialize(
     descriptor: LogicalDescriptor,
-    parent: GameInstance | Scene
-  ): GameInstance | UIInstance {
+    parent: EntityInstance | Scene
+  ): EntityInstance | UIInstance {
     if (isGameDescriptor(descriptor)) {
       return this.#materializeGame(descriptor, parent);
     }
@@ -58,10 +58,10 @@ export class Materializer {
     );
   }
 
-  #materializeGame(descriptor: GameDescriptor, parent: GameInstance | Scene): GameInstance {
+  #materializeGame(descriptor: GameDescriptor, parent: EntityInstance | Scene): EntityInstance {
     const entity = this.#hooks.createGameEntity(parent);
 
-    const instance: GameInstance = {
+    const instance: EntityInstance = {
       [INSTANCE_KIND]: "game",
       descriptor,
       entity,
@@ -85,7 +85,7 @@ export class Materializer {
       for (const childDescriptor of childDescriptors) {
         const childInstance = this.materialize(childDescriptor, instance);
         if (childInstance[INSTANCE_KIND] === "game") {
-          instance.gameChildren.push(childInstance as GameInstance);
+          instance.gameChildren.push(childInstance as EntityInstance);
         } else {
           instance.uiChildren.push(childInstance as UIInstance);
         }
@@ -95,7 +95,7 @@ export class Materializer {
     return instance;
   }
 
-  #materializeUI(descriptor: UIDescriptor, parent: GameInstance | Scene): UIInstance {
+  #materializeUI(descriptor: UIDescriptor, parent: EntityInstance | Scene): UIInstance {
     const renderer = this.#app.getUIRenderer();
     if (!renderer) {
       throw new Error(
@@ -111,7 +111,7 @@ export class Materializer {
   }
 
   /** DFS teardown: detaches owned UI children first, then calls runOnDestroy. Component teardown is the caller's responsibility. */
-  destroyCascade(instance: GameInstance, runOnDestroy: (e: GameEntity) => void): void {
+  destroyCascade(instance: EntityInstance, runOnDestroy: (e: GameEntity) => void): void {
     for (const child of instance.gameChildren) {
       this.destroyCascade(child, runOnDestroy);
     }

@@ -87,7 +87,7 @@ export interface FloatingOpts {
   closeOnEsc?: boolean;
 }
 
-export type NodeDescriptor =
+export type UIChild =
   | { type: "text"; content: string | Ref<any>; formatter?: (v: any) => string; opts?: TextOpts }
   | { type: "bar"; source?: Ref<any>; formatter?: (v: any) => number; opts: BarOpts }
   | { type: "html"; content: string }
@@ -98,13 +98,10 @@ export type NodeDescriptor =
   | { type: "value"; label: string; content: string | Ref<string> }
   | { type: "ui"; descriptor: UINode }
   | { type: "menu"; items: MenuItem[]; onSelect: (item: MenuItem) => void; focusIndex: Ref<number> }
-  | { type: "list"; children: NodeDescriptor[] }
+  | { type: "list"; children: UIChild[] }
   | { type: "split"; opts: SplitOpts }
   | { type: "tabs"; opts: TabsOpts }
   | { type: "for"; opts: ForOpts<any> }
   | { type: "show"; opts: ShowOpts }
   | { type: "floating"; opts: FloatingOpts }
   | { type: "live"; element: HTMLElement; cleanups?: Set<() => void> };
-
-/** Public alias for NodeDescriptor — use this in authoring APIs. */
-export type UIChild = NodeDescriptor;

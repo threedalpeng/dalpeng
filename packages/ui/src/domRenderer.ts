@@ -10,7 +10,7 @@ import {
 } from "@dalpeng/core";
 import { getThisUI, setThisUI, type UIContext } from "./context";
 import type { Placement } from "./placement";
-import type { NodeDescriptor, TextOpts } from "./types";
+import type { TextOpts, UIChild } from "./types";
 
 export interface RenderContext {
   doc: Document;
@@ -34,20 +34,20 @@ export interface RenderResult {
 export function renderUI(node: UINode, ctx: RenderContext): RenderResult {
   const prevUI = getThisUI();
   const uiCtx: UIContext = {
-    nodes: [] as NodeDescriptor[],
+    nodes: [] as UIChild[],
     layout: { direction: "column", gap: 4 },
   };
   setThisUI(uiCtx);
   enterUIScope();
   const cleanups = beginCleanupScope();
 
-  let nodes: NodeDescriptor[];
+  let nodes: UIChild[];
   let placement: Placement | undefined;
   let layerName: string | undefined;
   let layout: { direction: "column" | "row"; gap: number; align?: string };
 
   try {
-    nodes = (node.setup as (p: unknown) => NodeDescriptor[])(node.props);
+    nodes = (node.setup as (p: unknown) => UIChild[])(node.props);
     placement = uiCtx.placement;
     layerName = uiCtx.layer;
     layout = { ...uiCtx.layout };
@@ -72,7 +72,7 @@ export function renderUI(node: UINode, ctx: RenderContext): RenderResult {
   return { element: container, cleanups, placement, layer: layerName };
 }
 
-function renderNode(node: NodeDescriptor, ctx: RenderContext): RenderResult {
+function renderNode(node: UIChild, ctx: RenderContext): RenderResult {
   switch (node.type) {
     case "text":
       return renderText(node, ctx);
@@ -111,10 +111,7 @@ function renderNode(node: NodeDescriptor, ctx: RenderContext): RenderResult {
   }
 }
 
-function renderText(
-  node: Extract<NodeDescriptor, { type: "text" }>,
-  ctx: RenderContext
-): RenderResult {
+function renderText(node: Extract<UIChild, { type: "text" }>, ctx: RenderContext): RenderResult {
   const cleanups = new Set<() => void>();
   const doc = ctx.doc;
   const span = doc.createElement("span");
@@ -135,7 +132,7 @@ function renderText(
   return { element: span, cleanups };
 }
 
-function renderBar(node: Extract<NodeDescriptor, { type: "bar" }>): RenderResult {
+function renderBar(node: Extract<UIChild, { type: "bar" }>): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
 
@@ -174,10 +171,7 @@ function renderBar(node: Extract<NodeDescriptor, { type: "bar" }>): RenderResult
   return { element: outer, cleanups };
 }
 
-function renderHtml(
-  node: Extract<NodeDescriptor, { type: "html" }>,
-  ctx: RenderContext
-): RenderResult {
+function renderHtml(node: Extract<UIChild, { type: "html" }>, ctx: RenderContext): RenderResult {
   const doc = ctx.doc;
   const el = doc.createElement("div");
   el.innerHTML = node.content;
@@ -211,7 +205,7 @@ function resolveBinding<T>(
 }
 
 function renderToggle(
-  node: Extract<NodeDescriptor, { type: "toggle" }>,
+  node: Extract<UIChild, { type: "toggle" }>,
   ctx: RenderContext
 ): RenderResult {
   const cleanups = new Set<() => void>();
@@ -245,10 +239,7 @@ function renderToggle(
   return { element: label, cleanups };
 }
 
-function renderRange(
-  node: Extract<NodeDescriptor, { type: "range" }>,
-  ctx: RenderContext
-): RenderResult {
+function renderRange(node: Extract<UIChild, { type: "range" }>, ctx: RenderContext): RenderResult {
   const cleanups = new Set<() => void>();
   const { ref: bound, cleanups: bindCleanups } = resolveBinding<number>(node.source, ctx);
   bindCleanups.forEach((fn) => cleanups.add(fn));
@@ -291,7 +282,7 @@ function renderRange(
 }
 
 function renderSelect(
-  node: Extract<NodeDescriptor, { type: "select" }>,
+  node: Extract<UIChild, { type: "select" }>,
   ctx: RenderContext
 ): RenderResult {
   const cleanups = new Set<() => void>();
@@ -330,7 +321,7 @@ function renderSelect(
 }
 
 function renderButton(
-  node: Extract<NodeDescriptor, { type: "button" }>,
+  node: Extract<UIChild, { type: "button" }>,
   ctx: RenderContext
 ): RenderResult {
   const doc = ctx.doc;
@@ -340,10 +331,7 @@ function renderButton(
   return { element: btn, cleanups: new Set() };
 }
 
-function renderValue(
-  node: Extract<NodeDescriptor, { type: "value" }>,
-  ctx: RenderContext
-): RenderResult {
+function renderValue(node: Extract<UIChild, { type: "value" }>, ctx: RenderContext): RenderResult {
   const cleanups = new Set<() => void>();
   const doc = ctx.doc;
   const container = doc.createElement("div");
@@ -370,10 +358,7 @@ function renderValue(
   return { element: container, cleanups };
 }
 
-function renderMenu(
-  node: Extract<NodeDescriptor, { type: "menu" }>,
-  ctx: RenderContext
-): RenderResult {
+function renderMenu(node: Extract<UIChild, { type: "menu" }>, ctx: RenderContext): RenderResult {
   const cleanups = new Set<() => void>();
   const { items, onSelect, focusIndex } = node;
   const doc = ctx.doc;
@@ -454,10 +439,7 @@ function renderMenu(
   return { element: ul, cleanups };
 }
 
-function renderList(
-  node: Extract<NodeDescriptor, { type: "list" }>,
-  ctx: RenderContext
-): RenderResult {
+function renderList(node: Extract<UIChild, { type: "list" }>, ctx: RenderContext): RenderResult {
   const cleanups = new Set<() => void>();
   const doc = ctx.doc;
 
@@ -476,10 +458,7 @@ function renderList(
   return { element: container, cleanups };
 }
 
-function renderSplit(
-  node: Extract<NodeDescriptor, { type: "split" }>,
-  ctx: RenderContext
-): RenderResult {
+function renderSplit(node: Extract<UIChild, { type: "split" }>, ctx: RenderContext): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
   const isRow = opts.direction === "row";
@@ -592,10 +571,7 @@ function renderSplit(
   return { element: container, cleanups };
 }
 
-function renderTabs(
-  node: Extract<NodeDescriptor, { type: "tabs" }>,
-  ctx: RenderContext
-): RenderResult {
+function renderTabs(node: Extract<UIChild, { type: "tabs" }>, ctx: RenderContext): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
   const doc = ctx.doc;
@@ -699,10 +675,7 @@ function renderTabs(
   return { element: wrap, cleanups };
 }
 
-function renderFor(
-  node: Extract<NodeDescriptor, { type: "for" }>,
-  ctx: RenderContext
-): RenderResult {
+function renderFor(node: Extract<UIChild, { type: "for" }>, ctx: RenderContext): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
   const doc = ctx.doc;
@@ -738,10 +711,7 @@ function renderFor(
   return { element: wrap, cleanups };
 }
 
-function renderShow(
-  node: Extract<NodeDescriptor, { type: "show" }>,
-  ctx: RenderContext
-): RenderResult {
+function renderShow(node: Extract<UIChild, { type: "show" }>, ctx: RenderContext): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
   const doc = ctx.doc;
@@ -773,7 +743,7 @@ function renderShow(
 }
 
 function renderFloating(
-  node: Extract<NodeDescriptor, { type: "floating" }>,
+  node: Extract<UIChild, { type: "floating" }>,
   ctx: RenderContext
 ): RenderResult {
   const cleanups = new Set<() => void>();

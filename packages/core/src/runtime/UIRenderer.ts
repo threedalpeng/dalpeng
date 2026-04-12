@@ -21,7 +21,7 @@
 
 import type Scene from "../Scene";
 import type { UIDescriptor } from "./Descriptor";
-import type { GameInstance, UIInstance } from "./Instance";
+import type { EntityInstance, UIInstance } from "./Instance";
 import type { ProjectionContext } from "./ProjectionContext";
 
 /**
@@ -52,11 +52,11 @@ export interface UIRenderer {
    * @param descriptor  the UI recipe to materialise
    * @param context     the host capabilities the renderer needs
    * @param owner       the parent in the ownership graph (Scene for
-   *                    root UI, GameInstance for cross-kind ui child)
+   *                    root UI, EntityInstance for cross-kind ui child)
    */
   materialize(
     descriptor: UIDescriptor,
     context: ProjectionContext,
-    owner: GameInstance | Scene
+    owner: EntityInstance | Scene
   ): UIInstance;
 }

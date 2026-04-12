@@ -24,7 +24,7 @@ import InputManager from "./InputManager";
 import type { RenderConfig } from "./RenderConfig";
 import RenderPipeline from "./rendering/RenderPipeline";
 import { isGameDescriptor, type LogicalDescriptor } from "./runtime/Descriptor";
-import type { GameInstance } from "./runtime/Instance";
+import type { EntityInstance } from "./runtime/Instance";
 import { LayerRegistry } from "./runtime/Layer";
 import { type Materializer } from "./runtime/Materializer";
 import { ref, type ReadonlyRef } from "./runtime/reactive";
@@ -333,10 +333,10 @@ export default class Application {
     if (!this.#materializer) return;
     const scene = parent?.scene ?? this.#activeScene.value;
     if (!scene) return;
-    const parentArg: GameInstance | Scene = parent?._gameInstance ?? scene;
+    const parentArg: EntityInstance | Scene = parent?._gameInstance ?? scene;
     const instance = this.#materializer.materialize(descriptor, parentArg);
     if (isGameDescriptor(descriptor)) {
-      this.#setupEntitySubtree((instance as GameInstance).entity);
+      this.#setupEntitySubtree((instance as EntityInstance).entity);
     }
   }
 

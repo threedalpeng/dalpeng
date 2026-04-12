@@ -32,7 +32,7 @@ export function isUIDescriptor(value: unknown): value is UIDescriptor {
   return isDescriptor(value) && value[DESCRIPTOR_KIND] === "ui";
 }
 
-export function createGameDescriptor<P>(
+export function createEntityNode<P>(
   setup: (props: P) => readonly LogicalDescriptor[] | void,
   props: P
 ): GameDescriptor<P> {
@@ -43,7 +43,7 @@ export function createGameDescriptor<P>(
   };
 }
 
-export function createUIDescriptor<P>(
+export function createUINode<P>(
   setup: (props: P) => readonly unknown[],
   props: P
 ): UIDescriptor<P> {

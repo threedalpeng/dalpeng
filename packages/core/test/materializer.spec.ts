@@ -24,11 +24,11 @@ import {
   type ProjectionContext,
   type UIRenderer,
 } from "../src/index";
-import { createGameDescriptor, createUIDescriptor } from "../src/runtime/Descriptor";
+import { createEntityNode, createUINode } from "../src/runtime/Descriptor";
 import {
-  isGameInstance,
+  isEntityInstance,
   isUIInstance,
-  type GameInstance,
+  type EntityInstance,
   type UIInstance,
 } from "../src/runtime/Instance";
 
@@ -84,7 +84,7 @@ function makeRealUIRenderer(
 
 function makeHooks(
   options: {
-    onCreateEntity?: (entity: GameEntity, parent: GameInstance | Scene) => void;
+    onCreateEntity?: (entity: GameEntity, parent: EntityInstance | Scene) => void;
     onPushContext?: (entity: GameEntity) => void;
     onPopContext?: (entity: GameEntity) => void;
   } = {}
@@ -117,11 +117,11 @@ describe("Materializer — descriptor walk", () => {
     const m = new Materializer(app, makeHooks());
     const scene = makeMockScene();
 
-    const desc = createGameDescriptor(() => undefined, {});
+    const desc = createEntityNode(() => undefined, {});
     const instance = m.materialize(desc, scene);
 
-    expect(isGameInstance(instance)).toBe(true);
-    if (isGameInstance(instance)) {
+    expect(isEntityInstance(instance)).toBe(true);
+    if (isEntityInstance(instance)) {
       expect(instance.descriptor).toBe(desc);
       expect(instance.owner).toBe(scene);
       expect(instance.gameChildren).toEqual([]);
@@ -135,10 +135,10 @@ describe("Materializer — descriptor walk", () => {
     const m = new Materializer(app, makeHooks());
     const scene = makeMockScene();
 
-    const child = createGameDescriptor(() => undefined, {});
-    const parent = createGameDescriptor(() => [child], {});
+    const child = createEntityNode(() => undefined, {});
+    const parent = createEntityNode(() => [child], {});
 
-    const instance = m.materialize(parent, scene) as GameInstance;
+    const instance = m.materialize(parent, scene) as EntityInstance;
     expect(instance.gameChildren).toHaveLength(1);
     expect(instance.gameChildren[0].descriptor).toBe(child);
     expect(instance.gameChildren[0].owner).toBe(instance);
@@ -150,10 +150,10 @@ describe("Materializer — descriptor walk", () => {
     const m = new Materializer(app, makeHooks());
     const scene = makeMockScene();
 
-    const uiChild = createUIDescriptor(() => [], {});
-    const gameParent = createGameDescriptor(() => [uiChild], {});
+    const uiChild = createUINode(() => [], {});
+    const gameParent = createEntityNode(() => [uiChild], {});
 
-    const instance = m.materialize(gameParent, scene) as GameInstance;
+    const instance = m.materialize(gameParent, scene) as EntityInstance;
 
     expect(instance.gameChildren).toEqual([]);
     expect(instance.uiChildren).toHaveLength(1);
@@ -168,11 +168,11 @@ describe("Materializer — descriptor walk", () => {
     const m = new Materializer(app, makeHooks());
     const scene = makeMockScene();
 
-    const gameChild = createGameDescriptor(() => undefined, {});
-    const uiChild = createUIDescriptor(() => [], {});
-    const parent = createGameDescriptor(() => [gameChild, uiChild], {});
+    const gameChild = createEntityNode(() => undefined, {});
+    const uiChild = createUINode(() => [], {});
+    const parent = createEntityNode(() => [gameChild, uiChild], {});
 
-    const instance = m.materialize(parent, scene) as GameInstance;
+    const instance = m.materialize(parent, scene) as EntityInstance;
     expect(instance.gameChildren).toHaveLength(1);
     expect(instance.uiChildren).toHaveLength(1);
   });
@@ -184,7 +184,7 @@ describe("Materializer — descriptor walk", () => {
     const scene = makeMockScene();
 
     const setup = vi.fn(() => undefined);
-    const desc = createGameDescriptor(setup, { hp: 100, name: "Enemy" });
+    const desc = createEntityNode(setup, { hp: 100, name: "Enemy" });
     m.materialize(desc, scene);
 
     expect(setup).toHaveBeenCalledOnce();
@@ -204,7 +204,7 @@ describe("Materializer — descriptor walk", () => {
     );
     const scene = makeMockScene();
 
-    const desc = createGameDescriptor(() => {
+    const desc = createEntityNode(() => {
       events.push("setup runs");
       return undefined;
     }, {});
@@ -219,7 +219,7 @@ describe("Materializer — descriptor walk", () => {
     const m = new Materializer(app, makeHooks());
     const scene = makeMockScene();
 
-    const desc = createUIDescriptor(() => [], {});
+    const desc = createUINode(() => [], {});
     expect(() => m.materialize(desc, scene)).toThrow(/no UI renderer registered/);
   });
 });
@@ -231,9 +231,9 @@ describe("Materializer — materializeRoots", () => {
     const m = new Materializer(app, makeHooks());
     const scene = makeMockScene();
 
-    const game1 = createGameDescriptor(() => undefined, {});
-    const game2 = createGameDescriptor(() => undefined, {});
-    const ui1 = createUIDescriptor(() => [], {});
+    const game1 = createEntityNode(() => undefined, {});
+    const game2 = createEntityNode(() => undefined, {});
+    const ui1 = createUINode(() => [], {});
 
     const result = m.materializeRoots(scene, [game1, ui1, game2]);
 
@@ -259,12 +259,12 @@ describe("Materializer — destroyCascade", () => {
     //    ├── ui-A
     //    └── child
     //         └── ui-B
-    const uiA = createUIDescriptor(() => [], {});
-    const uiB = createUIDescriptor(() => [], {});
-    const child = createGameDescriptor(() => [uiB], {});
-    const parent = createGameDescriptor(() => [uiA, child], {});
+    const uiA = createUINode(() => [], {});
+    const uiB = createUINode(() => [], {});
+    const child = createEntityNode(() => [uiB], {});
+    const parent = createEntityNode(() => [uiA, child], {});
 
-    const instance = m.materialize(parent, scene) as GameInstance;
+    const instance = m.materialize(parent, scene) as EntityInstance;
     expect(detached).toEqual([]); // nothing torn down yet
 
     m.destroyCascade(instance, (entity) => {
@@ -290,9 +290,9 @@ describe("Materializer — destroyCascade", () => {
     const m = new Materializer(app, makeHooks());
     const scene = makeMockScene();
 
-    const uiChild = createUIDescriptor(() => [], {});
-    const parent = createGameDescriptor(() => [uiChild], {});
-    const instance = m.materialize(parent, scene) as GameInstance;
+    const uiChild = createUINode(() => [], {});
+    const parent = createEntityNode(() => [uiChild], {});
+    const instance = m.materialize(parent, scene) as EntityInstance;
 
     // Grab the instance reference before cascade clears the list.
     const ui = instance.uiChildren[0];

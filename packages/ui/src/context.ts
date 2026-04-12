@@ -1,8 +1,8 @@
 import type { Placement } from "./placement";
-import type { NodeDescriptor } from "./types";
+import type { UIChild } from "./types";
 
 export interface UIContext {
-  nodes: NodeDescriptor[];
+  nodes: UIChild[];
   layout: { direction: "column" | "row"; gap: number; align?: string };
   /** Written by `usePlacement`. Read back by `renderUI`. */
   placement?: Placement;

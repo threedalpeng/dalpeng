@@ -1,4 +1,4 @@
-import type { GameInstance } from "../runtime/Instance";
+import type { EntityInstance } from "../runtime/Instance";
 import type Scene from "../Scene.js";
 import Component, { type ComponentConstructor } from "./Component.js";
 import Entity from "./Entity.js";
@@ -15,7 +15,7 @@ export default class GameEntity extends Entity {
     GameEntity.#gameEntityList.set(this.id, this);
   }
 
-  _gameInstance: GameInstance | null = null;
+  _gameInstance: EntityInstance | null = null;
   _layerName: string | undefined = undefined;
 
   scene!: Scene;

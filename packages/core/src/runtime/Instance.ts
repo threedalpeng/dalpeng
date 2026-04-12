@@ -10,34 +10,30 @@ export interface Instance<K extends InstanceKind = InstanceKind> {
   readonly [INSTANCE_KIND]: K;
 }
 
-export interface GameInstance extends Instance<"game"> {
+export interface EntityInstance extends Instance<"game"> {
   readonly descriptor: GameDescriptor;
   readonly entity: GameEntity;
-  readonly owner: GameInstance | Scene;
-  readonly gameChildren: GameInstance[];
+  readonly owner: EntityInstance | Scene;
+  readonly gameChildren: EntityInstance[];
   readonly uiChildren: UIInstance[];
 }
 
 export interface UIInstance extends Instance<"ui"> {
   readonly descriptor: UIDescriptor;
-  readonly owner: GameInstance | Scene;
+  readonly owner: EntityInstance | Scene;
   /** Opaque renderer payload — `core` never reads this. */
   readonly rendererState: unknown;
   /** Idempotent teardown. Safe to call multiple times. */
   detach(): void;
 }
 
-export function isInstance(value: unknown): value is GameInstance | UIInstance {
+export function isInstance(value: unknown): value is EntityInstance | UIInstance {
   return value !== null && typeof value === "object" && INSTANCE_KIND in (value as object);
 }
 
-export type EntityInstance = GameInstance;
-
-export function isGameInstance(value: unknown): value is GameInstance {
+export function isEntityInstance(value: unknown): value is EntityInstance {
   return isInstance(value) && value[INSTANCE_KIND] === "game";
 }
-
-export const isEntityInstance = isGameInstance;
 
 export function isUIInstance(value: unknown): value is UIInstance {
   return isInstance(value) && value[INSTANCE_KIND] === "ui";
