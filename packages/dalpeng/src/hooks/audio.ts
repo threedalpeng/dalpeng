@@ -2,7 +2,7 @@ import type { AudioHandle, PlayOptions } from "@dalpeng/core";
 import { requireEntity } from "../context";
 import { onDestroy } from "./gameEntity";
 
-/** Must be called inside defineGameEntity() setup. */
+/** Must be called inside defineEntity() setup. */
 export function useAudio(url: string) {
   const entity = requireEntity("useAudio");
   const audio = entity.currentApp.audio;

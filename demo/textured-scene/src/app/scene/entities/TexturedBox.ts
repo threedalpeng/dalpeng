@@ -1,6 +1,6 @@
 import { vec3 } from "@dalpeng/math";
 import {
-  defineGameEntity,
+  defineEntity,
   onStart,
   Transform,
   useComponent,
@@ -10,7 +10,7 @@ import {
 } from "dalpeng";
 import { makeWoodTextures } from "../../textures/procedural";
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("TexturedBox");
 
   useComponent(Transform, (t) => {

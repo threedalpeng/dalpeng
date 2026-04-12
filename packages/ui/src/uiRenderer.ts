@@ -1,6 +1,6 @@
 import {
   INSTANCE_KIND,
-  type GameInstance,
+  type EntityInstance,
   type ProjectionContext,
   type Scene,
   type UIInstance,
@@ -19,7 +19,7 @@ export const domUIRenderer: UIRenderer = {
   materialize(
     descriptor: UINode,
     context: ProjectionContext,
-    owner: GameInstance | Scene
+    owner: EntityInstance | Scene
   ): UIInstance {
     const result = renderUI(descriptor, {
       doc: context.doc,

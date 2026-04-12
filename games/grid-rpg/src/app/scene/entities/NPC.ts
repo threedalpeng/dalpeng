@@ -2,7 +2,7 @@ import { Sprite2DRenderer, SpriteAtlas, Transform } from "@dalpeng/core";
 import { vec3 } from "@dalpeng/math";
 import type { DialogueLine } from "dalpeng";
 import {
-  defineGameEntity,
+  defineEntity,
   Dialogue,
   onStart,
   onUpdate,
@@ -16,7 +16,7 @@ import FieldScene from "../FieldScene";
 
 const SPRITE_URL = "/assets/sprites/player.png";
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("NPC");
 
   const transform = useComponent(Transform, (t) => {

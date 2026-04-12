@@ -1,16 +1,8 @@
 import useBallPhysics from "@app/composables/useBallPhysics";
 import { vec3 } from "@dalpeng/math";
-import {
-  defineGameEntity,
-  Light,
-  Transform,
-  useComponent,
-  useMesh,
-  withName,
-  withTag,
-} from "dalpeng";
+import { defineEntity, Light, Transform, useComponent, useMesh, withName, withTag } from "dalpeng";
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("Ball");
   withTag("ball");
 

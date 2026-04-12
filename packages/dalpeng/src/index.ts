@@ -91,10 +91,10 @@ export type {
   DialogueController,
   DialogueLine,
   MenuItem,
-  NodeDescriptor,
   Placement,
   RenderContext,
   Size,
+  UIChild,
   Vec2,
   ViewportCorner,
 } from "@dalpeng/ui";

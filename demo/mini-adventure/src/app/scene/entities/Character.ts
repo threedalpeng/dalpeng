@@ -1,6 +1,6 @@
 import { vec3 } from "@dalpeng/math";
 import {
-  defineGameEntity,
+  defineEntity,
   onStart,
   spawnModelEntities,
   Transform,
@@ -11,7 +11,7 @@ import {
 } from "dalpeng";
 import useCharacterController from "../../composables/useCharacterController";
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("Character");
   withTag("character");
 

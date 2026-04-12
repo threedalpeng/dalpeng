@@ -1,10 +1,10 @@
 import { SpriteAtlas, TileCollider, TiledImporter, TilemapRenderer } from "@dalpeng/core";
-import { defineGameEntity, onStart, Transform, useComponent, withName } from "dalpeng";
+import { defineEntity, onStart, Transform, useComponent, withName } from "dalpeng";
 import { setTileCollider } from "../shared";
 
 const TILEMAP_URL = "/assets/maps/world.tmj";
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("Tilemap");
 
   useComponent(Transform);

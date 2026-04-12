@@ -1,8 +1,8 @@
 import usePaddleControl from "@app/composables/usePaddleControl";
 import { vec3 } from "@dalpeng/math";
-import { defineGameEntity, Transform, useComponent, useMesh, withName, withTag } from "dalpeng";
+import { defineEntity, Transform, useComponent, useMesh, withName, withTag } from "dalpeng";
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("Paddle");
   withTag("paddle");
 

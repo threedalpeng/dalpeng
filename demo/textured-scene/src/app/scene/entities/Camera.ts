@@ -1,7 +1,7 @@
 import { vec3 } from "@dalpeng/math";
-import { Camera, defineGameEntity, onUpdate, Transform, useComponent, withName } from "dalpeng";
+import { Camera, defineEntity, onUpdate, Transform, useComponent, withName } from "dalpeng";
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("Camera");
 
   const transform = useComponent(Transform, (t) => {

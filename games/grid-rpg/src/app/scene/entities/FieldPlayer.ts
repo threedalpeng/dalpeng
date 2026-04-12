@@ -2,7 +2,7 @@ import { Sprite2DRenderer, SpriteAnimator, SpriteAtlas } from "@dalpeng/core";
 import { vec3 } from "@dalpeng/math";
 import type { SpriteAnimationClip } from "dalpeng";
 import {
-  defineGameEntity,
+  defineEntity,
   onStart,
   onUpdate,
   Time,
@@ -29,7 +29,7 @@ const WALK_CLIPS: SpriteAnimationClip[] = [
   { name: "walk-right", frames: [12, 13, 14, 15], frameDuration: 0.15, loop: true },
 ];
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("Player");
   withTag("player");
 

@@ -1,8 +1,8 @@
 import { Vec3 } from "@dalpeng/math";
 import type Application from "./Application";
+import type { AppNode } from "./AppNode";
 import type GameEntity from "./ecs/GameEntity";
 import Transform from "./ecs/Transform";
-import type { LogicalDescriptor } from "./runtime/Descriptor";
 import { computed, ref, type ReadonlyRef } from "./runtime/reactive";
 import EventEmitter from "./utils/EventEmitter";
 
@@ -29,7 +29,7 @@ export default class Scene {
     this.#app = app;
   }
 
-  _pendingRootDescriptors: LogicalDescriptor[] = [];
+  _pendingRootDescriptors: AppNode[] = [];
 
   rootEntities: { [key: number]: GameEntity } = {};
   #entities = new Set<GameEntity>();

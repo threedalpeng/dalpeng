@@ -6,95 +6,83 @@ import type {
   FloatingOpts,
   ForOpts,
   MenuItem,
-  NodeDescriptor,
   RangeOpts,
   SelectOption,
   ShowOpts,
   SplitOpts,
   TabsOpts,
   TextOpts,
+  UIChild,
 } from "./types";
 
-export function defineUI(setup: () => NodeDescriptor[]): () => UINode;
-export function defineUI<P>(setup: (props: P) => NodeDescriptor[]): (props: P) => UINode;
-export function defineUI<P = void>(setup: (props?: P) => NodeDescriptor[]) {
+export function defineUI(setup: () => UIChild[]): () => UINode;
+export function defineUI<P>(setup: (props: P) => UIChild[]): (props: P) => UINode;
+export function defineUI<P = void>(setup: (props?: P) => UIChild[]) {
   return ((props?: P) => createUINode(setup as any, props as any)) as any;
 }
 
-export function Text(content: string, opts?: TextOpts): NodeDescriptor;
-export function Text<T>(
-  source: Ref<T>,
-  formatter: (v: T) => string,
-  opts?: TextOpts
-): NodeDescriptor;
+export function Text(content: string, opts?: TextOpts): UIChild;
+export function Text<T>(source: Ref<T>, formatter: (v: T) => string, opts?: TextOpts): UIChild;
 export function Text(
   contentOrSource: string | Ref<any>,
   formatterOrOpts?: any,
   opts?: TextOpts
-): NodeDescriptor {
+): UIChild {
   if (typeof contentOrSource === "string") {
     return { type: "text", content: contentOrSource, opts: formatterOrOpts };
   }
   return { type: "text", content: contentOrSource, formatter: formatterOrOpts, opts };
 }
 
-export function Bar(opts: BarOpts): NodeDescriptor;
-export function Bar<T>(source: Ref<T>, formatter: (v: T) => number, opts: BarOpts): NodeDescriptor;
-export function Bar(
-  sourceOrOpts: Ref<any> | BarOpts,
-  formatter?: any,
-  opts?: BarOpts
-): NodeDescriptor {
+export function Bar(opts: BarOpts): UIChild;
+export function Bar<T>(source: Ref<T>, formatter: (v: T) => number, opts: BarOpts): UIChild;
+export function Bar(sourceOrOpts: Ref<any> | BarOpts, formatter?: any, opts?: BarOpts): UIChild {
   if (isRef(sourceOrOpts)) {
     return { type: "bar", source: sourceOrOpts, formatter, opts: opts! };
   }
   return { type: "bar", opts: sourceOrOpts as BarOpts };
 }
 
-export function Html(content: string): NodeDescriptor {
+export function Html(content: string): UIChild {
   return { type: "html", content };
 }
 
-export function Toggle(value: Ref<boolean>, label: string): NodeDescriptor;
-export function Toggle(featureKey: string, label: string): NodeDescriptor;
-export function Toggle(valueOrKey: Ref<boolean> | string, label: string): NodeDescriptor {
+export function Toggle(value: Ref<boolean>, label: string): UIChild;
+export function Toggle(featureKey: string, label: string): UIChild;
+export function Toggle(valueOrKey: Ref<boolean> | string, label: string): UIChild {
   const source: BindingSource<boolean> = isRef(valueOrKey)
     ? { kind: "ref", ref: valueOrKey }
     : { kind: "feature", key: valueOrKey };
   return { type: "toggle", source, label };
 }
 
-export function Range(value: Ref<number>, label: string, opts: RangeOpts): NodeDescriptor;
-export function Range(featureKey: string, label: string, opts: RangeOpts): NodeDescriptor;
-export function Range(
-  valueOrKey: Ref<number> | string,
-  label: string,
-  opts: RangeOpts
-): NodeDescriptor {
+export function Range(value: Ref<number>, label: string, opts: RangeOpts): UIChild;
+export function Range(featureKey: string, label: string, opts: RangeOpts): UIChild;
+export function Range(valueOrKey: Ref<number> | string, label: string, opts: RangeOpts): UIChild {
   const source: BindingSource<number> = isRef(valueOrKey)
     ? { kind: "ref", ref: valueOrKey }
     : { kind: "feature", key: valueOrKey };
   return { type: "range", source, label, opts };
 }
 
-export function Select(value: Ref<string>, label: string, options: SelectOption[]): NodeDescriptor;
-export function Select(featureKey: string, label: string, options: SelectOption[]): NodeDescriptor;
+export function Select(value: Ref<string>, label: string, options: SelectOption[]): UIChild;
+export function Select(featureKey: string, label: string, options: SelectOption[]): UIChild;
 export function Select(
   valueOrKey: Ref<string> | string,
   label: string,
   options: SelectOption[]
-): NodeDescriptor {
+): UIChild {
   const source: BindingSource<string> = isRef(valueOrKey)
     ? { kind: "ref", ref: valueOrKey }
     : { kind: "feature", key: valueOrKey };
   return { type: "select", source, label, options };
 }
 
-export function Button(label: string, onClick: () => void): NodeDescriptor {
+export function Button(label: string, onClick: () => void): UIChild {
   return { type: "button", label, onClick };
 }
 
-export function Value(label: string, content: string | Ref<string>): NodeDescriptor {
+export function Value(label: string, content: string | Ref<string>): UIChild {
   return { type: "value", label, content };
 }
 
@@ -106,35 +94,32 @@ export function useFeature<K extends keyof RenderConfig>(key: K): Ref<RenderConf
   return r;
 }
 
-export function Menu(items: MenuItem[], onSelect: (item: MenuItem) => void): NodeDescriptor {
+export function Menu(items: MenuItem[], onSelect: (item: MenuItem) => void): UIChild {
   const focusIndex = ref(0);
   return { type: "menu", items, onSelect, focusIndex };
 }
 
-export function List<T>(
-  items: T[],
-  renderItem: (item: T, index: number) => NodeDescriptor
-): NodeDescriptor {
+export function List<T>(items: T[], renderItem: (item: T, index: number) => UIChild): UIChild {
   return { type: "list", children: items.map((item, i) => renderItem(item, i)) };
 }
 
-export function Split(opts: SplitOpts): NodeDescriptor {
+export function Split(opts: SplitOpts): UIChild {
   return { type: "split", opts };
 }
 
-export function Tabs(opts: TabsOpts): NodeDescriptor {
+export function Tabs(opts: TabsOpts): UIChild {
   return { type: "tabs", opts };
 }
 
-export function For<T>(opts: ForOpts<T>): NodeDescriptor {
+export function For<T>(opts: ForOpts<T>): UIChild {
   return { type: "for", opts };
 }
 
-export function Show(opts: ShowOpts): NodeDescriptor {
+export function Show(opts: ShowOpts): UIChild {
   return { type: "show", opts };
 }
 
-export function Floating(opts: FloatingOpts): NodeDescriptor {
+export function Floating(opts: FloatingOpts): UIChild {
   return { type: "floating", opts };
 }
 

@@ -1,5 +1,5 @@
 import {
-  defineGameEntity,
+  defineEntity,
   onStart,
   spawnModelEntities,
   Transform,
@@ -9,7 +9,7 @@ import {
   withName,
 } from "dalpeng";
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("GLTFModel");
 
   const transform = useComponent(Transform);

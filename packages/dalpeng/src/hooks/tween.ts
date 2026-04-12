@@ -2,7 +2,7 @@ import type { Tween, TweenOptions } from "@dalpeng/core";
 import { requireEntity } from "../context";
 import { onDestroy } from "./gameEntity";
 
-/** Must be called inside defineGameEntity() setup. */
+/** Must be called inside defineEntity() setup. */
 export function useTween() {
   const entity = requireEntity("useTween");
   const tweens = entity.currentApp.tweens;

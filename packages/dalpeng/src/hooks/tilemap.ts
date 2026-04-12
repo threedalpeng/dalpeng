@@ -11,7 +11,7 @@ export interface TilemapHandle {
   getObjects(type: string): TriggerZone[];
 }
 
-/** Must be called inside defineGameEntity() setup. */
+/** Must be called inside defineEntity() setup. */
 export function useTilemap(url: string, pixelsPerUnit = 16): TilemapHandle {
   const entity = requireEntity("useTilemap");
   const atlases = entity.currentApp.atlases;

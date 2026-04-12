@@ -1,5 +1,5 @@
 import { vec3 } from "@dalpeng/math";
-import { defineGameEntity, withName } from "dalpeng";
+import { defineEntity, withName } from "dalpeng";
 import { createBrick } from "./Brick";
 
 const COLS = 8;
@@ -16,7 +16,7 @@ const ROW_COLORS = [
   vec3(0.2, 0.8, 0.3), // green
 ];
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("BrickGrid");
 
   const bricks = [];

@@ -1,8 +1,8 @@
 import useQuad from "@app/composables/render/useQuad";
 import { vec3 } from "@dalpeng/math";
-import { defineGameEntity, onUpdate, Time, Transform, useComponent, withName } from "dalpeng";
+import { defineEntity, onUpdate, Time, Transform, useComponent, withName } from "dalpeng";
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("Ball");
 
   const t = useComponent(Transform, (transform) => {

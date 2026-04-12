@@ -37,6 +37,8 @@ export function isGameInstance(value: unknown): value is GameInstance {
   return isInstance(value) && value[INSTANCE_KIND] === "game";
 }
 
+export const isEntityInstance = isGameInstance;
+
 export function isUIInstance(value: unknown): value is UIInstance {
   return isInstance(value) && value[INSTANCE_KIND] === "ui";
 }

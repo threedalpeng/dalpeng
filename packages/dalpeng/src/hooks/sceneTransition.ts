@@ -4,7 +4,7 @@ import type { UseScene } from "./scene";
 
 const persistentEntities = new Set<GameEntity>();
 
-/** Mark the current entity as persistent across scene transitions. Must be called inside defineGameEntity() setup. */
+/** Mark the current entity as persistent across scene transitions. Must be called inside defineEntity() setup. */
 export function usePersistent(): void {
   const entity = requireEntity("usePersistent");
   persistentEntities.add(entity);
@@ -22,7 +22,7 @@ export interface SceneSwitcher {
   switchTo(sceneFactory: UseScene, opts?: TransitionOptions): Promise<void>;
 }
 
-/** Returns a scene-switch handle. Must be called inside defineGameEntity() setup. */
+/** Returns a scene-switch handle. Must be called inside defineEntity() setup. */
 export function useSceneSwitch(): SceneSwitcher {
   const entity = requireEntity("useSceneSwitch");
 

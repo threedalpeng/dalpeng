@@ -1,6 +1,6 @@
 import { cleared, gameOver, resetGame, setCleared } from "@app/composables/useGameState";
 import {
-  defineGameEntity,
+  defineEntity,
   onUpdate,
   spawn,
   Transform,
@@ -12,7 +12,7 @@ import Ball from "./Ball";
 import BrickGrid from "./BrickGrid";
 import Paddle from "./Paddle";
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("GameManager");
 
   const transform = useComponent(Transform);

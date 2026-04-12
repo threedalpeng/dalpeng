@@ -7,7 +7,7 @@ export interface TextureHandle {
   ready: Promise<any>;
 }
 
-/** Must be called inside defineGameEntity() setup. */
+/** Must be called inside defineEntity() setup. */
 export function useTexture(url: string, opts?: TextureLoadOptions): TextureHandle {
   const entity = requireEntity("useTexture");
   const textures = entity.currentApp.textures;

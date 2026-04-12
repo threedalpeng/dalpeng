@@ -44,7 +44,6 @@ export type {
   FloatingOpts,
   ForOpts,
   MenuItem,
-  NodeDescriptor,
   RangeOpts,
   SelectOption,
   ShowOpts,

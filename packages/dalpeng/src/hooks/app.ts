@@ -5,7 +5,7 @@ import {
   Scene,
   Transform,
   type CanvasOptions,
-  type GameInstance,
+  type EntityInstance,
   type Layer,
   type MaterializerHooks,
   type ProjectionContext,
@@ -105,14 +105,14 @@ function makeMaterializerHooks(app: Application): MaterializerHooks {
       if (parent instanceof Scene) {
         parent.addEntity(entity);
       } else {
-        (parent as GameInstance).entity.addChild(entity);
+        (parent as EntityInstance).entity.addChild(entity);
       }
       entity.addComponent(Transform);
       return entity;
     },
 
     pushGameContext(entity, parent) {
-      const prevParent = parent instanceof Scene ? null : (parent as GameInstance).entity;
+      const prevParent = parent instanceof Scene ? null : (parent as EntityInstance).entity;
       setThisEntity(entity);
       setParentEntity(prevParent);
       const scene = entity.scene;
@@ -184,7 +184,7 @@ export async function runApp(
     const pending = scene._pendingRootDescriptors;
     if (pending.length === 0) continue;
     scene._pendingRootDescriptors = [];
-    materializer.materializeRoots(scene, pending);
+    materializer.materializeRoots(scene, pending as any);
   }
 
   return app;

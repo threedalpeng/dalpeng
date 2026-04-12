@@ -449,7 +449,7 @@ export default class Application {
     const pending = newScene._pendingRootDescriptors;
     if (pending.length > 0) {
       newScene._pendingRootDescriptors = [];
-      this.#materializer.materializeRoots(newScene, pending);
+      this.#materializer.materializeRoots(newScene, pending as unknown as LogicalDescriptor[]);
     }
 
     for (const entityId of Object.keys(newScene.rootEntities)) {

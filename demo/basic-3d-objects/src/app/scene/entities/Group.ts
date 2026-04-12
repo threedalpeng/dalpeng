@@ -1,10 +1,10 @@
-import { defineGameEntity, withName } from "dalpeng";
+import { defineEntity, withName } from "dalpeng";
 import Box from "./Box";
 import Cylinder from "./Cylinder";
 import Ground from "./Ground";
 import Sphere from "./Sphere";
 
-export default defineGameEntity(() => {
+export default defineEntity(() => {
   withName("Group");
 
   // const transform = useComponent(Transform)!;

@@ -9,7 +9,7 @@ export function defineScene(setup: () => readonly AppNode[] | void) {
     setThisScene(scene);
     try {
       getThisApp()?.addScene(scene);
-      scene._pendingRootDescriptors = [...(setup() ?? [])] as any;
+      (scene._pendingRootDescriptors as AppNode[]) = [...(setup() ?? [])];
       return scene;
     } finally {
       setThisScene(null);

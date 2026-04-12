@@ -91,11 +91,10 @@ export {
 } from "./AppNode";
 export {
   INSTANCE_KIND,
-  isGameInstance,
+  isEntityInstance,
   isInstance,
   isUIInstance,
   type EntityInstance,
-  type GameInstance,
   type Instance,
   type InstanceKind,
   type UIInstance,

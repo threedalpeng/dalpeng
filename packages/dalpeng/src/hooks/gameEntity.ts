@@ -20,11 +20,9 @@ function uiHasActiveScope(): boolean {
 export type GameFactory = () => EntityNode;
 export type GameFactoryWithProps<P> = (props: P) => EntityNode;
 
-export function defineGameEntity(setup: () => AppNode[] | void): GameFactory;
-export function defineGameEntity<P>(setup: (props: P) => AppNode[] | void): GameFactoryWithProps<P>;
-export function defineGameEntity<P>(
-  setup: (props: P) => AppNode[] | void
-): (props: P) => EntityNode {
+export function defineEntity(setup: () => AppNode[] | void): GameFactory;
+export function defineEntity<P>(setup: (props: P) => AppNode[] | void): GameFactoryWithProps<P>;
+export function defineEntity<P>(setup: (props: P) => AppNode[] | void): (props: P) => EntityNode {
   // Passing undefined for P=void is sound at runtime; the public overloads
   // declare the correct external types.
   return (props: P) => createEntityNode<P>(setup as any, props) as unknown as EntityNode;
@@ -77,7 +75,7 @@ export function withTag(tag: string) {
  * Assign the current setup scope to a named layer.
  *
  * Works in both game entity and UI scopes:
- *   - Inside `defineGameEntity`: stamps the entity with the layer name.
+ *   - Inside `defineEntity`: stamps the entity with the layer name.
  *   - Inside `defineUI`: forwards to `@dalpeng/ui`'s `withLayer`.
  *
  * Game entity validation happens immediately (entity has app context).
@@ -93,7 +91,7 @@ export function withLayer(name: string) {
   if (!app) {
     throw new Error(
       `withLayer("${name}"): entity has no Application context yet. ` +
-        `Call withLayer inside defineGameEntity setup, after the entity is attached to a scene.`
+        `Call withLayer inside defineEntity setup, after the entity is attached to a scene.`
     );
   }
   if (!app.layers.has(name)) {
@@ -132,7 +130,7 @@ export function onDestroy(callback: () => void) {
   } else if (hasActiveCleanupScope()) {
     registerCleanup(callback);
   } else {
-    throw new Error("onDestroy() requires defineGameEntity or defineUI context.");
+    throw new Error("onDestroy() requires defineEntity or defineUI context.");
   }
 }
 

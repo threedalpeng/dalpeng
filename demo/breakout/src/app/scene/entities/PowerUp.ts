@@ -1,7 +1,7 @@
 import { addLife, setSpeedMultiplier, speedMultiplier } from "@app/composables/useGameState";
 import { vec3, type Vec3 } from "@dalpeng/math";
 import {
-  defineGameEntity,
+  defineEntity,
   Light,
   onUpdate,
   Time,
@@ -38,7 +38,7 @@ const EFFECT_VISUALS: Record<PowerUpEffect, PowerUpVisual> = {
 
 export function createPowerUp(x: number, y: number, effect: PowerUpEffect) {
   const visual = EFFECT_VISUALS[effect];
-  return defineGameEntity(() => {
+  return defineEntity(() => {
     withName("PowerUp");
     withTag("powerup");
 

@@ -17,7 +17,7 @@ export interface ModelHandle {
   ready: Promise<any>;
 }
 
-/** Must be called inside defineGameEntity() setup. */
+/** Must be called inside defineEntity() setup. */
 export function useModel(url: string): ModelHandle {
   const entity = requireEntity("useModel");
   const models = entity.currentApp.models;

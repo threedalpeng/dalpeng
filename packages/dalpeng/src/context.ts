@@ -58,7 +58,7 @@ export function requireEntity(hookName: string): GameEntity {
           `If you need to react to state changes inside a UI, use watch(ref, ...) instead.`
       );
     }
-    throw new Error(`${hookName}() must be called inside defineGameEntity setup.`);
+    throw new Error(`${hookName}() must be called inside defineEntity setup.`);
   }
   return thisEntity;
 }

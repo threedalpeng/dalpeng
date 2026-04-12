@@ -19,9 +19,7 @@ export * from "./tween";
 export function withName(name: string) {
   const current = getThis();
   if (!current) {
-    throw new Error(
-      "withName() must be called inside defineApp/defineScene/defineGameEntity setup."
-    );
+    throw new Error("withName() must be called inside defineApp/defineScene/defineEntity setup.");
   }
   current.name = name;
 }

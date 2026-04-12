@@ -9,9 +9,9 @@ export interface SpriteAtlasHandle {
   ready: Promise<SpriteAtlas>;
 }
 
-/** Loads a uniform-grid sprite atlas. Must be called inside defineGameEntity() setup. */
+/** Loads a uniform-grid sprite atlas. Must be called inside defineEntity() setup. */
 export function useSpriteAtlas(imageUrl: string, frameW: number, frameH: number): SpriteAtlasHandle;
-/** Loads a named-frame sprite atlas. Must be called inside defineGameEntity() setup. */
+/** Loads a named-frame sprite atlas. Must be called inside defineEntity() setup. */
 export function useSpriteAtlas(imageUrl: string, frames: AtlasFrame[]): SpriteAtlasHandle;
 export function useSpriteAtlas(
   imageUrl: string,
@@ -42,7 +42,7 @@ export function useSpriteAtlas(
   return handle;
 }
 
-/** Adds a Sprite2DRenderer to the current entity. Must be called inside defineGameEntity() setup. */
+/** Adds a Sprite2DRenderer to the current entity. Must be called inside defineEntity() setup. */
 export function useSprite(
   atlasHandle?: SpriteAtlasHandle,
   frame?: number | string
@@ -61,7 +61,7 @@ export function useSprite(
   return renderer;
 }
 
-/** Adds a SpriteAnimator to the current entity. Must be called inside defineGameEntity() setup. */
+/** Adds a SpriteAnimator to the current entity. Must be called inside defineEntity() setup. */
 export function useSpriteAnimator(clips?: SpriteAnimationClip[]): SpriteAnimator {
   const animator = useComponent(SpriteAnimator);
   if (clips) {

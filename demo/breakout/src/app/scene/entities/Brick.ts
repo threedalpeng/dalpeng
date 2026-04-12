@@ -1,6 +1,6 @@
 import { vec3, type Vec3 } from "@dalpeng/math";
 import {
-  defineGameEntity,
+  defineEntity,
   Easings,
   MeshRenderer,
   onDestroy,
@@ -45,7 +45,7 @@ export function takeDamage(brick: GameEntity) {
 }
 
 export function createBrick(x: number, y: number, color: Vec3, hitPoints = 1) {
-  return defineGameEntity(() => {
+  return defineEntity(() => {
     withName("Brick");
     withTag("brick");
 
@@ -74,7 +74,7 @@ export function createBrick(x: number, y: number, color: Vec3, hitPoints = 1) {
       const pos = transform.position;
       const col = color;
       spawn(
-        defineGameEntity(() => {
+        defineEntity(() => {
           withName("BrickBreakEffect");
           const t = useComponent(Transform);
           t.position = vec3(pos.x, pos.y, pos.z);
@@ -101,7 +101,7 @@ export function createBrick(x: number, y: number, color: Vec3, hitPoints = 1) {
         })
       );
       spawn(
-        defineGameEntity(() => {
+        defineEntity(() => {
           withName("BrickParticle");
           const pt = useComponent(Transform);
           pt.position = vec3(pos.x, pos.y, pos.z);
