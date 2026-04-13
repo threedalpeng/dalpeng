@@ -1,4 +1,4 @@
-import { createUINode, isRef, ref, type Ref, type RenderConfig, type UINode } from "@dalpeng/core";
+import { APP_NODE_KIND, isRef, ref, type Ref, type RenderConfig, type UINode } from "@dalpeng/core";
 import { requireUI } from "./context";
 import type {
   BarOpts,
@@ -18,7 +18,7 @@ import type {
 export function defineUI(setup: () => UIChild[]): () => UINode;
 export function defineUI<P>(setup: (props: P) => UIChild[]): (props: P) => UINode;
 export function defineUI<P = void>(setup: (props?: P) => UIChild[]) {
-  return ((props?: P) => createUINode(setup as any, props as any)) as any;
+  return ((props?: P) => ({ [APP_NODE_KIND]: "ui", setup, props }) as any) as any;
 }
 
 export function Text(content: string, opts?: TextOpts): UIChild;

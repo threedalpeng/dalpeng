@@ -1,5 +1,5 @@
 import {
-  createEntityNode,
+  APP_NODE_KIND,
   GameEntity,
   MeshBuilder,
   MeshRenderer,
@@ -25,7 +25,7 @@ export function defineEntity<P>(setup: (props: P) => AppNode[] | void): GameFact
 export function defineEntity<P>(setup: (props: P) => AppNode[] | void): (props: P) => EntityNode {
   // Passing undefined for P=void is sound at runtime; the public overloads
   // declare the correct external types.
-  return (props: P) => createEntityNode<P>(setup as any, props) as unknown as EntityNode;
+  return (props: P) => ({ [APP_NODE_KIND]: "game", setup, props }) as unknown as EntityNode;
 }
 
 type ComponentConstructor<Type extends Component> = new (gameEntity: GameEntity) => Type;

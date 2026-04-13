@@ -81,14 +81,7 @@ export {
   type ResolvedLayer,
 } from "./runtime/Layer";
 
-export {
-  APP_NODE_KIND,
-  createEntityNode,
-  createUINode,
-  type AppNode,
-  type EntityNode,
-  type UINode,
-} from "./AppNode";
+export { APP_NODE_KIND, type AppNode, type EntityNode, type UINode } from "./AppNode";
 export {
   INSTANCE_KIND,
   isEntityInstance,

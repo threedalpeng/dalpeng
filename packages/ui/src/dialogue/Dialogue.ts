@@ -1,11 +1,13 @@
-import { createUINode, registerCleanup, type UINode } from "@dalpeng/core";
+import { APP_NODE_KIND, registerCleanup, type UINode } from "@dalpeng/core";
 import { usePlacement } from "../define";
 import type { DialogueController } from "./controller";
 import type { DialogueLine } from "./types";
 
 export function Dialogue(controller: DialogueController): UINode {
-  return createUINode(
-    (props: { controller: DialogueController }) => {
+  return {
+    [APP_NODE_KIND]: "ui",
+    props: { controller },
+    setup: (props: { controller: DialogueController }) => {
       const { controller } = props;
 
       usePlacement({
@@ -142,6 +144,5 @@ export function Dialogue(controller: DialogueController): UINode {
 
       return [{ type: "live", element: panel, cleanups }];
     },
-    { controller }
-  );
+  } as unknown as UINode;
 }

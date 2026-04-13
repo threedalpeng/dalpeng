@@ -1,6 +1,5 @@
 import { DESCRIPTOR_KIND } from "./runtime/Descriptor";
 
-export { createEntityNode, createUINode } from "./runtime/Descriptor";
 export { DESCRIPTOR_KIND as APP_NODE_KIND };
 
 export interface AppNode {
