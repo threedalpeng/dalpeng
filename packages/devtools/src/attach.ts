@@ -1,5 +1,6 @@
 import { FrameProfiler, Logger, type Application } from "@dalpeng/core";
 import { createDevToolsHost } from "./createHost";
+import { registerDefaultSchemas } from "./defaultSchemas";
 import { DevToolsRootHost, type DevToolsRootHostOptions } from "./hostFrame";
 import type { DevToolsPlugin } from "./plugin";
 import { PluginRegistry } from "./registry";
@@ -33,6 +34,8 @@ export function attachDevTools(app: Application, opts: AttachDevToolsOptions = {
   const prevLogger = Logger.enabled;
   FrameProfiler.enabled = true;
   Logger.enabled = true;
+
+  registerDefaultSchemas();
 
   const { host, attachApp, detach } = createDevToolsHost(app);
   attachApp(app);

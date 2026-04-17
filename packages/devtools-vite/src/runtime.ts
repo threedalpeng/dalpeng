@@ -18,11 +18,12 @@ export async function setupDevTools(
   ) {
     const {
       attachDevTools,
-      scenePlugin,
-      performancePlugin,
+      assetsPlugin,
       consolePlugin,
-      renderPlugin,
       layersPlugin,
+      performancePlugin,
+      renderPlugin,
+      scenePlugin,
     } = await import("@dalpeng/devtools");
 
     return attachDevTools(app, {
@@ -33,6 +34,7 @@ export async function setupDevTools(
         consolePlugin(),
         renderPlugin(),
         layersPlugin(),
+        assetsPlugin(),
       ],
     });
   }

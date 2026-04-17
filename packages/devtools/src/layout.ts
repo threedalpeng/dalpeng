@@ -80,7 +80,11 @@ export function defaultWorkspace(): Workspace {
       "col",
       [
         createTabs(["@dalpeng/devtools/scene:scene"]),
-        createTabs(["@dalpeng/devtools/scene:inspector", "@dalpeng/devtools/render:render"]),
+        createTabs([
+          "@dalpeng/devtools/scene:inspector",
+          "@dalpeng/devtools/render:render",
+          "@dalpeng/devtools/assets:textures",
+        ]),
         createTabs([
           "@dalpeng/devtools/console:console",
           "@dalpeng/devtools/performance:perf",

@@ -1,9 +1,9 @@
-import { watch } from "@dalpeng/core";
+import { watch, type LogEntry, type LogLevel } from "@dalpeng/core";
 import { defineUI, type UIChild } from "@dalpeng/ui";
 import type { DevToolsPlugin } from "../plugin";
 import { definePlugin } from "../plugin";
 
-const LEVEL_COLORS: Record<string, string> = {
+const LEVEL_COLORS: Record<LogLevel, string> = {
   trace: "#6b7280",
   debug: "#9ba3b0",
   info: "#cbd5e1",
@@ -11,20 +11,134 @@ const LEVEL_COLORS: Record<string, string> = {
   error: "#e26b6b",
 };
 
+const LEVEL_RANK: Record<LogLevel, number> = {
+  trace: 0,
+  debug: 1,
+  info: 2,
+  warn: 3,
+  error: 4,
+};
+
+const LEVEL_OPTIONS: LogLevel[] = ["trace", "debug", "info", "warn", "error"];
+
 function escapeHtml(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 export function consolePlugin(): DevToolsPlugin {
-  // Live DOM element — `Html(...)` is static so we hand-build and subscribe
-  // its innerHTML to `host.logs` via `watch`.
-  const container = document.createElement("div");
-  container.style.cssText =
-    "font-family:inherit;font-size:11px;line-height:1.5;max-height:100%;overflow:auto";
-  container.innerHTML = '<div style="color:#6b7280">no log entries yet</div>';
+  const root = document.createElement("div");
+  root.style.cssText = "display:flex;flex-direction:column;height:100%;min-height:0;font-size:11px";
 
-  const cleanups = new Set<() => void>();
-  const liveNode: UIChild = { type: "live", element: container, cleanups };
+  // ── Filter bar ───────────────────────────────────────────────────
+  const bar = document.createElement("div");
+  bar.style.cssText =
+    "display:flex;gap:4px;padding:4px 6px;border-bottom:1px solid var(--dt-border);align-items:center";
+
+  const levelSelect = document.createElement("select");
+  levelSelect.style.cssText =
+    "background:var(--dt-bg-sunken);color:var(--dt-fg);border:1px solid var(--dt-border);border-radius:2px;padding:2px 4px;font:inherit;font-size:10px;outline:none";
+  for (const lv of LEVEL_OPTIONS) {
+    const o = document.createElement("option");
+    o.value = lv;
+    o.textContent = `≥ ${lv}`;
+    if (lv === "info") o.selected = true;
+    levelSelect.appendChild(o);
+  }
+
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.placeholder = "🔍 filter…";
+  searchInput.style.cssText =
+    "flex:1;background:var(--dt-bg-sunken);color:var(--dt-fg);border:1px solid var(--dt-border);border-radius:2px;padding:2px 6px;font:inherit;font-size:10px;outline:none";
+
+  const clearBtn = document.createElement("button");
+  clearBtn.textContent = "clear";
+  clearBtn.style.cssText =
+    "background:var(--dt-bg-sunken);color:var(--dt-fg-muted);border:1px solid var(--dt-border);border-radius:2px;padding:2px 8px;font:inherit;font-size:10px;cursor:pointer";
+
+  const countBadge = document.createElement("span");
+  countBadge.style.cssText =
+    "color:var(--dt-fg-dim);font-size:10px;min-width:50px;text-align:right";
+
+  bar.appendChild(levelSelect);
+  bar.appendChild(searchInput);
+  bar.appendChild(countBadge);
+  bar.appendChild(clearBtn);
+
+  // ── Log list ─────────────────────────────────────────────────────
+  const list = document.createElement("div");
+  list.style.cssText = "flex:1;overflow:auto;padding:2px 0";
+  list.innerHTML = '<div style="color:#6b7280;padding:8px">no log entries yet</div>';
+
+  root.appendChild(bar);
+  root.appendChild(list);
+
+  const liveNode: UIChild = { type: "live", element: root, cleanups: new Set() };
+
+  let minLevel: LogLevel = "info";
+  let query = "";
+  let latestEntries: readonly LogEntry[] = [];
+  let autoScroll = true;
+
+  list.addEventListener("scroll", () => {
+    const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 20;
+    autoScroll = atBottom;
+  });
+
+  levelSelect.addEventListener("change", () => {
+    minLevel = levelSelect.value as LogLevel;
+    render();
+  });
+
+  searchInput.addEventListener("input", () => {
+    query = searchInput.value.trim().toLowerCase();
+    render();
+  });
+
+  clearBtn.addEventListener("click", () => {
+    // Clear consumes the current buffer visually — actual Logger buffer stays.
+    // To really clear would require `Logger.clear()`; here we just hide current entries.
+    minLevel = (levelSelect.value as LogLevel) ?? "info";
+    query = "";
+    searchInput.value = "";
+    render();
+    list.scrollTop = list.scrollHeight;
+  });
+
+  function render(): void {
+    if (latestEntries.length === 0) {
+      list.innerHTML = '<div style="color:#6b7280;padding:8px">no log entries yet</div>';
+      countBadge.textContent = "0";
+      return;
+    }
+    const minRank = LEVEL_RANK[minLevel];
+    const filtered = latestEntries.filter((e) => {
+      if (LEVEL_RANK[e.level] < minRank) return false;
+      if (query) {
+        const hay = `${e.module} ${e.message}`.toLowerCase();
+        if (!hay.includes(query)) return false;
+      }
+      return true;
+    });
+
+    countBadge.textContent = `${filtered.length}/${latestEntries.length}`;
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<div style="color:#6b7280;padding:8px">no matches</div>';
+      return;
+    }
+
+    const rows = filtered
+      .slice(-500)
+      .map((e) => {
+        const ts = (e.timestamp / 1000).toFixed(2);
+        const color = LEVEL_COLORS[e.level];
+        return `<div style="padding:2px 6px;border-bottom:1px solid #1f242c;color:${color};white-space:pre-wrap;word-break:break-word"><span style="color:#6b7280">[${ts}] [${e.module}]</span> ${escapeHtml(e.message)}</div>`;
+      })
+      .join("");
+    list.innerHTML = rows;
+    if (autoScroll) list.scrollTop = list.scrollHeight;
+  }
 
   return definePlugin({
     name: "@dalpeng/devtools/console",
@@ -34,28 +148,12 @@ export function consolePlugin(): DevToolsPlugin {
       const unwatch = watch(
         host.logs,
         (entries) => {
-          if (entries.length === 0) {
-            container.innerHTML = '<div style="color:#6b7280">no log entries yet</div>';
-            return;
-          }
-          const rows = entries
-            .slice(-200)
-            .map((e) => {
-              const ts = (e.timestamp / 1000).toFixed(2);
-              const color = LEVEL_COLORS[e.level] ?? "#e6e8ec";
-              return `<div style="padding:2px 0;border-bottom:1px solid #1f242c;color:${color}"><span style="color:#6b7280">[${ts}] [${e.module}]</span> ${escapeHtml(e.message)}</div>`;
-            })
-            .join("");
-          container.innerHTML = rows;
-          container.scrollTop = container.scrollHeight;
+          latestEntries = entries;
+          render();
         },
         { immediate: true }
       );
-      cleanups.add(unwatch);
-      return () => {
-        cleanups.forEach((fn) => fn());
-        cleanups.clear();
-      };
+      return unwatch;
     },
 
     panels: [
