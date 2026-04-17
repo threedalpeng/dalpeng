@@ -1,5 +1,6 @@
 import type Skeleton from "@/animation/Skeleton";
 import type GameEntity from "@/ecs/GameEntity";
+import type GfxBuffer from "@/gfx/Buffer";
 import type GfxVertexArray from "@/gfx/VertexArray";
 import Transform from "../ecs/Transform";
 import BaseRenderer from "./BaseRenderer";
@@ -15,13 +16,14 @@ export default class SkinnedMeshRenderer extends BaseRenderer {
   weightsData!: Float32Array;
   #vao!: GfxVertexArray;
   #shadowVao?: GfxVertexArray;
+  #buffers: GfxBuffer[] = [];
   #indexType: "uint16" | "uint32" = "uint16";
 
   constructor(gameEntity: GameEntity) {
     super(gameEntity);
   }
 
-  async setup() {
+  override setup() {
     super.setup();
     this.transform = this.getComponent(Transform)!;
     this.geometryShader = this.currentApp.shader.geometry;
@@ -36,15 +38,18 @@ export default class SkinnedMeshRenderer extends BaseRenderer {
 
     const positionBuffer = renderer.createBuffer("vertex");
     positionBuffer.update(this.mesh.vertex.position);
+    this.#buffers.push(positionBuffer);
     this.#vao.setVertexBuffer(positionAttribLocation, positionBuffer, 3);
 
     const normalBuffer = renderer.createBuffer("vertex");
     normalBuffer.update(this.mesh.vertex.normal);
+    this.#buffers.push(normalBuffer);
     this.#vao.setVertexBuffer(normalAttribLocation, normalBuffer, 3);
 
     if (texcoordAttribLocation >= 0) {
       const texcoordBuffer = renderer.createBuffer("vertex");
       texcoordBuffer.update(this.mesh.vertex.texcoord);
+      this.#buffers.push(texcoordBuffer);
       this.#vao.setVertexBuffer(texcoordAttribLocation, texcoordBuffer, 2);
     }
 
@@ -53,6 +58,7 @@ export default class SkinnedMeshRenderer extends BaseRenderer {
     if (tangentAttribLocation >= 0 && this.mesh.vertex.tangent) {
       const tangentBuffer = renderer.createBuffer("vertex");
       tangentBuffer.update(this.mesh.vertex.tangent);
+      this.#buffers.push(tangentBuffer);
       this.#vao.setVertexBuffer(tangentAttribLocation, tangentBuffer, 4);
       this.material.hasTangent = true;
     }
@@ -64,6 +70,7 @@ export default class SkinnedMeshRenderer extends BaseRenderer {
       for (let i = 0; i < this.jointsData.length; i++) jointsFloat[i] = this.jointsData[i];
       const jointsBuffer = renderer.createBuffer("vertex");
       jointsBuffer.update(jointsFloat);
+      this.#buffers.push(jointsBuffer);
       this.#vao.setVertexBuffer(jointsAttribLocation, jointsBuffer, 4);
     }
 
@@ -72,11 +79,13 @@ export default class SkinnedMeshRenderer extends BaseRenderer {
     if (weightsAttribLocation >= 0) {
       const weightsBuffer = renderer.createBuffer("vertex");
       weightsBuffer.update(this.weightsData);
+      this.#buffers.push(weightsBuffer);
       this.#vao.setVertexBuffer(weightsAttribLocation, weightsBuffer, 4);
     }
 
     const indexBuffer = renderer.createBuffer("index");
     indexBuffer.update(this.mesh.index);
+    this.#buffers.push(indexBuffer);
     this.#vao.setIndexBuffer(indexBuffer);
     this.#indexType = this.mesh.index instanceof Uint32Array ? "uint32" : "uint16";
 
@@ -86,6 +95,7 @@ export default class SkinnedMeshRenderer extends BaseRenderer {
       const vaoS = renderer.createVertexArray();
       const positionBufferS = renderer.createBuffer("vertex");
       positionBufferS.update(this.mesh.vertex.position);
+      this.#buffers.push(positionBufferS);
       vaoS.setVertexBuffer(posLocShadow, positionBufferS, 3);
 
       // Joints buffer for shadow VAO (float conversion)
@@ -107,9 +117,17 @@ export default class SkinnedMeshRenderer extends BaseRenderer {
 
       const indexBufferS = renderer.createBuffer("index");
       indexBufferS.update(this.mesh.index);
+      this.#buffers.push(indexBufferS);
       vaoS.setIndexBuffer(indexBufferS);
       this.#shadowVao = vaoS;
     }
+  }
+
+  override dispose(): void {
+    this.#vao?.dispose();
+    this.#shadowVao?.dispose();
+    for (const b of this.#buffers) b.dispose();
+    this.#buffers.length = 0;
   }
 
   async render() {

@@ -71,6 +71,35 @@ export default class TextureManager {
     return this.#cache.get(url);
   }
 
+  /** Devtools introspection. Returns live entries — do not mutate. */
+  entries(): Iterable<[string, GfxTexture]> {
+    return this.#cache.entries();
+  }
+
+  /**
+   * Release the texture for `url` and remove it from the cache. Safe to call
+   * even if the URL was never loaded. Returns `true` if a texture was freed.
+   *
+   * Callers are responsible for ensuring no live renderer still references
+   * this texture — the engine has no ref counting.
+   */
+  unload(url: string): boolean {
+    const tex = this.#cache.get(url);
+    if (!tex) return false;
+    tex.dispose();
+    this.#cache.delete(url);
+    return true;
+  }
+
+  /** Release every cached texture. Does NOT touch the placeholder/sampler. */
+  unloadAll(): void {
+    for (const [url, tex] of this.#cache) {
+      tex.dispose();
+      void url;
+    }
+    this.#cache.clear();
+  }
+
   async #doLoad(url: string, opts: TextureLoadOptions): Promise<GfxTexture> {
     const srgb = opts.srgb ?? true;
     const mipmaps = opts.mipmaps ?? true;

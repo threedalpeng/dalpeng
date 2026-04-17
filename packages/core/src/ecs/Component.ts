@@ -1,15 +1,14 @@
-import { isNil } from "../utils/basic.js";
 import Entity from "./Entity.js";
 import type GameEntity from "./GameEntity.js";
 
 export type ComponentConstructor<Type extends Component> = new (gameEntity: GameEntity) => Type;
-type ComponentGroup<Type extends Component> = Map<number, Type[]>;
-type ComponentGroups = Map<ComponentConstructor<Component>["name"], ComponentGroup<Component>>;
+
 type ComponentEventCallback = (...data: any[]) => void;
+
 export default class Component extends Entity {
   #gameEntity: GameEntity;
   #isActive: boolean = true;
-  componentGroup!: ComponentGroup<Component>;
+
   constructor(gameEntity: GameEntity) {
     super();
     this.#gameEntity = gameEntity;
@@ -20,44 +19,29 @@ export default class Component extends Entity {
     this.#isSetup = true;
   }
 
-  static componentGroups: ComponentGroups = new Map<
-    ComponentConstructor<Component>["name"],
-    ComponentGroup<Component>
-  >();
+  /**
+   * Release GPU/IO resources held by this component.
+   * Called during `GameEntity.remove()` and `Application.dispose()`.
+   * Subclasses override to dispose VAOs, VBOs, textures, event listeners, etc.
+   */
+  dispose(): void {}
+
   static create<Type extends Component>(
     type: ComponentConstructor<Type>,
     gameEntity: GameEntity,
     isActive = true
-  ) {
+  ): Type {
     const component = new type(gameEntity);
-    let componentGroup: ComponentGroup<Type> | undefined = this.componentGroups.get(
-      type.name
-    ) as ComponentGroup<Type>;
-    if (componentGroup === undefined) {
-      componentGroup = new Map<number, Type[]>();
-      this.componentGroups.set(type.name, componentGroup);
-    }
-    component.componentGroup = componentGroup;
+    gameEntity._registerComponentInstance(type, component);
 
-    let components: Type[] | undefined = componentGroup.get(gameEntity.id);
-    if (components === undefined) {
-      components = [];
-      componentGroup.set(gameEntity.id, components);
-    }
-    components.push(component);
-    gameEntity._registerComponentInstance(component);
-
-    component.isActive = isActive;
+    // Initial active-registration: setter short-circuits when old === new,
+    // so force the side-effect once here for freshly-created components.
     if (isActive) {
+      if (!component.#isSetup) component.setup();
       const app = gameEntity.scene?.app;
-      if (app) {
-        let components = app.activeComponents.get(type.name) as Set<Type> | undefined;
-        if (components === undefined) {
-          components = new Set<Type>();
-          app.activeComponents.set(type.name, components);
-        }
-        components.add(component);
-      }
+      if (app) app._registerActive(type, component);
+    } else {
+      component.#isActive = false;
     }
 
     component.on("run", (key: keyof Type) => {
@@ -67,28 +51,6 @@ export default class Component extends Entity {
     });
 
     return component;
-  }
-
-  static find<Type extends Component>(
-    type: ComponentConstructor<Type>
-  ): ComponentGroup<Type> | null;
-  static find<Type extends Component>(
-    type: ComponentConstructor<Type>,
-    gameEntityId: number
-  ): Type[] | null;
-  static find<Type extends Component>(
-    type: ComponentConstructor<Type>,
-    gameEntityId?: number
-  ): ComponentGroup<Type> | Type[] | null {
-    const componentGroup = this.componentGroups.get(type.name) as ComponentGroup<Type>;
-    if (isNil(componentGroup)) {
-      return null;
-    } else {
-      if (gameEntityId === undefined) {
-        return componentGroup;
-      }
-      return (componentGroup.get(gameEntityId) ?? []) as Type[];
-    }
   }
 
   get gameEntity() {
@@ -105,28 +67,15 @@ export default class Component extends Entity {
     return this.#isActive;
   }
   set isActive(active) {
-    if (this.#isActive !== active) {
-      this.#isActive = active;
-      if (active) {
-        if (!this.#isSetup) {
-          this.setup();
-        }
-        const app = this.gameEntity.scene?.app;
-        if (app) {
-          let components = app.activeComponents.get(this.constructor.name) as Set<this> | undefined;
-          if (components === undefined) {
-            components = new Set<this>();
-            app.activeComponents.set(this.constructor.name, components);
-          }
-          components.add(this);
-        }
-      } else {
-        const app = this.gameEntity.scene?.app;
-        const components = app?.activeComponents.get(this.constructor.name) as
-          | Set<this>
-          | undefined;
-        components?.delete(this);
-      }
+    if (this.#isActive === active) return;
+    this.#isActive = active;
+    const app = this.#gameEntity.scene?.app;
+    const ctor = this.constructor as ComponentConstructor<this>;
+    if (active) {
+      if (!this.#isSetup) this.setup();
+      if (app) app._registerActive(ctor, this);
+    } else {
+      if (app) app._unregisterActive(ctor, this);
     }
   }
 
@@ -136,23 +85,16 @@ export default class Component extends Entity {
 
   #callbacks: { [event: string]: ComponentEventCallback[] } = {};
   on(event: string, callback: ComponentEventCallback) {
-    this.#callbacks = this.#callbacks || {};
     (this.#callbacks[event] = this.#callbacks[event] || []).push(callback);
     return this;
   }
   emit(event: string, ...data: any[]) {
-    this.#callbacks = this.#callbacks || {};
-
-    const args = data.slice(0);
-    let callbacks = this.#callbacks[event];
-
-    if (callbacks) {
-      callbacks = callbacks.slice(0);
-      for (let i = 0, len = callbacks.length; i < len; ++i) {
-        callbacks[i].apply(this, args);
-      }
+    const callbacks = this.#callbacks[event];
+    if (!callbacks) return this;
+    const snapshot = callbacks.slice();
+    for (let i = 0; i < snapshot.length; i++) {
+      snapshot[i].apply(this, data);
     }
-
     return this;
   }
 }

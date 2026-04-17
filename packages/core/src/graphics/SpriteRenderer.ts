@@ -14,7 +14,7 @@ export default class SpriteRenderer extends BaseRenderer {
     super(gameEntity);
   }
 
-  async setup() {
+  override setup() {
     super.setup();
 
     this.transform = this.getComponent(Transform)!;

@@ -20,7 +20,7 @@ export default class Light extends Component {
   transform!: Transform;
   lightingShader!: Shader;
 
-  async setup() {
+  override setup() {
     super.setup();
     this.transform = this.getComponent(Transform)!;
     this.lightingShader = this.currentApp.shader.lighting;

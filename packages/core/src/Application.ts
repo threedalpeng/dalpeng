@@ -127,19 +127,126 @@ export default class Application {
     this.#disposeCallbacks.add(cb);
   }
 
-  activeComponents = new Map<string, Set<Component>>();
+  /**
+   * Frame-level hook targets. Unlike Script lifecycle (per-entity), these
+   * fire once per Application per frame and receive the delta in ms.
+   * Useful for plugins, DevTools, and systems that need frame boundaries.
+   */
+  #frameHooks: Record<"beforeUpdate" | "beforeRender" | "afterRender", Set<(dt: number) => void>> =
+    {
+      beforeUpdate: new Set(),
+      beforeRender: new Set(),
+      afterRender: new Set(),
+    };
+
+  onBeforeUpdate(cb: (dt: number) => void): () => void {
+    this.#frameHooks.beforeUpdate.add(cb);
+    return () => void this.#frameHooks.beforeUpdate.delete(cb);
+  }
+  onBeforeRender(cb: (dt: number) => void): () => void {
+    this.#frameHooks.beforeRender.add(cb);
+    return () => void this.#frameHooks.beforeRender.delete(cb);
+  }
+  onAfterRender(cb: (dt: number) => void): () => void {
+    this.#frameHooks.afterRender.add(cb);
+    return () => void this.#frameHooks.afterRender.delete(cb);
+  }
+
+  #fireFrameHook(phase: "beforeUpdate" | "beforeRender" | "afterRender", dt: number): void {
+    for (const cb of this.#frameHooks[phase]) {
+      try {
+        cb(dt);
+      } catch (err) {
+        console.error(`Application.${phase} hook threw`, err);
+      }
+    }
+  }
+
+  /**
+   * Active components keyed by constructor reference. Not by class name —
+   * the string-keyed approach was minification-unsafe and couldn't distinguish
+   * two classes that happened to share a name.
+   */
+  activeComponents = new Map<ComponentConstructor<Component>, Set<Component>>();
   #dirtyTransforms = new Set<Transform>();
+
+  _registerActive<T extends Component>(type: ComponentConstructor<T>, component: T): void {
+    const key = type as ComponentConstructor<Component>;
+    let set = this.activeComponents.get(key);
+    if (!set) {
+      set = new Set();
+      this.activeComponents.set(key, set);
+    }
+    set.add(component);
+  }
+
+  _unregisterActive<T extends Component>(type: ComponentConstructor<T>, component: T): void {
+    const set = this.activeComponents.get(type as ComponentConstructor<Component>);
+    set?.delete(component);
+  }
+
   forEachActiveComponent<Type extends Component>(
     type: ComponentConstructor<Type>,
     callback: (component: Type) => void
   ) {
-    const components = this.activeComponents.get(type.name) as Set<Type> | undefined;
-    if (components === undefined) {
-      return;
-    }
-    for (const component of components) {
-      callback(component);
-    }
+    const components = this.activeComponents.get(type as ComponentConstructor<Component>) as
+      | Set<Type>
+      | undefined;
+    if (components === undefined) return;
+    for (const component of components) callback(component);
+  }
+
+  /**
+   * Iterate entities that have ALL of the given component types, yielding
+   * each entity with a typed tuple of its components.
+   *
+   * Pivots on the smallest active-component set, then filters each entity by
+   * `entity.getComponent(T)` for the remaining types.
+   */
+  query<T extends readonly ComponentConstructor<Component>[]>(
+    types: [...T]
+  ): Iterable<readonly [GameEntity, ...{ [K in keyof T]: InstanceType<T[K]> }]> {
+    const activeComponents = this.activeComponents;
+    return {
+      *[Symbol.iterator]() {
+        if (types.length === 0) return;
+        let pivotIdx = 0;
+        let pivotSize = Infinity;
+        for (let i = 0; i < types.length; i++) {
+          const set = activeComponents.get(types[i] as ComponentConstructor<Component>);
+          const size = set?.size ?? 0;
+          if (size === 0) return;
+          if (size < pivotSize) {
+            pivotIdx = i;
+            pivotSize = size;
+          }
+        }
+        const pivotSet = activeComponents.get(types[pivotIdx] as ComponentConstructor<Component>)!;
+        for (const pivotComp of pivotSet) {
+          const entity = pivotComp.gameEntity;
+          const tuple: Component[] = new Array(types.length);
+          let ok = true;
+          for (let i = 0; i < types.length; i++) {
+            if (i === pivotIdx) {
+              tuple[i] = pivotComp;
+              continue;
+            }
+            const c = entity.getComponent(types[i]);
+            if (!c) {
+              ok = false;
+              break;
+            }
+            tuple[i] = c;
+          }
+          if (ok) {
+            yield [entity, ...tuple] as unknown as readonly [
+              GameEntity,
+              ...{ [K in keyof T]: InstanceType<T[K]> },
+            ];
+          }
+        }
+      },
+    };
   }
   queueTransformUpdate(transform: Transform) {
     this.#dirtyTransforms.add(transform);
@@ -151,11 +258,16 @@ export default class Application {
     for (const transform of batch) transform.checkModelMatrixToBeUpdated();
   }
 
-  activeScripts = new Map<number, Script>();
+  /**
+   * Iterate every active Script. Backed by `activeComponents.get(Script)` —
+   * no separate map. Multiple Scripts per entity is allowed and each is iterated.
+   */
   forEachActiveScript(callback: (component: Script) => void) {
-    for (const script of this.activeScripts.values()) {
-      callback(script);
-    }
+    const scripts = this.activeComponents.get(Script as ComponentConstructor<Component>) as
+      | Set<Script>
+      | undefined;
+    if (!scripts) return;
+    for (const script of scripts) callback(script);
   }
 
   renderer: RendererBackend = new WebGL2Renderer();
@@ -483,7 +595,6 @@ export default class Application {
     }
     this.#sceneList.clear();
     this.activeComponents.clear();
-    this.activeScripts.clear();
     this.#pendingStarts.clear();
     this.#lifecycleQueue.length = 0;
     this.#dirtyTransforms.clear();
@@ -534,6 +645,8 @@ export default class Application {
         this.forEachActive((app) => app.#fixedUpdate());
       }
 
+      const dt = Time.delta();
+      this.forEachActive((app) => app.#fireFrameHook("beforeUpdate", dt));
       this.forEachActive((app) => app.#update());
       this.forEachActive((app) => app.#lateUpdate());
 
@@ -541,8 +654,9 @@ export default class Application {
       this.forEachActive((app) => app.#flushPendingStarts());
 
       this.forEachActive((app) => app.#preRender());
-
+      this.forEachActive((app) => app.#fireFrameHook("beforeRender", dt));
       this.forEachActive((app) => app.#render());
+      this.forEachActive((app) => app.#fireFrameHook("afterRender", dt));
 
       requestAnimationFrame(loop);
     };

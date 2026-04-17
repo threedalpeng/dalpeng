@@ -22,7 +22,7 @@ export default class Camera extends Component {
     return this.getComponent(Transform)!;
   }
 
-  async setup() {
+  override setup() {
     super.setup();
 
     const size = this.currentApp.renderer.getDrawableSize();

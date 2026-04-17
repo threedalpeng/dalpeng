@@ -7,7 +7,8 @@ import Transform from "./Transform";
 export default class GameEntity extends Entity {
   static #gameEntityList = new Map<number, GameEntity>();
   #tag = "default";
-  #componentsByType = new Map<string, Component[]>();
+  /** Per-entity component storage, keyed by constructor reference (not class name). */
+  #componentsByType = new Map<ComponentConstructor<Component>, Component[]>();
 
   constructor(name = "") {
     super();
@@ -30,9 +31,7 @@ export default class GameEntity extends Entity {
   }
 
   addChild(child: GameEntity) {
-    if (child === this) {
-      return this;
-    }
+    if (child === this) return this;
     child.detach();
     this.#children.push(child);
     child.#parent = this;
@@ -48,9 +47,7 @@ export default class GameEntity extends Entity {
     const idx = this.#children.indexOf(child);
     if (idx >= 0) {
       this.#children.splice(idx, 1);
-      if (child.#parent === this) {
-        child.#parent = null;
-      }
+      if (child.#parent === this) child.#parent = null;
     }
     return this;
   }
@@ -70,9 +67,17 @@ export default class GameEntity extends Entity {
   remove() {
     [...this.#children].forEach((child) => child.remove());
     this.detach();
-    Component.componentGroups.forEach((componentGroup) => {
-      componentGroup.delete(this.id);
-    });
+    for (const components of this.#componentsByType.values()) {
+      for (const c of components) {
+        c.isActive = false;
+        try {
+          c.dispose();
+        } catch (err) {
+          console.error(`[core] ${c.constructor.name}.dispose() threw:`, err);
+        }
+      }
+    }
+    this.#componentsByType.clear();
     GameEntity.#gameEntityList.delete(this.id);
   }
 
@@ -81,12 +86,19 @@ export default class GameEntity extends Entity {
   }
 
   getComponent<Type extends Component>(type: ComponentConstructor<Type>): Type | null {
-    const components = this.#componentsByType.get(type.name) as Type[] | undefined;
+    const components = this.#componentsByType.get(type as ComponentConstructor<Component>) as
+      | Type[]
+      | undefined;
     return components?.[0] ?? null;
   }
+
   getComponents<Type extends Component>(type: ComponentConstructor<Type>): Type[] {
-    return (this.#componentsByType.get(type.name) as Type[] | undefined) ?? [];
+    return (
+      (this.#componentsByType.get(type as ComponentConstructor<Component>) as Type[] | undefined) ??
+      []
+    );
   }
+
   getAllComponents(): Component[] {
     const result: Component[] = [];
     for (const components of this.#componentsByType.values()) {
@@ -109,37 +121,37 @@ export default class GameEntity extends Entity {
     return this.scene.app;
   }
 
-  _registerComponentInstance(component: Component) {
-    const typeName = component.constructor.name;
-    let components = this.#componentsByType.get(typeName);
+  _registerComponentInstance<Type extends Component>(
+    type: ComponentConstructor<Type>,
+    component: Type
+  ) {
+    const key = type as ComponentConstructor<Component>;
+    let components = this.#componentsByType.get(key);
     if (components === undefined) {
       components = [];
-      this.#componentsByType.set(typeName, components);
+      this.#componentsByType.set(key, components);
     }
     components.push(component);
   }
 
-  _unregisterComponentInstance(component: Component) {
-    const typeName = component.constructor.name;
-    const components = this.#componentsByType.get(typeName);
+  _unregisterComponentInstance<Type extends Component>(
+    type: ComponentConstructor<Type>,
+    component: Type
+  ) {
+    const key = type as ComponentConstructor<Component>;
+    const components = this.#componentsByType.get(key);
     if (!components) return;
     const idx = components.indexOf(component);
     if (idx >= 0) {
       components.splice(idx, 1);
-      if (components.length === 0) {
-        this.#componentsByType.delete(typeName);
-      }
+      if (components.length === 0) this.#componentsByType.delete(key);
     }
   }
 
-  static find(name: string) {
-    let toFind;
-    for (let [_, entity] of GameEntity.#gameEntityList) {
-      if (entity.name === name) {
-        toFind = entity;
-        break;
-      }
+  static find(name: string): GameEntity | undefined {
+    for (const entity of GameEntity.#gameEntityList.values()) {
+      if (entity.name === name) return entity;
     }
-    return toFind;
+    return undefined;
   }
 }

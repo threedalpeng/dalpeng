@@ -1,4 +1,5 @@
 import type GameEntity from "@/ecs/GameEntity";
+import type GfxBuffer from "@/gfx/Buffer";
 import type GfxVertexArray from "@/gfx/VertexArray";
 import Transform from "../ecs/Transform";
 import BaseRenderer from "./BaseRenderer";
@@ -11,6 +12,7 @@ export default class MeshRenderer extends BaseRenderer {
   material = new Material();
   #vao!: GfxVertexArray;
   #shadowVao?: GfxVertexArray;
+  #buffers: GfxBuffer[] = [];
   #indexType: "uint16" | "uint32" = "uint16";
 
   constructor(gameEntity: GameEntity) {
@@ -19,7 +21,7 @@ export default class MeshRenderer extends BaseRenderer {
 
   // No direct GL access; everything goes through the backend
 
-  async setup() {
+  override setup() {
     super.setup();
     this.transform = this.getComponent(Transform)!;
     this.geometryShader = this.currentApp.shader.geometry;
@@ -35,15 +37,18 @@ export default class MeshRenderer extends BaseRenderer {
     const positionBuffer = renderer.createBuffer("vertex");
     positionBuffer.update(this.mesh.vertex.position);
     this.#vao.setVertexBuffer(positionAttribLocation, positionBuffer, 3);
+    this.#buffers.push(positionBuffer);
 
     const normalBuffer = renderer.createBuffer("vertex");
     normalBuffer.update(this.mesh.vertex.normal);
     this.#vao.setVertexBuffer(normalAttribLocation, normalBuffer, 3);
+    this.#buffers.push(normalBuffer);
 
     if (texcoordAttribLocation >= 0) {
       const texcoordBuffer = renderer.createBuffer("vertex");
       texcoordBuffer.update(this.mesh.vertex.texcoord);
       this.#vao.setVertexBuffer(texcoordAttribLocation, texcoordBuffer, 2);
+      this.#buffers.push(texcoordBuffer);
     }
 
     // Optional tangent buffer (vec4: xyz + w handedness)
@@ -53,11 +58,13 @@ export default class MeshRenderer extends BaseRenderer {
       tangentBuffer.update(this.mesh.vertex.tangent);
       this.#vao.setVertexBuffer(tangentAttribLocation, tangentBuffer, 4);
       this.material.hasTangent = true;
+      this.#buffers.push(tangentBuffer);
     }
 
     const indexBuffer = renderer.createBuffer("index");
     indexBuffer.update(this.mesh.index);
     this.#vao.setIndexBuffer(indexBuffer);
+    this.#buffers.push(indexBuffer);
     this.#indexType = this.mesh.index instanceof Uint32Array ? "uint32" : "uint16";
 
     // Optional second VAO for shadow program (attribute locations may differ)
@@ -71,7 +78,15 @@ export default class MeshRenderer extends BaseRenderer {
       indexBufferS.update(this.mesh.index);
       vaoS.setIndexBuffer(indexBufferS);
       this.#shadowVao = vaoS;
+      this.#buffers.push(positionBufferS, indexBufferS);
     }
+  }
+
+  override dispose(): void {
+    this.#vao?.dispose();
+    this.#shadowVao?.dispose();
+    for (const b of this.#buffers) b.dispose();
+    this.#buffers.length = 0;
   }
 
   async render() {

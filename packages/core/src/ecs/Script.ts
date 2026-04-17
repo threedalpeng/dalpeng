@@ -10,14 +10,14 @@ export default class Script extends Component {
     this.#hasStarted = true;
   }
 
-  set isActive(active: boolean) {
-    const wasActive = this.isActive;
+  // Explicit getter: TS/JS shadows parent accessors when subclass defines
+  // only a setter, so the inherited getter would return undefined without this.
+  override get isActive(): boolean {
+    return super.isActive;
+  }
+  override set isActive(active: boolean) {
+    const wasActive = super.isActive;
     super.isActive = active;
-    if (active) {
-      this.currentApp.activeScripts.set(this.id, this);
-    } else {
-      this.currentApp.activeScripts.delete(this.id);
-    }
     if (wasActive !== active) {
       if (active) this.onEnable();
       else this.onDisable();

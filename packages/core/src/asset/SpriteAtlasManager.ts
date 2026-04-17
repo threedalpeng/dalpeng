@@ -47,6 +47,24 @@ export default class SpriteAtlasManager {
     return SpriteAtlas.fromFrames(tex, tex.width, tex.height, frames);
   }
 
+  /** Devtools introspection. Returns live entries — do not mutate. */
+  entries(): Iterable<[string, SpriteAtlas]> {
+    return this.#cache.entries();
+  }
+
+  /**
+   * Release a cached atlas entry. The underlying texture is shared with
+   * `TextureManager` and is NOT unloaded — free it separately via
+   * `textures.unload(url)` if no other user holds a reference.
+   */
+  unload(key: string): boolean {
+    return this.#cache.delete(key);
+  }
+
+  unloadAll(): void {
+    this.#cache.clear();
+  }
+
   dispose(): void {
     this.#cache.clear();
     this.#loading.clear();

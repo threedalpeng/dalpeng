@@ -71,6 +71,30 @@ export default class ModelManager {
     return this.#cache.get(url);
   }
 
+  /** Devtools introspection. Returns live entries — do not mutate. */
+  entries(): Iterable<[string, ModelAsset]> {
+    return this.#cache.entries();
+  }
+
+  /**
+   * Release the model and its per-model GPU textures. Shared textures loaded
+   * through `TextureManager` are not affected — free them separately.
+   */
+  unload(url: string): boolean {
+    const asset = this.#cache.get(url);
+    if (!asset) return false;
+    for (const tex of asset.textures) tex?.dispose();
+    this.#cache.delete(url);
+    return true;
+  }
+
+  unloadAll(): void {
+    for (const asset of this.#cache.values()) {
+      for (const tex of asset.textures) tex?.dispose();
+    }
+    this.#cache.clear();
+  }
+
   dispose(): void {
     for (const asset of this.#cache.values()) {
       for (const tex of asset.textures) {
