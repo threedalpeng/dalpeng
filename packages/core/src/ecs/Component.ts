@@ -34,10 +34,14 @@ export default class Component extends Entity {
     const component = new type(gameEntity);
     gameEntity._registerComponentInstance(type, component);
 
-    // Initial active-registration: setter short-circuits when old === new,
-    // so force the side-effect once here for freshly-created components.
+    // Initial active-registration: the isActive setter short-circuits when
+    // old === new (default #isActive = true), so perform the registration
+    // side-effect directly here. Note: we do NOT call setup() — subclasses
+    // like MeshRenderer need `renderer.mesh = ...` to be assigned by the
+    // caller (e.g., useMesh) before setup runs. Setup is fired later by
+    // Application.#setup() at app start, or by #setupEntitySubtree after
+    // a runtime spawn. See feedback_self_review_runtime_paths.md.
     if (isActive) {
-      if (!component.#isSetup) component.setup();
       const app = gameEntity.scene?.app;
       if (app) app._registerActive(type, component);
     } else {
