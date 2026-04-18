@@ -599,6 +599,7 @@ export default class Application {
     this.#lifecycleQueue.length = 0;
     this.#dirtyTransforms.clear();
 
+    this.pipeline.dispose();
     this.input.unbind();
 
     Application.instanceList.delete(this.#id);

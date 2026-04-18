@@ -155,6 +155,17 @@ void main() {
     return;
   }
 
+  // Skip pixels the geometry pass never wrote to. Without this, an empty
+  // pixel has normal=(0,0,0) (defaulted to (0,0,1)) and roughness=0 (clamped
+  // to 0.045), so the GGX specular term explodes for a front-facing camera
+  // and the background clamps to white. gAlbedo.a defaults to 1.0 in the
+  // g-buffer shader whenever a fragment is written, so alpha<0.01 uniquely
+  // identifies the clear (0,0,0,0).
+  if (texelFetch(gAlbedo, fragCoord, 0).a < 0.01) {
+    outColor = vec4(0.0);
+    return;
+  }
+
   vec3 V = normalize(uViewPos - pos);
   vec3 lightToPoint = uLight.pos - pos;
   if(uLight.type == LIGHT_TYPE_DIRECTIONAL) {

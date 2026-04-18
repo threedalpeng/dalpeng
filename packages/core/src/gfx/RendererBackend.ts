@@ -58,6 +58,12 @@ export interface RendererBackend {
   setCullFace?(enabled: boolean): void;
   setGenericIntegerAttrib?(location: number, x: number, y: number, z: number, w: number): void;
 
+  // Unbind whatever 2D / cube texture is at `unit`. Passes that sample a
+  // color buffer should call this before the next pass writes to the same
+  // texture, otherwise WebGL flags a feedback loop (sampling and writing
+  // the same texture simultaneously).
+  unbindTextureAt?(unit: number): void;
+
   // Misc per-frame state
   setViewport(x: number, y: number, w: number, h: number): void;
 

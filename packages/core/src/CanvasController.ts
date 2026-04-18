@@ -4,6 +4,7 @@ import type { RendererBackend } from "./gfx/RendererBackend";
 export default class CanvasController {
   #canvas: HTMLCanvasElement | null = null;
   #renderer: RendererBackend | null = null;
+  #parentObserver: ResizeObserver | null = null;
   #options: Required<CanvasOptions> = {
     resolution: "auto",
     fit: "fill",
@@ -42,10 +43,22 @@ export default class CanvasController {
     this.#canvas = canvas;
     this.#renderer = renderer;
     window.addEventListener("resize", this.#handleResize);
+
+    // ResizeObserver catches parent-layout changes (e.g., DevTools dock
+    // reserving space on `document.body`) that don't fire the window resize
+    // event. Without this, sidebars sliding in or out would leave the canvas
+    // sized for the old parent until the window itself resizes.
+    const parent = canvas.parentElement;
+    if (parent && typeof ResizeObserver !== "undefined") {
+      this.#parentObserver = new ResizeObserver(this.#handleResize);
+      this.#parentObserver.observe(parent);
+    }
   }
 
   dispose(): void {
     window.removeEventListener("resize", this.#handleResize);
+    this.#parentObserver?.disconnect();
+    this.#parentObserver = null;
     this.#canvas = null;
     this.#renderer = null;
   }

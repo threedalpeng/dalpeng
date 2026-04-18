@@ -213,6 +213,13 @@ export default class WebGL2Renderer implements RendererBackend {
     this.#gl!.vertexAttribI4i(location, x, y, z, w);
   }
 
+  unbindTextureAt(unit: number): void {
+    const gl = this.#gl!;
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+  }
+
   getDrawableSize() {
     const c = this.#gl!.canvas as HTMLCanvasElement;
     return { width: c.width, height: c.height };
