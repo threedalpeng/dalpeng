@@ -1,9 +1,15 @@
+import EventEmitter, { type EventMap } from "../utils/EventEmitter";
 import Entity from "./Entity.js";
 import type GameEntity from "./GameEntity.js";
 
 export type ComponentConstructor<Type extends Component> = new (gameEntity: GameEntity) => Type;
 
-type ComponentEventCallback = (...data: any[]) => void;
+/**
+ * Base component event shape. Subclasses can narrow via declaration merge
+ * or a more specific emitter type — but for the vast majority of code the
+ * loose string/any-args shape is what Script / dalpeng hooks rely on.
+ */
+export type ComponentEventMap = EventMap;
 
 export default class Component extends Entity {
   #gameEntity: GameEntity;
@@ -48,12 +54,6 @@ export default class Component extends Entity {
       component.#isActive = false;
     }
 
-    component.on("run", (key: keyof Type) => {
-      if (key in component && typeof component[key] === "function") {
-        (component[key] as unknown as () => void)();
-      }
-    });
-
     return component;
   }
 
@@ -87,18 +87,37 @@ export default class Component extends Entity {
     return this.#gameEntity.getComponent<Type>(type);
   }
 
-  #callbacks: { [event: string]: ComponentEventCallback[] } = {};
-  on(event: string, callback: ComponentEventCallback) {
-    (this.#callbacks[event] = this.#callbacks[event] || []).push(callback);
-    return this;
+  // Events are delegated to a shared EventEmitter primitive so Scene /
+  // Component / (future) Entity bus all share the same typed, off-supporting
+  // surface. Historically Component rolled its own raw-array callbacks with
+  // no unsubscribe and no `off`; that duplication is the root S1 issue.
+  #emitter = new EventEmitter<ComponentEventMap>();
+
+  /** Subscribe to an event. Returns an unsubscribe function. */
+  on<K extends keyof ComponentEventMap>(
+    event: K,
+    callback: (...args: ComponentEventMap[K]) => void
+  ): () => void {
+    return this.#emitter.on(event, callback);
   }
-  emit(event: string, ...data: any[]) {
-    const callbacks = this.#callbacks[event];
-    if (!callbacks) return this;
-    const snapshot = callbacks.slice();
-    for (let i = 0; i < snapshot.length; i++) {
-      snapshot[i].apply(this, data);
-    }
-    return this;
+
+  /** Subscribe once and auto-unsubscribe on first fire. */
+  once<K extends keyof ComponentEventMap>(
+    event: K,
+    callback: (...args: ComponentEventMap[K]) => void
+  ): () => void {
+    return this.#emitter.once(event, callback);
+  }
+
+  /** Remove a specific callback for `event`. */
+  off<K extends keyof ComponentEventMap>(
+    event: K,
+    callback: (...args: ComponentEventMap[K]) => void
+  ): void {
+    this.#emitter.off(event, callback);
+  }
+
+  emit<K extends keyof ComponentEventMap>(event: K, ...data: ComponentEventMap[K]): void {
+    this.#emitter.emit(event, ...data);
   }
 }

@@ -96,6 +96,45 @@ describe("Philosophy invariant — ref binding precision", () => {
   });
 });
 
+describe("Philosophy invariant — Component.on returns unsubscribe", () => {
+  it("returned unsub stops future fires", async () => {
+    const { default: Component } = await import("../src/ecs/Component");
+    const { default: GameEntity } = await import("../src/ecs/GameEntity");
+
+    class TestComp extends Component {}
+    const entity = new GameEntity();
+    const comp = entity.addComponent(TestComp);
+
+    let calls = 0;
+    const unsub = comp.on("ping", () => calls++);
+
+    comp.emit("ping");
+    expect(calls).toBe(1);
+    comp.emit("ping");
+    expect(calls).toBe(2);
+
+    unsub();
+    comp.emit("ping");
+    expect(calls).toBe(2);
+  });
+
+  it("once() fires exactly once then auto-unsubscribes", async () => {
+    const { default: Component } = await import("../src/ecs/Component");
+    const { default: GameEntity } = await import("../src/ecs/GameEntity");
+
+    class TestComp extends Component {}
+    const entity = new GameEntity();
+    const comp = entity.addComponent(TestComp);
+
+    let calls = 0;
+    comp.once("poke", () => calls++);
+    comp.emit("poke");
+    comp.emit("poke");
+    comp.emit("poke");
+    expect(calls).toBe(1);
+  });
+});
+
 describe("Philosophy invariant — destroy cascade", () => {
   it("destroying an entity cascades to child entities", () => {
     const destroyOrder: string[] = [];

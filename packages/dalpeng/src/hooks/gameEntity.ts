@@ -49,21 +49,21 @@ export function useMesh(
   return renderer;
 }
 
-export function onUpdate(update: () => any) {
+export function onUpdate(update: () => any): () => void {
   requireEntity("onUpdate");
   const script = useComponent(Script);
-  script.on("update", update);
+  return script.on("update", update);
 }
-export function onFixedUpdate(fixedUpdate: () => any) {
+export function onFixedUpdate(fixedUpdate: () => any): () => void {
   requireEntity("onFixedUpdate");
   const script = useComponent(Script);
-  script.on("fixedUpdate", fixedUpdate);
+  return script.on("fixedUpdate", fixedUpdate);
 }
 
-export function onLateUpdate(lateUpdate: () => any) {
+export function onLateUpdate(lateUpdate: () => any): () => void {
   requireEntity("onLateUpdate");
   const script = useComponent(Script);
-  script.on("lateUpdate", lateUpdate);
+  return script.on("lateUpdate", lateUpdate);
 }
 
 export function withTag(tag: string) {
@@ -123,31 +123,33 @@ export function destroy(entity?: GameEntity): void {
   self.currentApp.destroy(entity ?? self);
 }
 
-export function onStart(callback: () => void) {
+export function onStart(callback: () => void): () => void {
   requireEntity("onStart");
   const script = useComponent(Script);
-  script.on("start", callback);
+  return script.on("start", callback);
 }
 
-export function onDestroy(callback: () => void) {
+export function onDestroy(callback: () => void): () => void {
   if (getThisEntity()) {
     const script = useComponent(Script);
-    script.on("destroy", callback);
+    return script.on("destroy", callback);
   } else if (hasActiveCleanupScope()) {
     registerCleanup(callback);
+    // cleanup scope owns the lifetime — return a noop; cleanup fires on scope end.
+    return () => {};
   } else {
     throw new Error("onDestroy() requires defineEntity or defineUI context.");
   }
 }
 
-export function onEnable(callback: () => void) {
+export function onEnable(callback: () => void): () => void {
   requireEntity("onEnable");
   const script = useComponent(Script);
-  script.on("enable", callback);
+  return script.on("enable", callback);
 }
 
-export function onDisable(callback: () => void) {
+export function onDisable(callback: () => void): () => void {
   requireEntity("onDisable");
   const script = useComponent(Script);
-  script.on("disable", callback);
+  return script.on("disable", callback);
 }
