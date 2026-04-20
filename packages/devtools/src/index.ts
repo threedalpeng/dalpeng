@@ -38,6 +38,7 @@ export { DevToolsRootHost, type DevToolsRootHostOptions } from "./hostFrame";
 export { assetsPlugin } from "./plugins/assets";
 export { consolePlugin } from "./plugins/console";
 export { layersPlugin } from "./plugins/layers";
+export { patchesPlugin } from "./plugins/patches";
 export { performancePlugin } from "./plugins/performance";
 export { renderPlugin } from "./plugins/render";
 export { scenePlugin } from "./plugins/scene";

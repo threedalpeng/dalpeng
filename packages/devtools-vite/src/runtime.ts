@@ -21,6 +21,7 @@ export async function setupDevTools(
       assetsPlugin,
       consolePlugin,
       layersPlugin,
+      patchesPlugin,
       performancePlugin,
       renderPlugin,
       scenePlugin,
@@ -35,6 +36,7 @@ export async function setupDevTools(
         renderPlugin(),
         layersPlugin(),
         assetsPlugin(),
+        patchesPlugin(),
       ],
     });
   }
