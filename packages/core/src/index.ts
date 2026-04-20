@@ -103,6 +103,14 @@ export type {
 } from "./runtime/ProjectionContext";
 export type { UIRenderer } from "./runtime/UIRenderer";
 
+// Testing utilities — headless scene harness for vitest / similar.
+export {
+  makeNoopUIRenderer,
+  testScene,
+  type SceneRunner,
+  type TestSceneOptions,
+} from "./testing/testScene";
+
 export { computed, isRef, ref, watch, type ReadonlyRef, type Ref } from "./runtime/reactive";
 
 export {

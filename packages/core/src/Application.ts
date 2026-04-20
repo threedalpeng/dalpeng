@@ -730,4 +730,42 @@ export default class Application {
   static forEachActive(callback: (instance: Application) => void) {
     Application.#activeInstances.forEach(callback);
   }
+
+  // ──────────────────────────────────────────────────────────────────
+  // Testing primitives
+  // ──────────────────────────────────────────────────────────────────
+  //
+  // `_testStep` runs a single frame body synchronously, bypassing the
+  // browser's rAF loop. Together with `_testSetup` it lets the scene test
+  // harness drive the engine without a real canvas / renderer.
+  //
+  // Intentionally prefixed `_test` rather than `#private` so `testScene()`
+  // (in the sibling `testing/` subpath) can reach them without reflection,
+  // while still signaling "internal; do not rely on in user code."
+
+  _testSetup(): void {
+    if (this.state === "new") {
+      Time._setFixedUpdateRate(60);
+      Time._setup();
+      this.#setup();
+      this.state = "running";
+    }
+  }
+
+  _testStep(dtMs: number, opts?: { skipRender?: boolean }): void {
+    Time._updateDelta(Time.current() + dtMs);
+    this.input.poll();
+    this.#flushPendingStarts();
+    while (Time._needsFixedUpdate()) this.#fixedUpdate();
+    const dt = Time.delta();
+    this.#fireFrameHook("beforeUpdate", dt);
+    this.#update();
+    this.#lateUpdate();
+    this.#flushLifecycleQueue();
+    this.#flushPendingStarts();
+    this.#preRender();
+    this.#fireFrameHook("beforeRender", dt);
+    if (!opts?.skipRender) this.#render();
+    this.#fireFrameHook("afterRender", dt);
+  }
 }
