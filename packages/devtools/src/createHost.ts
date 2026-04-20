@@ -169,6 +169,13 @@ export function createDevToolsHost(initial: Application | null = null): {
   });
 
   // ── Value writer: mutate array-likes in place ─────────────────────
+  //
+  // Array-like fields (Vec3, Quaternion, Float32Array) are written in place
+  // to preserve reference identity — anything else holding the same ref sees
+  // the update automatically. We still reassign at the end so the property
+  // setter runs, because many components (e.g., `Transform.position`)
+  // perform side effects like `markDirty()` / dirty-queue registration that
+  // in-place mutation bypasses, which would leave renders stale.
   function writeValue(target: Record<string, unknown>, field: string, value: unknown): void {
     const current = target[field];
     if (isArrayLikeMutable(current) && isArrayLikeMutable(value)) {
@@ -176,6 +183,7 @@ export function createDevToolsHost(initial: Application | null = null): {
       const v = value as unknown as number[];
       const n = Math.min(c.length, v.length);
       for (let i = 0; i < n; i++) c[i] = v[i];
+      target[field] = current;
       return;
     }
     target[field] = value;

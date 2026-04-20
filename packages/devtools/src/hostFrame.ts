@@ -45,6 +45,46 @@ export interface DevToolsRootHostOptions {
   layout?: "dock" | "fill";
 }
 
+/**
+ * Stage CSS properties the dock overrides while attached. Saving and
+ * restoring these preserves whatever styling the author put on the stage
+ * (e.g., `width:100%; height:100%`), so detaching leaves no trace.
+ */
+const STAGE_RESET_PROPS = [
+  "flex",
+  "minWidth",
+  "minHeight",
+  "width",
+  "height",
+  "maxWidth",
+  "maxHeight",
+] as const satisfies readonly (keyof CSSStyleDeclaration)[];
+
+type SavedCSSProps = Record<(typeof STAGE_RESET_PROPS)[number], string>;
+
+function captureCSSProps(el: HTMLElement, keys: typeof STAGE_RESET_PROPS): SavedCSSProps {
+  const saved = {} as SavedCSSProps;
+  for (const key of keys) saved[key] = el.style[key] as string;
+  return saved;
+}
+
+function restoreCSSProps(el: HTMLElement, saved: SavedCSSProps): void {
+  for (const key of Object.keys(saved) as Array<keyof SavedCSSProps>) {
+    el.style[key] = saved[key];
+  }
+}
+
+interface StageLayoutAttachment {
+  /** Flex container that dalpeng created to house stage + dock. */
+  readonly wrapper: HTMLElement;
+  /** The canvas's original parent element (the "stage"). */
+  readonly stage: HTMLElement;
+  /** The stage's original parent — where `wrapper` now lives. */
+  readonly stageHost: HTMLElement;
+  /** CSS we took from the stage on attach; restored on detach. */
+  readonly savedStage: SavedCSSProps;
+}
+
 export class DevToolsRootHost {
   #app: Application;
   #ownerDoc: Document;
@@ -67,17 +107,21 @@ export class DevToolsRootHost {
   #poppedWindow: Window | null = null;
   #onPopupBeforeUnload: (() => void) | null = null;
 
+  /** Layout attachment — tracks what we mutated so we can restore it. */
+  #layout: StageLayoutAttachment | null = null;
+  #explicitContainer: HTMLElement | null;
+
   constructor(app: Application, registry: PluginRegistry, opts: DevToolsRootHostOptions = {}) {
     this.#app = app;
     this.#registry = registry;
     this.#ownerDoc = opts.ownerDoc ?? document;
     this.#layoutMode = opts.layout ?? "dock";
     this.#settings = getSettings();
+    this.#explicitContainer = opts.container ?? null;
 
     const root = this.#ownerDoc.createElement("div");
     root.id = "dalpeng-devtools-root";
     Object.assign(root.style, this.#baseRootStyle());
-    (opts.container ?? this.#ownerDoc.body).appendChild(root);
     this.#rootDiv = root;
 
     this.#applyAllStyles();
@@ -138,7 +182,11 @@ export class DevToolsRootHost {
 
   #applyDockLayout(): void {
     const root = this.#rootDiv;
-    if (this.#layoutMode === "fill") {
+
+    // Fill and popped-out modes do not participate in the page layout —
+    // they own their container. Detach any active stage-host attachment.
+    if (this.#layoutMode === "fill" || this.#poppedWindow) {
+      this.#detachFromStageHost();
       Object.assign(root.style, {
         position: "absolute",
         top: "0",
@@ -146,36 +194,144 @@ export class DevToolsRootHost {
         right: "0",
         bottom: "0",
         width: "auto",
+        flex: "",
         borderLeft: "none",
         borderRight: "none",
         boxShadow: "none",
       } satisfies Partial<CSSStyleDeclaration>);
+      if (!root.isConnected) {
+        (this.#explicitContainer ?? this.#ownerDoc.body).appendChild(root);
+      }
       return;
     }
+
+    // Dock mode: wrap the canvas's stage inside our own flex container and
+    // park the dock next to it. See #attachToStageHost for the rationale.
     const side = this.#settings.side.value;
     const width = `${this.#settings.width.value}px`;
+
     Object.assign(root.style, {
-      position: "fixed",
-      top: "0",
-      bottom: "0",
+      position: "relative",
+      top: "",
+      bottom: "",
+      left: "",
+      right: "",
       width,
-      zIndex: "2147483646",
-      ...(side === "right"
-        ? {
-            right: "0",
-            left: "auto",
-            borderLeft: "1px solid var(--dt-border)",
-            borderRight: "none",
-            boxShadow: "-2px 0 12px var(--dt-shadow)",
-          }
-        : {
-            left: "0",
-            right: "auto",
-            borderRight: "1px solid var(--dt-border)",
-            borderLeft: "none",
-            boxShadow: "2px 0 12px var(--dt-shadow)",
-          }),
+      height: "auto",
+      alignSelf: "stretch",
+      flex: "0 0 auto",
+      zIndex: "",
+      boxShadow: side === "right" ? "-2px 0 12px var(--dt-shadow)" : "2px 0 12px var(--dt-shadow)",
+      borderLeft: side === "right" ? "1px solid var(--dt-border)" : "none",
+      borderRight: side === "left" ? "1px solid var(--dt-border)" : "none",
     } satisfies Partial<CSSStyleDeclaration>);
+
+    const attached = this.#attachToStageHost(side);
+    if (!attached) {
+      // No suitable stage found — fall back to fixed overlay so the panel
+      // is still visible, but the canvas will end up hidden behind it.
+      Object.assign(root.style, {
+        position: "fixed",
+        top: "0",
+        bottom: "0",
+        width,
+        height: "auto",
+        flex: "",
+        zIndex: "2147483646",
+        ...(side === "right"
+          ? { right: "0", left: "auto" }
+          : { left: "0", right: "auto" }),
+      } satisfies Partial<CSSStyleDeclaration>);
+      if (!root.isConnected) {
+        (this.#explicitContainer ?? this.#ownerDoc.body).appendChild(root);
+      }
+    }
+  }
+
+  /**
+   * Wrap the canvas's stage element (canvas.parentElement) inside a
+   * dalpeng-owned flex container so the dock becomes a flex sibling of the
+   * stage, not an overlay. The wrapper replaces the stage's position in the
+   * original stage-host; `#detachFromStageHost` reverses the operation.
+   *
+   * Returns false when the attach cannot be performed (no canvas, no parent
+   * element, or stage is the body itself) — the caller should fall back to
+   * a fixed-position overlay in that case.
+   */
+  #attachToStageHost(side: "left" | "right"): boolean {
+    if (this.#layout) {
+      // Already attached — just update direction/position for side changes.
+      this.#updateLayoutDirection(side);
+      if (!this.#rootDiv.isConnected) {
+        this.#layout.wrapper.appendChild(this.#rootDiv);
+      }
+      return true;
+    }
+
+    const canvas = this.#app.canvasController.canvas;
+    const stage = canvas?.parentElement ?? null;
+    const stageHost = stage?.parentElement ?? null;
+    if (!canvas || !stage || !stageHost) return false;
+    if (stage === this.#ownerDoc.body) return false;
+
+    const wrapper = this.#ownerDoc.createElement("div");
+    wrapper.className = "dalpeng-devtools-layout";
+    Object.assign(wrapper.style, {
+      display: "flex",
+      flexDirection: side === "right" ? "row" : "row-reverse",
+      width: "100%",
+      height: "100%",
+      minWidth: "0",
+      minHeight: "0",
+    } satisfies Partial<CSSStyleDeclaration>);
+
+    const savedStage: SavedCSSProps = captureCSSProps(stage, STAGE_RESET_PROPS);
+
+    // Put wrapper where stage was, then move stage inside wrapper.
+    stageHost.insertBefore(wrapper, stage);
+    wrapper.appendChild(stage);
+    wrapper.appendChild(this.#rootDiv);
+
+    Object.assign(stage.style, {
+      flex: "1 1 0",
+      minWidth: "0",
+      minHeight: "0",
+      width: "auto",
+      height: "auto",
+      maxWidth: "none",
+      maxHeight: "none",
+    } satisfies Partial<CSSStyleDeclaration>);
+
+    this.#layout = { wrapper, stage, stageHost, savedStage };
+    return true;
+  }
+
+  #updateLayoutDirection(side: "left" | "right"): void {
+    if (!this.#layout) return;
+    this.#layout.wrapper.style.flexDirection = side === "right" ? "row" : "row-reverse";
+  }
+
+  #detachFromStageHost(): void {
+    if (!this.#layout) return;
+    const { wrapper, stage, stageHost, savedStage } = this.#layout;
+
+    // Move stage back to its original parent position (before the wrapper).
+    if (wrapper.parentElement === stageHost) {
+      stageHost.insertBefore(stage, wrapper);
+    } else if (stage.isConnected) {
+      // Wrapper already detached — leave stage where it is.
+    }
+
+    restoreCSSProps(stage, savedStage);
+
+    // Detach the dock from the wrapper before removing it, so the caller can
+    // re-parent it (e.g., to a popup window or back to the body).
+    if (this.#rootDiv.parentElement === wrapper) {
+      this.#rootDiv.remove();
+    }
+    wrapper.remove();
+
+    this.#layout = null;
   }
 
   #syncWorkspaceWithPanels(panels: readonly RegisteredPanel[]): void {
@@ -249,7 +405,13 @@ export class DevToolsRootHost {
   #defineHostFrame(): UINode {
     const emptyPanel = (): UINode => defineUI(() => [Text("(missing panel)")])();
 
-    const renderTabs = (node: TabsNode): UINode => {
+    // Return UIChild (Split/Tabs) directly rather than wrapping in defineUI.
+    // A defineUI wrapper creates an intrinsic-height flex container that, when
+    // placed inside the outer HostFrame flex column, collapses to 0 height —
+    // which is what caused the whole workspace to disappear. Split/Tabs
+    // renderers set flex:1 on their own containers, so passing them as a
+    // UIChild lets layout flow correctly.
+    const renderTabsAsChild = (node: TabsNode): UIChild => {
       const active = this.#getActiveRef(node);
       const tabsRef: ReadonlyRef<TabSpec[]> = computed(() => {
         const out: TabSpec[] = [];
@@ -263,23 +425,25 @@ export class DevToolsRootHost {
         }
         return out;
       });
-      return defineUI(() => [
-        Tabs({
-          tabs: tabsRef,
-          active,
-          onDragStart: (panelKey, ev) => this.#beginTabDrag(panelKey, ev),
-          dataAttrs: { devtoolsTabs: node.id },
-        }),
-      ])();
+      return Tabs({
+        tabs: tabsRef,
+        active,
+        onDragStart: (panelKey, ev) => this.#beginTabDrag(panelKey, ev),
+        dataAttrs: { devtoolsTabs: node.id },
+      });
     };
 
-    const renderLayout = (node: LayoutNode): UINode => {
+    const renderLayoutAsChild = (node: LayoutNode): UIChild => {
       if (node.kind === "split") {
         const sizes = this.#getSizesRef(node);
-        const slots = node.children.map((c) => renderLayout(c));
-        return defineUI(() => [Split({ direction: node.direction, sizes, slots })])();
+        // Split.slots expects UINode[]; renderSplit applies flex:1 to each
+        // slot container, so the inner UINode wrapper there is harmless.
+        const slots = node.children.map((c) =>
+          defineUI(() => [renderLayoutAsChild(c)])()
+        );
+        return Split({ direction: node.direction, sizes, slots });
       }
-      return renderTabs(node);
+      return renderTabsAsChild(node);
     };
 
     const footerEl = this.#buildFooterElement();
@@ -334,10 +498,7 @@ export class DevToolsRootHost {
 
     return defineUI(() => {
       const ws = this.#settings.workspace.value;
-      const workspaceNode: UIChild = {
-        type: "ui",
-        descriptor: renderLayout(ws.main),
-      };
+      const workspaceNode = renderLayoutAsChild(ws.main);
       const footerNode: UIChild = {
         type: "live",
         element: footerEl,
@@ -592,6 +753,7 @@ export class DevToolsRootHost {
     for (const u of this.#unwatchSettings) u();
     this.#unwatchSettings = [];
     this.#unmountHostUI();
+    this.#detachFromStageHost();
     if (this.#poppedWindow && !this.#poppedWindow.closed) {
       if (this.#onPopupBeforeUnload) {
         this.#poppedWindow.removeEventListener("beforeunload", this.#onPopupBeforeUnload);
