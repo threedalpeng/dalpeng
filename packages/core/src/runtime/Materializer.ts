@@ -111,6 +111,20 @@ export class Materializer {
   }
 
   /** DFS teardown: detaches owned UI children first, then calls runOnDestroy. Component teardown is the caller's responsibility. */
+  /**
+   * Push the dalpeng-layer entity context (so `useEntity()`, `spawn()`, etc.
+   * work inside onStart/onDestroy callbacks). Returns a pop function.
+   * Unlike the materialize-time push, this is for runtime lifecycle hooks
+   * where the parent arg is whatever the entity currently resolves to.
+   */
+  pushEntityContext(entity: GameEntity): () => void {
+    const parentInstance = entity.parent?._gameInstance;
+    const scene = entity.scene;
+    const parent = parentInstance ?? scene;
+    if (!parent) return () => {};
+    return this.#hooks.pushGameContext(entity, parent);
+  }
+
   destroyCascade(instance: EntityInstance, runOnDestroy: (e: GameEntity) => void): void {
     for (const child of instance.gameChildren) {
       this.destroyCascade(child, runOnDestroy);

@@ -467,8 +467,15 @@ export default class Application {
   }
 
   #runOnDestroyScripts(entity: GameEntity) {
-    for (const script of entity.getComponents(Script)) {
-      script.onDestroy();
+    // Push entity context so dalpeng hooks that expect setup scope
+    // (`spawn()`, `useEntity()`, etc.) also work inside onDestroy callbacks.
+    const pop = this.#materializer?.pushEntityContext(entity);
+    try {
+      for (const script of entity.getComponents(Script)) {
+        script.onDestroy();
+      }
+    } finally {
+      pop?.();
     }
   }
 
