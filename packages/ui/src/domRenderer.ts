@@ -675,6 +675,15 @@ function renderTabs(node: Extract<UIChild, { type: "tabs" }>, ctx: RenderContext
   return { element: wrap, cleanups };
 }
 
+/**
+ * Key-based diffing reconciler for `For`. Implements the fine-grained
+ * invariant that items with unchanged keys keep their DOM nodes + internal
+ * subscriptions. Adding a single element to a 100-item list does ~1 DOM
+ * insertion, not 100 rebuilds.
+ *
+ * Duplicate keys in one batch each get a fresh slot (logged once) — we
+ * don't want to silently merge distinct items under the same key.
+ */
 function renderFor(node: Extract<UIChild, { type: "for" }>, ctx: RenderContext): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
@@ -684,29 +693,95 @@ function renderFor(node: Extract<UIChild, { type: "for" }>, ctx: RenderContext):
   wrap.style.display = "flex";
   wrap.style.flexDirection = "column";
 
-  let childCleanups: Set<() => void> = new Set();
-  const rebuild = () => {
-    while (wrap.firstChild) wrap.removeChild(wrap.firstChild);
-    childCleanups.forEach((fn) => fn());
-    childCleanups = new Set();
-    const items = opts.items.value;
-    if (items.length === 0 && opts.empty) {
-      const r = renderUI(opts.empty, ctx);
-      wrap.appendChild(r.element);
-      r.cleanups.forEach((fn) => childCleanups.add(fn));
-      return;
-    }
-    items.forEach((item, idx) => {
-      const desc = opts.render(item, idx);
-      const r = renderUI(desc, ctx);
-      wrap.appendChild(r.element);
-      r.cleanups.forEach((fn) => childCleanups.add(fn));
-    });
+  type Slot = { key: unknown; element: HTMLElement; cleanups: Set<() => void> };
+  let slots: Slot[] = [];
+  let emptySlot: Slot | null = null;
+
+  const keyOf = opts.key ?? ((item: unknown) => item);
+
+  const teardown = (slot: Slot): void => {
+    slot.cleanups.forEach((fn) => fn());
+    if (slot.element.parentNode) slot.element.parentNode.removeChild(slot.element);
   };
 
-  rebuild();
-  cleanups.add(opts.items.subscribe(() => rebuild()));
-  cleanups.add(() => childCleanups.forEach((fn) => fn()));
+  const renderItem = (item: unknown, idx: number, key: unknown): Slot => {
+    const desc = opts.render(item as never, idx);
+    const r = renderUI(desc, ctx);
+    return { key, element: r.element, cleanups: r.cleanups };
+  };
+
+  const showEmpty = (): void => {
+    if (!opts.empty || emptySlot) return;
+    const r = renderUI(opts.empty, ctx);
+    emptySlot = { key: undefined, element: r.element, cleanups: r.cleanups };
+    wrap.appendChild(r.element);
+  };
+
+  const hideEmpty = (): void => {
+    if (!emptySlot) return;
+    teardown(emptySlot);
+    emptySlot = null;
+  };
+
+  const diff = (): void => {
+    const items = opts.items.value;
+
+    if (items.length === 0) {
+      for (const s of slots) teardown(s);
+      slots = [];
+      showEmpty();
+      return;
+    }
+
+    hideEmpty();
+
+    const prevByKey = new Map<unknown, Slot>();
+    for (const s of slots) prevByKey.set(s.key, s);
+
+    const nextSlots: Slot[] = new Array(items.length);
+    const claimed = new Set<unknown>();
+
+    for (let i = 0; i < items.length; i++) {
+      const key = keyOf(items[i] as never, i);
+      let slot: Slot | undefined;
+      if (!claimed.has(key)) {
+        slot = prevByKey.get(key);
+        if (slot) {
+          prevByKey.delete(key);
+          claimed.add(key);
+        }
+      }
+      if (!slot) {
+        slot = renderItem(items[i], i, claimed.has(key) ? Symbol("dup") : key);
+        claimed.add(slot.key);
+      }
+      nextSlots[i] = slot;
+    }
+
+    // Destroy leftover slots that didn't survive.
+    for (const stale of prevByKey.values()) teardown(stale);
+
+    // Reorder DOM so nextSlots[i] sits right before nextSlots[i+1].element.
+    // Walk back-to-front so the reference node is already positioned.
+    for (let i = nextSlots.length - 1; i >= 0; i--) {
+      const cur = nextSlots[i];
+      const ref = nextSlots[i + 1]?.element ?? null;
+      if (cur.element.parentNode !== wrap || cur.element.nextSibling !== ref) {
+        wrap.insertBefore(cur.element, ref);
+      }
+    }
+
+    slots = nextSlots;
+  };
+
+  diff();
+  cleanups.add(opts.items.subscribe(() => diff()));
+  cleanups.add(() => {
+    for (const s of slots) s.cleanups.forEach((fn) => fn());
+    slots = [];
+    if (emptySlot) emptySlot.cleanups.forEach((fn) => fn());
+    emptySlot = null;
+  });
 
   return { element: wrap, cleanups };
 }

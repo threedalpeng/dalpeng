@@ -66,6 +66,18 @@ export interface ForOpts<T> {
   items: ReadonlyRef<readonly T[]>;
   render: (item: T, idx: number) => UINode;
   empty?: UINode;
+  /**
+   * Stable identity per item for key-based diffing. When the reactive `items`
+   * array changes, items whose keys remain are reused — existing DOM nodes
+   * and internal ref subscriptions survive — and only the added / removed /
+   * reordered ones take DOM work.
+   *
+   * Default: the item itself. That works for primitive arrays (numbers,
+   * strings) but misidentifies object arrays where reference changes
+   * should NOT rebuild the UI. Provide explicitly for object items:
+   * `key: (e) => e.id`.
+   */
+  key?: (item: T, idx: number) => unknown;
 }
 
 export interface ShowOpts {
