@@ -1,82 +1,58 @@
 import type { Application, GameEntity, Scene } from "@dalpeng/core";
-import { isInUIScope } from "@dalpeng/core";
+import { findScope, hasScope, pushScope as corePushScope, type Scope } from "@dalpeng/core";
 
 /**
- * Authoring scope state.
+ * Authoring scope facade over `@dalpeng/core`'s shared scope stack.
  *
- * Historically there were 5+ parallel module-level variables
- * (thisApp/thisScene/thisEntity/parentEntity/currentThis) updated by pair
- * of setter calls. That structure made nested setup physically impossible
- * (no stack) and cross-package scope detection required ad-hoc signals
- * like `isInUIScope()`.
- *
- * This module now keeps a single **scope stack**. Each `pushScope()`
- * adds a frame inheriting unspecified fields from the outer frame; the
- * returned function pops it. Nested `defineEntity` / `defineScene` are
- * expressible for free — each setup just pushes its own frame.
- *
- * `setThisX` setters are preserved as a thin legacy surface for callers
- * that haven't migrated yet. They all funnel through the same stack.
+ * dalpeng no longer keeps its own stack — all scope state (app / scene /
+ * entity / parent / cleanup / ui) lives in one core primitive. Hooks in
+ * this file just pick the frame they need via `findScope(kind)`.
  */
 
-interface Frame {
-  app: Application | null;
-  scene: Scene | null;
-  entity: GameEntity | null;
-  parent: GameEntity | null;
+interface DalpengScopeFrame {
+  app?: Application | null;
+  scene?: Scene | null;
+  entity?: GameEntity | null;
+  parent?: GameEntity | null;
 }
 
-const EMPTY_FRAME: Frame = {
-  app: null,
-  scene: null,
-  entity: null,
-  parent: null,
-};
-
-const stack: Frame[] = [];
-
-function current(): Frame {
-  return stack[stack.length - 1] ?? EMPTY_FRAME;
-}
-
-/**
- * Push a new authoring scope. Unspecified fields inherit from the outer
- * frame — so an entity frame pushed inside a scene frame still reports
- * the outer scene via `getThisScene()`. Returns a function that pops.
- */
-export function pushScope(patch: Partial<Frame>): () => void {
-  const outer = current();
-  stack.push({
-    app: patch.app !== undefined ? patch.app : outer.app,
-    scene: patch.scene !== undefined ? patch.scene : outer.scene,
-    // entity and parent do NOT inherit — nested setup gets a fresh entity
-    // identity. `setParentEntity(null)` after pushScope({entity}) lets the
-    // caller mark "no parent" explicitly.
-    entity: patch.entity !== undefined ? patch.entity : null,
-    parent: patch.parent !== undefined ? patch.parent : null,
-  });
+export function pushScope(frame: DalpengScopeFrame): () => void {
+  // Translate a dalpeng-level "compound frame" push into one or more typed
+  // core scope pushes. Order matters — outermost kind pushed first so
+  // `findScope("app")` walking back still finds the entity's app above it.
+  const pops: (() => void)[] = [];
+  if (frame.app !== undefined && frame.app !== null) {
+    pops.push(corePushScope({ kind: "app", app: frame.app, cleanups: new Set() }));
+  }
+  if (frame.scene !== undefined && frame.scene !== null) {
+    pops.push(corePushScope({ kind: "scene", scene: frame.scene, cleanups: new Set() }));
+  }
+  if (frame.entity !== undefined && frame.entity !== null) {
+    pops.push(
+      corePushScope({
+        kind: "entity",
+        entity: frame.entity,
+        parent: frame.parent ?? null,
+        cleanups: new Set(),
+      })
+    );
+  }
+  // Pop in reverse — innermost first.
   return () => {
-    stack.pop();
+    for (let i = pops.length - 1; i >= 0; i--) pops[i]();
   };
 }
 
 export function getThis(): Application | Scene | GameEntity | null {
-  const f = current();
-  return f.entity ?? f.scene ?? f.app;
+  return getThisEntity() ?? getThisScene() ?? getThisApp();
 }
 
-export function getThisApp() {
-  return current().app;
-}
-
-export function setThisApp(app: Application | null) {
-  // Legacy: mutate the top frame rather than push.
-  if (stack.length === 0) stack.push({ ...EMPTY_FRAME });
-  stack[stack.length - 1].app = app;
+export function getThisApp(): Application | null {
+  return findScope("app")?.app ?? null;
 }
 
 export function requireApp(hookName: string): Application {
-  const app = current().app;
+  const app = getThisApp();
   if (!app)
     throw new Error(
       `${hookName}() requires an active Application context (must be called inside defineApp setup).`
@@ -84,17 +60,12 @@ export function requireApp(hookName: string): Application {
   return app;
 }
 
-export function getThisScene() {
-  return current().scene;
-}
-
-export function setThisScene(scene: Scene | null) {
-  if (stack.length === 0) stack.push({ ...EMPTY_FRAME });
-  stack[stack.length - 1].scene = scene;
+export function getThisScene(): Scene | null {
+  return findScope("scene")?.scene ?? null;
 }
 
 export function requireScene(hookName: string): Scene {
-  const scene = current().scene;
+  const scene = getThisScene();
   if (!scene)
     throw new Error(
       `${hookName}() requires an active Scene context (must be called inside defineScene setup).`
@@ -102,21 +73,15 @@ export function requireScene(hookName: string): Scene {
   return scene;
 }
 
-export function getThisEntity() {
-  return current().entity;
-}
-
-export function setThisEntity(entity: GameEntity | null) {
-  if (stack.length === 0) stack.push({ ...EMPTY_FRAME });
-  stack[stack.length - 1].entity = entity;
+export function getThisEntity(): GameEntity | null {
+  return findScope("entity")?.entity ?? null;
 }
 
 export function requireEntity(hookName: string): GameEntity {
-  const entity = current().entity;
+  const entity = getThisEntity();
   if (!entity) {
-    // Can't import getThisUI directly (circular dep via @dalpeng/ui).
-    // isInUIScope() is the cross-package boolean signal @dalpeng/ui toggles.
-    if (isInUIScope()) {
+    // Check UI scope for a clearer error message.
+    if (hasScope("ui")) {
       throw new Error(
         `${hookName}() is a game-kind hook and cannot be called inside defineUI setup. ` +
           `Frame hooks (onUpdate / onFixedUpdate / onLateUpdate / onStart / onEnable / onDisable) ` +
@@ -129,17 +94,13 @@ export function requireEntity(hookName: string): GameEntity {
   return entity;
 }
 
-export function getParentEntity() {
-  return current().parent;
-}
-
-export function setParentEntity(entity: GameEntity | null) {
-  if (stack.length === 0) stack.push({ ...EMPTY_FRAME });
-  stack[stack.length - 1].parent = entity;
+export function getParentEntity(): GameEntity | null {
+  const entityScope = findScope("entity") as Extract<Scope, { kind: "entity" }> | null;
+  return entityScope?.parent ?? null;
 }
 
 // Cleanup scope helpers live in @dalpeng/core so reactive primitives and
-// @dalpeng/ui share the same singleton stack without a circular dep.
+// @dalpeng/ui share the same stack.
 export {
   beginCleanupScope,
   endCleanupScope,

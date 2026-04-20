@@ -118,9 +118,15 @@ export {
   endCleanupScope,
   hasActiveCleanupScope,
   registerCleanup,
-} from "./runtime/cleanupScope";
+} from "./runtime/scope";
 
-export { enterUIScope, isInUIScope, leaveUIScope } from "./runtime/uiScope";
+export {
+  currentScope,
+  findScope,
+  hasScope,
+  pushScope,
+  type Scope,
+} from "./runtime/scope";
 
 export {
   Animator,

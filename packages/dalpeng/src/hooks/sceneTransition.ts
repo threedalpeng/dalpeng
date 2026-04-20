@@ -1,5 +1,5 @@
 import type { GameEntity, Scene } from "@dalpeng/core";
-import { requireEntity, setThisApp } from "../context";
+import { pushScope, requireEntity } from "../context";
 import type { UseScene } from "./scene";
 
 const persistentEntities = new Set<GameEntity>();
@@ -84,12 +84,12 @@ export function useSceneSwitch(): SceneSwitcher {
     // and scene.app is set before entity components are created.
     let newScene: Scene | null = null;
     const wrappedFactory = (): Scene => {
-      setThisApp(app);
+      const popScope = pushScope({ app });
       try {
         newScene = sceneFactory();
         return newScene;
       } finally {
-        setThisApp(null);
+        popScope();
       }
     };
 

@@ -1,4 +1,4 @@
-import { hasActiveCleanupScope, registerCleanup } from "./cleanupScope";
+import { hasActiveCleanupScope, registerCleanup } from "./scope";
 
 export interface ReadonlyRef<T> {
   readonly value: T;

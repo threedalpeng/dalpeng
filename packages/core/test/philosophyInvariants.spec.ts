@@ -137,26 +137,94 @@ describe("Philosophy invariant — Component.on returns unsubscribe", () => {
 
 describe("Philosophy invariant — scope stack supports nesting", () => {
   it("nested pushScope frames restore outer state when popped", async () => {
-    const { pushScope, getThisEntity, getThisScene } = await import("../../dalpeng/src/context");
+    const { pushScope, findScope } = await import("../src/runtime/scope");
     const { default: GameEntity } = await import("../src/ecs/GameEntity");
 
-    expect(getThisEntity()).toBeNull();
-    expect(getThisScene()).toBeNull();
+    expect(findScope("entity")).toBeNull();
 
     const outerEntity = new GameEntity();
     const innerEntity = new GameEntity();
 
-    const popOuter = pushScope({ entity: outerEntity });
-    expect(getThisEntity()).toBe(outerEntity);
+    const popOuter = pushScope({
+      kind: "entity",
+      entity: outerEntity,
+      parent: null,
+      cleanups: new Set(),
+    });
+    expect(findScope("entity")?.entity).toBe(outerEntity);
 
-    const popInner = pushScope({ entity: innerEntity });
-    expect(getThisEntity()).toBe(innerEntity);
+    const popInner = pushScope({
+      kind: "entity",
+      entity: innerEntity,
+      parent: outerEntity,
+      cleanups: new Set(),
+    });
+    expect(findScope("entity")?.entity).toBe(innerEntity);
 
     popInner();
-    expect(getThisEntity()).toBe(outerEntity);
+    expect(findScope("entity")?.entity).toBe(outerEntity);
 
     popOuter();
-    expect(getThisEntity()).toBeNull();
+    expect(findScope("entity")).toBeNull();
+  });
+
+  it("UI scope and entity scope coexist on the same unified stack", async () => {
+    const { pushScope, findScope, hasScope } = await import("../src/runtime/scope");
+    const { default: GameEntity } = await import("../src/ecs/GameEntity");
+
+    expect(hasScope("ui")).toBe(false);
+    expect(hasScope("entity")).toBe(false);
+
+    const entity = new GameEntity();
+    const popEntity = pushScope({
+      kind: "entity",
+      entity,
+      parent: null,
+      cleanups: new Set(),
+    });
+
+    expect(hasScope("entity")).toBe(true);
+    expect(hasScope("ui")).toBe(false);
+    expect(findScope("entity")?.entity).toBe(entity);
+
+    const popUI = pushScope({ kind: "ui", ui: { kind: "ui-payload" }, cleanups: new Set() });
+    expect(hasScope("ui")).toBe(true);
+    expect(hasScope("entity")).toBe(true); // outer entity still reachable
+    expect((findScope("ui")?.ui as { kind: string }).kind).toBe("ui-payload");
+    expect(findScope("entity")?.entity).toBe(entity);
+
+    popUI();
+    expect(hasScope("ui")).toBe(false);
+    expect(hasScope("entity")).toBe(true);
+
+    popEntity();
+    expect(hasScope("entity")).toBe(false);
+  });
+
+  it("registerCleanup lands on the innermost frame regardless of kind", async () => {
+    const { pushScope, registerCleanup } = await import("../src/runtime/scope");
+    const { default: GameEntity } = await import("../src/ecs/GameEntity");
+    const entityCleanups = new Set<() => void>();
+    const uiCleanups = new Set<() => void>();
+
+    const popEntity = pushScope({
+      kind: "entity",
+      entity: new GameEntity(),
+      parent: null,
+      cleanups: entityCleanups,
+    });
+
+    registerCleanup(() => void 0);
+    expect(entityCleanups.size).toBe(1);
+    expect(uiCleanups.size).toBe(0);
+
+    const popUI = pushScope({ kind: "ui", ui: null, cleanups: uiCleanups });
+    registerCleanup(() => void 0);
+    expect(entityCleanups.size).toBe(1); // no change
+    expect(uiCleanups.size).toBe(1);
+
+    popUI();
+    popEntity();
   });
 });
 

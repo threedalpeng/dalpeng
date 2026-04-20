@@ -1,14 +1,5 @@
-import {
-  beginCleanupScope,
-  endCleanupScope,
-  enterUIScope,
-  isRef,
-  leaveUIScope,
-  ref,
-  type Ref,
-  type UINode,
-} from "@dalpeng/core";
-import { getThisUI, setThisUI, type UIContext } from "./context";
+import { isRef, ref, type Ref, type UINode } from "@dalpeng/core";
+import { pushUIScope, type UIContext } from "./context";
 import type { Placement } from "./placement";
 import type { TextOpts, UIChild } from "./types";
 
@@ -32,14 +23,11 @@ export interface RenderResult {
 }
 
 export function renderUI(node: UINode, ctx: RenderContext): RenderResult {
-  const prevUI = getThisUI();
   const uiCtx: UIContext = {
     nodes: [] as UIChild[],
     layout: { direction: "column", gap: 4 },
   };
-  setThisUI(uiCtx);
-  enterUIScope();
-  const cleanups = beginCleanupScope();
+  const { cleanups, pop } = pushUIScope(uiCtx);
 
   let nodes: UIChild[];
   let placement: Placement | undefined;
@@ -52,9 +40,7 @@ export function renderUI(node: UINode, ctx: RenderContext): RenderResult {
     layerName = uiCtx.layer;
     layout = { ...uiCtx.layout };
   } finally {
-    endCleanupScope();
-    leaveUIScope();
-    setThisUI(prevUI);
+    pop();
   }
 
   const container = ctx.doc.createElement("div");
