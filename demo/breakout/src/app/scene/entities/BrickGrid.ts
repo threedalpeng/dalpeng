@@ -26,7 +26,9 @@ export default defineEntity(() => {
       const y = START_Y - row * BRICK_H;
       const color = ROW_COLORS[row];
       const hp = row < 2 ? 2 : 1;
-      bricks.push(createBrick(x, y, color, hp));
+      // createBrick returns a factory (same shape as `export default defineEntity(...)`);
+      // invoke it to get the descriptor before handing it to the scene tree.
+      bricks.push(createBrick(x, y, color, hp)());
     }
   }
   return bricks;

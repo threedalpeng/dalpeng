@@ -13,7 +13,7 @@ export default defineEntity(() => {
 
   useQuad().material.baseColor = vec3(0.9, 0.9, 0.9);
 
-  usePaddle({ upKey: "KeyW", downKey: "KeyS", speed: 6, boundsY: 5.5 });
+  usePaddle({ upKey: "KeyW", downKey: "KeyS", speed: 6, boundsY: 5 });
 
   // Tag for lookup
   withTag("paddle-left");
