@@ -105,10 +105,16 @@ export function withLayer(name: string) {
   entity._layerName = name;
 }
 
-export function spawn(factory: GameFactory, parent?: GameEntity): void {
+export function spawn(factory: GameFactory, parent?: GameEntity): void;
+export function spawn(node: EntityNode, parent?: GameEntity): void;
+export function spawn(arg: GameFactory | EntityNode, parent?: GameEntity): void {
   const callingEntity = requireEntity("spawn");
   const app = callingEntity.currentApp;
-  const descriptor = factory();
+  // Factory vs descriptor: factory is `() => EntityNode`, descriptor is the
+  // plain object returned by calling that factory. Either is valid from the
+  // user's perspective — core `Application.spawn` already accepts both, so
+  // collapse the distinction here.
+  const descriptor = typeof arg === "function" ? arg() : arg;
   app.spawn(descriptor, parent ?? undefined);
 }
 
