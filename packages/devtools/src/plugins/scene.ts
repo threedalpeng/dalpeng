@@ -1,6 +1,6 @@
 import { ref, watch, type Component, type GameEntity } from "@dalpeng/core";
 import { defineUI, type UIChild } from "@dalpeng/ui";
-import { getComponentSchema, type FieldSchema } from "../editSchema";
+import { componentDisplayName, getComponentSchema, type FieldSchema } from "../editSchema";
 import type { DevToolsHost } from "../host";
 import type { DevToolsPlugin } from "../plugin";
 import { definePlugin } from "../plugin";
@@ -59,9 +59,15 @@ function buildTreePanel(host: DevToolsHost, selected: ReturnType<typeof ref<Game
 
   const collapsed = new Set<number>();
   let filter = "";
+  // Set by the input handler, consumed once by render() to scroll the first
+  // direct-match row into view. Typing 'p' then 'l' then 'a' shouldn't yank
+  // scroll back and forth uncontrollably — only the first match for the
+  // current filter string is targeted.
+  let pendingScrollToFirstMatch = false;
 
   filterInput.addEventListener("input", () => {
     filter = filterInput.value.trim();
+    pendingScrollToFirstMatch = filter.length > 0;
     render();
   });
 
@@ -71,6 +77,9 @@ function buildTreePanel(host: DevToolsHost, selected: ReturnType<typeof ref<Game
     const isCollapsed = collapsed.has(entity.id);
     const hasChildren = entity.children.length > 0;
     const isSelected = selected.value === entity;
+    const directMatch =
+      filter.length > 0 && entity.name.toLowerCase().includes(filter.toLowerCase());
+    if (directMatch) row.dataset.directMatch = "1";
 
     row.style.cssText = `display:flex;align-items:center;padding:1px 4px 1px ${depth * 12 + 4}px;cursor:pointer;white-space:nowrap;color:${isSelected ? PALETTE.accent : PALETTE.fg};background:${isSelected ? PALETTE.rowSelected : "transparent"}`;
 
@@ -130,6 +139,12 @@ function buildTreePanel(host: DevToolsHost, selected: ReturnType<typeof ref<Game
       listContainer.appendChild(renderRow(r, 0));
     }
     listContainer.scrollTop = savedScroll;
+
+    if (pendingScrollToFirstMatch) {
+      pendingScrollToFirstMatch = false;
+      const firstMatch = listContainer.querySelector<HTMLElement>('[data-direct-match="1"]');
+      firstMatch?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
   }
 
   return { root, render };
@@ -410,7 +425,11 @@ function makeFieldEditor(binding: FieldBinding, host: DevToolsHost): Editor {
 
 function buildInspectorPanel(
   host: DevToolsHost,
-  selected: ReturnType<typeof ref<GameEntity | null>>
+  selected: ReturnType<typeof ref<GameEntity | null>>,
+  /** Initial fold state (restored from localStorage by the plugin). */
+  foldedComponents: Set<string>,
+  /** Called after any fold toggle so the plugin can persist. */
+  onFoldChange: () => void
 ) {
   const root = document.createElement("div");
   root.style.cssText =
@@ -425,14 +444,13 @@ function buildInspectorPanel(
   root.appendChild(header);
   root.appendChild(body);
 
-  const foldedComponents = new Set<string>();
   let editors: Editor[] = [];
 
   function renderComponent(entity: GameEntity, component: Component): HTMLElement {
     const section = document.createElement("div");
     section.style.cssText = "margin-bottom:6px";
 
-    const typeName = component.constructor.name;
+    const typeName = componentDisplayName(component);
     const folded = foldedComponents.has(typeName);
 
     const head = document.createElement("div");
@@ -447,6 +465,7 @@ function buildInspectorPanel(
     head.addEventListener("click", () => {
       if (folded) foldedComponents.delete(typeName);
       else foldedComponents.add(typeName);
+      onFoldChange();
       render();
     });
     section.appendChild(head);
@@ -538,6 +557,42 @@ function buildInspectorPanel(
 
 // ── Plugin ──────────────────────────────────────────────────────────
 
+const SELECTED_KEY = "dalpeng.devtools.scene.selectedEntityName.v1";
+const FOLDED_KEY = "dalpeng.devtools.scene.foldedComponents.v1";
+
+function loadSelectedName(): string | null {
+  try {
+    return localStorage.getItem(SELECTED_KEY);
+  } catch {
+    return null;
+  }
+}
+function saveSelectedName(name: string | null): void {
+  try {
+    if (name) localStorage.setItem(SELECTED_KEY, name);
+    else localStorage.removeItem(SELECTED_KEY);
+  } catch {
+    // private mode / quota — ignore
+  }
+}
+function loadFolded(): Set<string> {
+  try {
+    const raw = localStorage.getItem(FOLDED_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw) as unknown;
+    return Array.isArray(arr) ? new Set(arr.filter((x) => typeof x === "string")) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+function saveFolded(set: Set<string>): void {
+  try {
+    localStorage.setItem(FOLDED_KEY, JSON.stringify([...set]));
+  } catch {
+    // ignore
+  }
+}
+
 export function scenePlugin(): DevToolsPlugin {
   const selected = ref<GameEntity | null>(null);
 
@@ -557,8 +612,17 @@ export function scenePlugin(): DevToolsPlugin {
     version: "0.1.0",
 
     setup(host) {
+      // Restore persisted fold state immediately — entities-agnostic.
+      const foldedComponents = loadFolded();
+      // Selected entity needs a live entity reference, so wait for the
+      // entities list to contain an entity with the saved name.
+      const persistedName = loadSelectedName();
+      let restoredSelection = false;
+
       const tree = buildTreePanel(host, selected);
-      const inspector = buildInspectorPanel(host, selected);
+      const inspector = buildInspectorPanel(host, selected, foldedComponents, () =>
+        saveFolded(foldedComponents)
+      );
       treeNode.element.replaceWith(tree.root);
       (treeNode as { element: HTMLElement }).element = tree.root;
       inspectorNode.element.replaceWith(inspector.root);
@@ -570,6 +634,14 @@ export function scenePlugin(): DevToolsPlugin {
           if (selected.value && !entities.includes(selected.value)) {
             selected.value = null;
           }
+          // One-shot restore when entity with persisted name appears.
+          if (!restoredSelection && persistedName && selected.value === null) {
+            const match = entities.find((e) => e.name === persistedName);
+            if (match) {
+              selected.value = match;
+              restoredSelection = true;
+            }
+          }
           tree.render();
         },
         { immediate: true }
@@ -577,7 +649,8 @@ export function scenePlugin(): DevToolsPlugin {
 
       const unwatchSelection = watch(
         selected,
-        () => {
+        (entity) => {
+          saveSelectedName(entity?.name ?? null);
           tree.render();
           inspector.render();
         },

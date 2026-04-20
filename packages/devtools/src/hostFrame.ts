@@ -715,7 +715,10 @@ export class DevToolsRootHost {
       "dalpeng-devtools",
       `width=${width},height=${height},resizable=yes,scrollbars=no`
     );
-    if (!popup) return null;
+    if (!popup) {
+      this.#showPopupBlockedBanner();
+      return null;
+    }
     popup.document.title = "Dalpeng DevTools";
     Object.assign(popup.document.body.style, {
       margin: "0",
@@ -746,6 +749,34 @@ export class DevToolsRootHost {
     this.#poppedWindow = popup;
     this.#onPopupBeforeUnload = handleUnload;
     return popup;
+  }
+
+  /**
+   * Show a short-lived inline banner inside the dock when `window.open`
+   * returns null (browser popup blocker). Silent failure used to be the
+   * default — user clicked the ⇗ button and nothing happened.
+   */
+  #showPopupBlockedBanner(): void {
+    const host = this.#uiElement ?? this.#rootDiv;
+    if (!host) return;
+    const banner = this.#ownerDoc.createElement("div");
+    banner.textContent = "⚠ Popup blocked — allow popups for this origin to pop the dock out.";
+    Object.assign(banner.style, {
+      position: "absolute",
+      top: "4px",
+      left: "4px",
+      right: "4px",
+      padding: "6px 10px",
+      background: "var(--dt-bg-sunken, #1a1d23)",
+      color: "var(--dt-fg, #e6e8ec)",
+      border: "1px solid var(--dt-accent, #f59e0b)",
+      borderRadius: "3px",
+      fontSize: "11px",
+      zIndex: "2147483647",
+      pointerEvents: "none",
+    } satisfies Partial<CSSStyleDeclaration>);
+    host.appendChild(banner);
+    setTimeout(() => banner.remove(), 4000);
   }
 
   destroy(): void {

@@ -24,6 +24,7 @@ export function registerDefaultSchemas(): void {
   registered = true;
 
   registerComponentSchema(Transform, {
+    displayName: "Transform",
     fields: {
       position: vec3Field({ step: 0.1, copyFormat: vec3CodeFormat }),
       // rotation is a Quaternion (xyzw) — proper quat/euler editor TBD.
@@ -37,6 +38,7 @@ export function registerDefaultSchemas(): void {
   });
 
   registerComponentSchema(Sprite2DRenderer, {
+    displayName: "Sprite2DRenderer",
     fields: {
       frame: numberField({ min: 0, step: 1 }),
       sortingLayer: numberField({ min: 0, step: 1 }),
@@ -47,6 +49,7 @@ export function registerDefaultSchemas(): void {
   });
 
   registerComponentSchema(MeshRenderer, {
+    displayName: "MeshRenderer",
     fields: {
       castShadow: toggleField(),
       receiveShadow: toggleField(),
@@ -54,6 +57,7 @@ export function registerDefaultSchemas(): void {
   });
 
   registerComponentSchema(Camera, {
+    displayName: "Camera",
     fields: {
       fov: numberField({ min: 1, max: 179, step: 1, unit: "deg" }),
       near: numberField({ min: 0.001, step: 0.1 }),
@@ -64,6 +68,7 @@ export function registerDefaultSchemas(): void {
   });
 
   registerComponentSchema(Light, {
+    displayName: "Light",
     fields: {
       type: enumField(["directional", "point", "spot"] as const),
       intensity: numberField({ min: 0, step: 0.1 }),
@@ -73,6 +78,7 @@ export function registerDefaultSchemas(): void {
   });
 
   registerComponentSchema(Animator, {
+    displayName: "Animator",
     fields: {
       isPlaying: readonlyField((v) => String(v)),
       currentClip: readonlyField((v) => (v == null ? "—" : String(v))),
@@ -81,6 +87,7 @@ export function registerDefaultSchemas(): void {
   });
 
   registerComponentSchema(Script, {
+    displayName: "Script",
     fields: {
       isActive: toggleField(),
     },

@@ -10,6 +10,7 @@ import {
   type ReadonlyRef,
   type Scene,
 } from "@dalpeng/core";
+import { componentDisplayName } from "./editSchema";
 import type {
   AnyPatch,
   AtlasInfo,
@@ -240,7 +241,7 @@ export function createDevToolsHost(initial: Application | null = null): {
 
     setField(entity, component, field, value): PatchId {
       const target = component as unknown as Record<string, unknown>;
-      const componentType = component.constructor.name;
+      const componentType = componentDisplayName(component);
       const key = fieldKey(entity.id, componentType, field);
       const existing = fieldPatches.get(key);
 
@@ -445,7 +446,7 @@ export function createDevToolsHost(initial: Application | null = null): {
           );
         }
         const ent = matches[0];
-        const comp = ent.getAllComponents().find((c) => c.constructor.name === rec.componentType);
+        const comp = ent.getAllComponents().find((c) => componentDisplayName(c) === rec.componentType);
         if (!comp) continue;
         const target = comp as unknown as Record<string, unknown>;
         const key = fieldKey(ent.id, rec.componentType!, rec.field!);

@@ -15,6 +15,13 @@ export interface FieldSchema {
 }
 
 export interface ComponentSchema {
+  /**
+   * Display name shown in Inspector headers and used as the stable key for
+   * patches / fold state. Falls back to `constructor.name` when omitted —
+   * but that breaks under production minification (class names become
+   * `mt`/`S`), so provide an explicit displayName for every built-in.
+   */
+  readonly displayName?: string;
   readonly fields: Readonly<Record<string, FieldSchema>>;
 }
 
@@ -28,6 +35,17 @@ export function registerComponentSchema(ctor: ComponentCtor, schema: ComponentSc
 
 export function getComponentSchema(component: Component): ComponentSchema | null {
   return registry.get(component.constructor as ComponentCtor) ?? null;
+}
+
+/**
+ * Stable, human-readable name for a component. Prefers the schema's
+ * displayName, falls back to `constructor.name`. Every consumer that needs
+ * to show or persist a component identity should call this — never read
+ * `component.constructor.name` directly.
+ */
+export function componentDisplayName(component: Component): string {
+  return registry.get(component.constructor as ComponentCtor)?.displayName
+    ?? component.constructor.name;
 }
 
 // ── Field constructors ───────────────────────────────────────────────
