@@ -1,18 +1,18 @@
 import { Scene, type AppNode } from "@dalpeng/core";
-import { getThisApp, setThisScene } from "../context";
+import { getThisApp, pushScope } from "../context";
 
 export type UseScene = ReturnType<typeof defineScene>;
 
 export function defineScene(setup: () => readonly AppNode[] | void) {
   return (): Scene => {
     const scene = new Scene();
-    setThisScene(scene);
+    const popScope = pushScope({ scene });
     try {
       getThisApp()?.addScene(scene);
       scene._pendingRootDescriptors = [...(setup() ?? [])];
       return scene;
     } finally {
-      setThisScene(null);
+      popScope();
     }
   };
 }

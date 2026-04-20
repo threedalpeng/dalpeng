@@ -135,6 +135,31 @@ describe("Philosophy invariant — Component.on returns unsubscribe", () => {
   });
 });
 
+describe("Philosophy invariant — scope stack supports nesting", () => {
+  it("nested pushScope frames restore outer state when popped", async () => {
+    const { pushScope, getThisEntity, getThisScene } = await import("../../dalpeng/src/context");
+    const { default: GameEntity } = await import("../src/ecs/GameEntity");
+
+    expect(getThisEntity()).toBeNull();
+    expect(getThisScene()).toBeNull();
+
+    const outerEntity = new GameEntity();
+    const innerEntity = new GameEntity();
+
+    const popOuter = pushScope({ entity: outerEntity });
+    expect(getThisEntity()).toBe(outerEntity);
+
+    const popInner = pushScope({ entity: innerEntity });
+    expect(getThisEntity()).toBe(innerEntity);
+
+    popInner();
+    expect(getThisEntity()).toBe(outerEntity);
+
+    popOuter();
+    expect(getThisEntity()).toBeNull();
+  });
+});
+
 describe("Philosophy invariant — destroy cascade", () => {
   it("destroying an entity cascades to child entities", () => {
     const destroyOrder: string[] = [];

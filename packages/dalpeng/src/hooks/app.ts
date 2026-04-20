@@ -12,7 +12,7 @@ import {
   type RenderConfig,
 } from "@dalpeng/core";
 import { domUIRenderer } from "@dalpeng/ui";
-import { requireApp, setParentEntity, setThisApp, setThisEntity, setThisScene } from "../context";
+import { pushScope, requireApp } from "../context";
 import type { UseScene } from "./scene";
 
 type FeatureListener = (newVal: any, oldVal: any) => void;
@@ -56,12 +56,12 @@ export type UseApp = ReturnType<typeof defineApp>;
 export function defineApp(setup: () => UseScene | undefined) {
   return () => {
     const app = new Application();
-    setThisApp(app);
+    const popScope = pushScope({ app });
     try {
       const sceneFn = setup();
       sceneFn?.();
     } finally {
-      setThisApp(null);
+      popScope();
     }
     return app;
   };
@@ -113,15 +113,11 @@ function makeMaterializerHooks(app: Application): MaterializerHooks {
 
     pushGameContext(entity, parent) {
       const prevParent = parent instanceof Scene ? null : (parent as EntityInstance).entity;
-      setThisEntity(entity);
-      setParentEntity(prevParent);
-      const scene = entity.scene;
-      if (scene) setThisScene(scene);
-      return () => {
-        setThisEntity(null);
-        setParentEntity(null);
-        setThisScene(null);
-      };
+      return pushScope({
+        entity,
+        parent: prevParent,
+        scene: entity.scene ?? null,
+      });
     },
 
     buildProjectionContext(_owner): ProjectionContext {
