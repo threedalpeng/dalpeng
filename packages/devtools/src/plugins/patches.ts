@@ -55,7 +55,6 @@ export function patchesPlugin(): DevToolsPlugin {
   const root = document.createElement("div");
   root.style.cssText = "display:flex;flex-direction:column;height:100%;min-height:0;font-size:11px";
 
-  // ── Toolbar ─────────────────────────────────────────────────────
   const bar = document.createElement("div");
   bar.style.cssText =
     "display:flex;gap:4px;padding:4px 6px;border-bottom:1px solid var(--dt-border);align-items:center";
@@ -79,7 +78,6 @@ export function patchesPlugin(): DevToolsPlugin {
   bar.appendChild(exportBtn);
   bar.appendChild(clearAllBtn);
 
-  // ── List ────────────────────────────────────────────────────────
   const list = document.createElement("div");
   list.style.cssText = "flex:1;overflow:auto;padding:2px 0";
 

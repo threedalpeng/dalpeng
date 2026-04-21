@@ -1,8 +1,3 @@
-/**
- * Invariant tests for `For` key-based diffing (S8). These lock in the
- * fine-grained claim: when items change, surviving keys keep their DOM +
- * subscriptions intact — only added/removed slots do DOM work.
- */
 import { ref } from "@dalpeng/core";
 import { describe, expect, it } from "vitest";
 import { defineUI, For, Text } from "../src/define";

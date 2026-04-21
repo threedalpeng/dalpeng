@@ -1,11 +1,4 @@
 // @vitest-environment happy-dom
-/**
- * Input context stack invariants.
- *
- * Locks F8 contract: callbacks carry the context they were registered in;
- * only the context matching stack-top dispatches; push/pop nest cleanly;
- * default context ("default") fires when stack is empty.
- */
 import { beforeEach, describe, expect, it } from "vitest";
 import InputManager from "../src/InputManager";
 

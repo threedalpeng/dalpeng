@@ -48,8 +48,7 @@ export default class PostComposePass implements RenderPass {
     renderer.endPass();
 
     if (!hasFxaa) {
-      // Restore default-framebuffer depth state so the next frame's shadow
-      // pass starts from a known state. FxaaPass handles this when active.
+      // Reset depth state; FxaaPass handles this when active.
       renderer.beginPass({ target: "default", depthTest: true, depthWrite: true });
       renderer.endPass();
     }

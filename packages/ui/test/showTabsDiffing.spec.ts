@@ -1,10 +1,3 @@
-/**
- * Invariant tests for `Show` + `Tabs` body reuse (S8 나머지).
- *
- * Lock the fine-grained claim: toggling Show back and forth does NOT teardown
- * and re-setup the body — it's detached and reattached. Same for Tabs —
- * switching between tab ids reuses cached body instances.
- */
 import { ref } from "@dalpeng/core";
 import { describe, expect, it } from "vitest";
 import { defineUI, Show, Tabs, Text } from "../src/define";

@@ -95,10 +95,6 @@ export function fontSizePx(f: FontSize): string {
   return FONT_PX[f];
 }
 
-// Singleton shared across the page. Persisted to localStorage so the user's
-// last layout survives reloads. Storage failures (private mode, quota) are
-// silently ignored.
-
 export interface DevToolsSettings {
   theme: Ref<ThemeName>;
   side: Ref<DockSide>;
@@ -114,7 +110,6 @@ interface PersistedSettings {
   width: number;
   fontSize: FontSize;
   density: Density;
-  /** Serialized workspace layout (JSON string). */
   workspace: string;
 }
 
@@ -150,7 +145,6 @@ function savePersisted(s: PersistedSettings): void {
 
 let settingsSingleton: DevToolsSettings | null = null;
 
-/** Maps panel dock preference to one of the three workspace regions. */
 export type RegionId = "top" | "middle" | "bottom";
 
 export function regionForDock(dock: string | undefined): RegionId {
@@ -159,15 +153,10 @@ export function regionForDock(dock: string | undefined): RegionId {
   return "middle";
 }
 
-/**
- * Lazily-constructed singleton. All DevTools surfaces share the same bundle
- * so state is consistent across the dock, settings panel, and popup.
- */
 export function getSettings(): DevToolsSettings {
   if (settingsSingleton) return settingsSingleton;
   const persisted = loadPersisted();
-  // Failed deserialise (corrupt JSON, schema bump) falls back to default —
-  // never block startup on bad persisted state.
+  // corrupt JSON / schema bump → fall back to default; never block startup
   const restoredWs = deserializeWorkspace(persisted.workspace) ?? defaultWorkspace();
 
   const settings: DevToolsSettings = {
@@ -198,7 +187,6 @@ export function getSettings(): DevToolsSettings {
   return settings;
 }
 
-/** Apply a theme's tokens as CSS custom properties on the host element. */
 export function applyThemeVariables(el: HTMLElement, theme: DevToolsTheme): void {
   el.style.setProperty("--dt-bg", theme.bg);
   el.style.setProperty("--dt-bg-muted", theme.bgMuted);
@@ -213,7 +201,6 @@ export function applyThemeVariables(el: HTMLElement, theme: DevToolsTheme): void
   el.style.setProperty("--dt-shadow", theme.shadow);
 }
 
-/** Apply font-size and density tokens. */
 export function applySizingVariables(el: HTMLElement, fontSize: FontSize, density: Density): void {
   el.style.setProperty("--dt-font-size", fontSizePx(fontSize));
   el.style.setProperty("--dt-pad", densityPad(density));

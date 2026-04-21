@@ -2,12 +2,6 @@ import { Mat4, Quaternion, Vec3 } from "@dalpeng/math";
 import type { ParsedNode } from "../utils/gltf/GLTFDocument";
 import type Skeleton from "./Skeleton";
 
-/**
- * Computes global transforms for all nodes in a glTF scene hierarchy,
- * incorporating animated TRS from the Skeleton's joint locals.
- * Writes results into the provided `result` map (cleared first).
- * `jointToSkelIdx` maps node indices to skeleton joint array indices.
- */
 export function computeNodeGlobalTransforms(
   nodes: ParsedNode[],
   rootNodeIndices: number[],
@@ -22,7 +16,6 @@ export function computeNodeGlobalTransforms(
 
     let t: Vec3, r: Quaternion, s: Vec3;
 
-    // If this node is a joint in the skeleton, use animated TRS
     const skelIdx = jointToSkelIdx.get(nodeIndex);
     if (skelIdx !== undefined && skeleton) {
       t = skeleton.jointLocalTranslation[skelIdx];

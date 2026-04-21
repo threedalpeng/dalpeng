@@ -1,12 +1,6 @@
 import { Quaternion } from "@dalpeng/math";
 import type { ParsedAnimationSampler } from "../utils/gltf/GLTFDocument";
 
-/**
- * Binary search helper.
- * Returns the index of the largest keyframe time <= t.
- * - If t is before the first keyframe, returns 0.
- * - If t is after the last keyframe, returns length - 2 (so the upper bound is the last).
- */
 function findKeyframeIndex(input: Float32Array, t: number): number {
   const last = input.length - 1;
   if (t <= input[0]) return 0;
@@ -25,11 +19,6 @@ function findKeyframeIndex(input: Float32Array, t: number): number {
   return lo;
 }
 
-/**
- * Sample a generic animation channel (translation or scale) using the given sampler.
- * componentCount is 3 for translation/scale, 4 for rotation (though rotation uses sampleRotation).
- * Returns a new Float32Array of size componentCount.
- */
 export function sampleChannel(
   sampler: ParsedAnimationSampler,
   t: number,
@@ -38,11 +27,9 @@ export function sampleChannel(
   const { input, output, interpolation } = sampler;
   const last = input.length - 1;
 
-  // Clamp to first keyframe
   if (t <= input[0]) {
     return output.slice(0, componentCount);
   }
-  // Clamp to last keyframe
   if (t >= input[last]) {
     return output.slice(last * componentCount, last * componentCount + componentCount);
   }
@@ -66,25 +53,22 @@ export function sampleChannel(
       result[c] = output[offsetA + c] * (1 - factor) + output[offsetB + c] * factor;
     }
   } else {
-    // CUBICSPLINE: each keyframe stores [in-tangent, value, out-tangent] => stride = componentCount * 3
+    // CUBICSPLINE: stride = componentCount * 3 (in-tangent, value, out-tangent per keyframe)
     const stride = componentCount * 3;
     const dt = t1 - t0;
     const f = factor;
     const f2 = f * f;
     const f3 = f2 * f;
 
-    // Hermite basis functions
     const h00 = 2 * f3 - 3 * f2 + 1;
     const h10 = f3 - 2 * f2 + f;
     const h01 = -2 * f3 + 3 * f2;
     const h11 = f3 - f2;
 
-    // p0: value of key i, m0: out-tangent of key i
-    // p1: value of key i+1, m1: in-tangent of key i+1
-    const p0Offset = i * stride + componentCount; // value portion of key i
-    const m0Offset = i * stride + componentCount * 2; // out-tangent of key i
-    const p1Offset = (i + 1) * stride + componentCount; // value portion of key i+1
-    const m1Offset = (i + 1) * stride; // in-tangent of key i+1
+    const p0Offset = i * stride + componentCount;
+    const m0Offset = i * stride + componentCount * 2;
+    const p1Offset = (i + 1) * stride + componentCount;
+    const m1Offset = (i + 1) * stride;
 
     for (let c = 0; c < componentCount; c++) {
       const p0 = output[p0Offset + c];
@@ -98,21 +82,14 @@ export function sampleChannel(
   return result;
 }
 
-/**
- * Sample a rotation channel, returning a Quaternion.
- * For LINEAR interpolation uses Quaternion.slerp.
- * For CUBICSPLINE, performs Hermite interpolation on all 4 components then normalizes.
- */
 export function sampleRotation(sampler: ParsedAnimationSampler, t: number): Quaternion {
   const { input, output, interpolation } = sampler;
   const last = input.length - 1;
   const componentCount = 4;
 
-  // Clamp to first keyframe
   if (t <= input[0]) {
     return new Quaternion([output[0], output[1], output[2], output[3]]);
   }
-  // Clamp to last keyframe
   if (t >= input[last]) {
     const o = last * componentCount;
     return new Quaternion([output[o], output[o + 1], output[o + 2], output[o + 3]]);
@@ -133,8 +110,7 @@ export function sampleRotation(sampler: ParsedAnimationSampler, t: number): Quat
     const b = new Quaternion([output[oB], output[oB + 1], output[oB + 2], output[oB + 3]]);
     return Quaternion.slerp(a, b, factor);
   } else {
-    // CUBICSPLINE: stride = 4 * 3 = 12
-    const stride = componentCount * 3;
+    const stride = componentCount * 3; // CUBICSPLINE: stride = 4 * 3 = 12
     const dt = t1 - t0;
     const f = factor;
     const f2 = f * f;
@@ -159,7 +135,6 @@ export function sampleRotation(sampler: ParsedAnimationSampler, t: number): Quat
       raw[c] = h00 * p0 + h10 * dt * m0 + h01 * p1 + h11 * dt * m1;
     }
 
-    // Normalize to produce a valid unit quaternion
     const len = Math.sqrt(raw[0] ** 2 + raw[1] ** 2 + raw[2] ** 2 + raw[3] ** 2) || 1;
     return new Quaternion([raw[0] / len, raw[1] / len, raw[2] / len, raw[3] / len]);
   }

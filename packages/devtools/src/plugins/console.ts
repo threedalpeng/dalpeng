@@ -29,7 +29,6 @@ export function consolePlugin(): DevToolsPlugin {
   const root = document.createElement("div");
   root.style.cssText = "display:flex;flex-direction:column;height:100%;min-height:0;font-size:11px";
 
-  // ── Filter bar ───────────────────────────────────────────────────
   const bar = document.createElement("div");
   bar.style.cssText =
     "display:flex;gap:4px;padding:4px 6px;border-bottom:1px solid var(--dt-border);align-items:center";

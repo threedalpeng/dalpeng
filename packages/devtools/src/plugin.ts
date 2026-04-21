@@ -28,17 +28,12 @@ export interface DevToolsPlugin {
   name: string;
   /** Optional version string for diagnostics. */
   version?: string;
-  /**
-   * Called once when registered. Subscribe to host signals here.
-   * Return a teardown function or nothing.
-   * Invariant: host calls `setup` once and the returned teardown once per plugin lifetime.
-   */
+  /** Called once on register; return teardown or nothing. */
   setup?: (host: DevToolsHost) => PluginTeardown | void;
   /** Panels contributed by this plugin. Panel ids must be unique within the plugin. */
   panels?: DevToolsPanel[];
 }
 
-/** Identity function at runtime — provides precise typing and validates required fields. */
 export function definePlugin(plugin: DevToolsPlugin): DevToolsPlugin {
   if (!plugin.name) {
     throw new Error("definePlugin: `name` is required.");

@@ -4,23 +4,15 @@ export interface HdrImage {
   data: Float32Array; // RGBA, linear HDR
 }
 
-/**
- * Fetch and parse a Radiance .hdr (RGBE) file.
- * Returns linear HDR float data in RGBA format (4 floats per pixel).
- */
 export async function loadHdr(url: string): Promise<HdrImage> {
   const response = await fetch(url);
   const buffer = await response.arrayBuffer();
   return parseHdr(new Uint8Array(buffer));
 }
 
-/**
- * Parse a Radiance .hdr (RGBE) byte array.
- */
 export function parseHdr(bytes: Uint8Array): HdrImage {
   let offset = 0;
 
-  // Read text line
   function readLine(): string {
     let line = "";
     while (offset < bytes.length) {
@@ -31,7 +23,6 @@ export function parseHdr(bytes: Uint8Array): HdrImage {
     return line;
   }
 
-  // Parse header
   const magic = readLine();
   if (!magic.startsWith("#?")) {
     throw new Error("Not a valid Radiance HDR file");
@@ -40,7 +31,7 @@ export function parseHdr(bytes: Uint8Array): HdrImage {
   let format = "";
   while (offset < bytes.length) {
     const line = readLine();
-    if (line.length === 0) break; // empty line ends header
+    if (line.length === 0) break;
     if (line.startsWith("FORMAT=")) {
       format = line.substring(7).trim();
     }
@@ -50,7 +41,6 @@ export function parseHdr(bytes: Uint8Array): HdrImage {
     throw new Error(`Unsupported HDR format: ${format}`);
   }
 
-  // Parse resolution line: "-Y height +X width"
   const resLine = readLine();
   const match = resLine.match(/^-Y\s+(\d+)\s+\+X\s+(\d+)$/);
   if (!match) {
@@ -60,7 +50,6 @@ export function parseHdr(bytes: Uint8Array): HdrImage {
   const height = parseInt(match[1], 10);
   const width = parseInt(match[2], 10);
 
-  // Decode scanlines
   const rgbe = new Uint8Array(width * height * 4);
   for (let y = 0; y < height; y++) {
     const scanlineOffset = y * width * 4;
@@ -68,7 +57,6 @@ export function parseHdr(bytes: Uint8Array): HdrImage {
     offset += scanlineByteLength(bytes, offset, width);
   }
 
-  // Convert RGBE → linear float RGBA
   const data = new Float32Array(width * height * 4);
   for (let i = 0; i < width * height; i++) {
     const r = rgbe[i * 4];
@@ -86,17 +74,13 @@ export function parseHdr(bytes: Uint8Array): HdrImage {
       data[i * 4 + 1] = g * scale;
       data[i * 4 + 2] = b * scale;
     }
-    data[i * 4 + 3] = 1.0; // Alpha
+    data[i * 4 + 3] = 1.0;
   }
 
   return { width, height, data };
 }
 
-/**
- * Calculate byte length of an encoded scanline.
- */
 function scanlineByteLength(bytes: Uint8Array, offset: number, width: number): number {
-  // Check for new-style RLE
   if (
     width >= 8 &&
     width <= 0x7fff &&
@@ -105,7 +89,6 @@ function scanlineByteLength(bytes: Uint8Array, offset: number, width: number): n
     bytes[offset + 2] === ((width >> 8) & 0xff) &&
     bytes[offset + 3] === (width & 0xff)
   ) {
-    // New RLE: 4-byte header + channel-separated RLE data
     let pos = offset + 4;
     for (let ch = 0; ch < 4; ch++) {
       let count = 0;
@@ -113,23 +96,19 @@ function scanlineByteLength(bytes: Uint8Array, offset: number, width: number): n
         const code = bytes[pos++];
         if (code > 128) {
           count += code - 128;
-          pos++; // run value
+          pos++;
         } else {
           count += code;
-          pos += code; // literal values
+          pos += code;
         }
       }
     }
     return pos - offset;
   }
 
-  // Old-style or uncompressed — 4 bytes per pixel
-  return width * 4;
+  return width * 4; // old-style, uncompressed
 }
 
-/**
- * Decode a single scanline from RGBE RLE encoding.
- */
 function decodeScanline(
   bytes: Uint8Array,
   offset: number,
@@ -137,7 +116,6 @@ function decodeScanline(
   out: Uint8Array,
   outOffset: number
 ): void {
-  // Check for new-style RLE: 0x02 0x02 followed by width as 2 bytes
   if (
     width >= 8 &&
     width <= 0x7fff &&
@@ -148,13 +126,11 @@ function decodeScanline(
   ) {
     let pos = offset + 4;
 
-    // Decode 4 channels separately
     for (let ch = 0; ch < 4; ch++) {
       let x = 0;
       while (x < width) {
         const code = bytes[pos++];
         if (code > 128) {
-          // RLE run
           const runLen = code - 128;
           const val = bytes[pos++];
           for (let j = 0; j < runLen; j++) {
@@ -162,7 +138,6 @@ function decodeScanline(
           }
           x += runLen;
         } else {
-          // Literal run
           for (let j = 0; j < code; j++) {
             out[outOffset + (x + j) * 4 + ch] = bytes[pos++];
           }
@@ -173,7 +148,7 @@ function decodeScanline(
     return;
   }
 
-  // Old-style: 4 bytes per pixel (RGBE), no RLE
+  // old-style: 4 bytes per pixel (RGBE), no RLE
   for (let x = 0; x < width; x++) {
     out[outOffset + x * 4] = bytes[offset + x * 4];
     out[outOffset + x * 4 + 1] = bytes[offset + x * 4 + 1];

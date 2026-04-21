@@ -49,8 +49,6 @@ export function componentDisplayName(component: Component): string {
   );
 }
 
-// ── Field constructors ───────────────────────────────────────────────
-
 export function numberField(opts: Partial<Omit<FieldSchema, "kind">> = {}): FieldSchema {
   return { kind: "number", step: 0.1, ...opts };
 }

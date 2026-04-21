@@ -15,10 +15,6 @@ export interface CameraFollow2DOptions {
   bounds?: { minX: number; maxX: number; minY: number; maxY: number };
 }
 
-/**
- * Adds a CameraFollow2D component with a lazily-resolved target.
- * `targetFn` is called each lateUpdate tick so the target entity need not exist at setup time.
- */
 export function useCameraFollow(
   targetFn: () => GameEntity | null,
   options?: CameraFollow2DOptions
@@ -31,7 +27,6 @@ export function useCameraFollow(
     if (options?.bounds !== undefined) comp.bounds = options.bounds;
   });
 
-  // Patch lateUpdate to resolve the target before each tick.
   const originalLateUpdate = follow.lateUpdate.bind(follow);
   follow.lateUpdate = () => {
     follow.target = targetFn();

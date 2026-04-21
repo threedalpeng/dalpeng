@@ -1,14 +1,6 @@
 import type { Application, GameEntity, Scene } from "@dalpeng/core";
 import { pushScope as corePushScope, findScope, hasScope, type Scope } from "@dalpeng/core";
 
-/**
- * Authoring scope facade over `@dalpeng/core`'s shared scope stack.
- *
- * dalpeng no longer keeps its own stack — all scope state (app / scene /
- * entity / parent / cleanup / ui) lives in one core primitive. Hooks in
- * this file just pick the frame they need via `findScope(kind)`.
- */
-
 interface DalpengScopeFrame {
   app?: Application | null;
   scene?: Scene | null;
@@ -17,9 +9,7 @@ interface DalpengScopeFrame {
 }
 
 export function pushScope(frame: DalpengScopeFrame): () => void {
-  // Translate a dalpeng-level "compound frame" push into one or more typed
-  // core scope pushes. Order matters — outermost kind pushed first so
-  // `findScope("app")` walking back still finds the entity's app above it.
+  // Order matters: outermost kind pushed first so findScope("app") resolves correctly.
   const pops: (() => void)[] = [];
   if (frame.app !== undefined && frame.app !== null) {
     pops.push(corePushScope({ kind: "app", app: frame.app, cleanups: new Set() }));
@@ -37,7 +27,6 @@ export function pushScope(frame: DalpengScopeFrame): () => void {
       })
     );
   }
-  // Pop in reverse — innermost first.
   return () => {
     for (let i = pops.length - 1; i >= 0; i--) pops[i]();
   };
@@ -80,7 +69,6 @@ export function getThisEntity(): GameEntity | null {
 export function requireEntity(hookName: string): GameEntity {
   const entity = getThisEntity();
   if (!entity) {
-    // Check UI scope for a clearer error message.
     if (hasScope("ui")) {
       throw new Error(
         `${hookName}() is a game-kind hook and cannot be called inside defineUI setup. ` +
@@ -99,8 +87,6 @@ export function getParentEntity(): GameEntity | null {
   return entityScope?.parent ?? null;
 }
 
-// Cleanup scope helpers live in @dalpeng/core so reactive primitives and
-// @dalpeng/ui share the same stack.
 export {
   beginCleanupScope,
   endCleanupScope,

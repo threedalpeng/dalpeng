@@ -59,7 +59,6 @@ function savePinned(records: PinnedRecord[]): void {
   }
 }
 
-// Serializable deep clone for baseline capture and localStorage.
 function cloneValue(v: unknown): unknown {
   if (v == null || typeof v !== "object") return v;
   if (ArrayBuffer.isView(v)) {

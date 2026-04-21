@@ -1,16 +1,3 @@
-/**
- * Philosophy invariants — fine-grained reactivity + lifecycle contracts.
- *
- * These tests lock down claims dalpeng makes in design docs:
- *
- *   1. defineEntity setup runs EXACTLY ONCE per entity (no VDOM re-render).
- *   2. A ref change only notifies subscribers of THAT ref (binding
- *      precision — no "dirty subtree" rebuild).
- *   3. Entity destroy propagates through children and UI (cascade).
- *
- * Each invariant is a *claim in the design docs*. Breaking them silently
- * would mean dalpeng stops being the engine it says it is.
- */
 import { describe, expect, it } from "vitest";
 import { createEntityNode, createUINode } from "../src/runtime/Descriptor";
 import { batch, computed, ref } from "../src/runtime/reactive";

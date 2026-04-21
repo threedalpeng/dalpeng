@@ -6,11 +6,6 @@ import { Materializer, type MaterializerHooks } from "../runtime/Materializer";
 import type { UIRenderer } from "../runtime/UIRenderer";
 import Scene from "../Scene";
 
-/**
- * Runner handed to the callback of `testScene`. Intentionally minimal —
- * the whole point is that every non-rendered scene invariant can be
- * asserted via these primitives alone.
- */
 export interface SceneRunner {
   readonly app: Application;
   readonly scene: Scene;
@@ -23,25 +18,17 @@ export interface SceneRunner {
   destroy(): void;
 }
 
-/**
- * A no-op `UIRenderer` — UI descriptors are still tracked as instances
- * (so destroy-cascade and owner relations are testable), but no DOM is
- * created.
- */
 export function makeNoopUIRenderer(): UIRenderer & { instances: UIInstance[] } {
   const instances: UIInstance[] = [];
   return {
     instances,
     materialize(descriptor, _context, owner) {
-      // Execute the descriptor's setup so any `ref`/hook calls inside run
-      // exactly once — matches real UI renderer behaviour but without DOM.
-      // Setup may return children; we intentionally ignore them here.
       try {
         (descriptor as { setup: (p: unknown) => unknown }).setup(
           (descriptor as { props: unknown }).props
         );
       } catch {
-        // Invariant tests may deliberately throw in setup; swallow.
+        // intentional: invariant tests may throw in setup
       }
       let detached = false;
       const instance: UIInstance = {
@@ -63,14 +50,6 @@ export function makeNoopUIRenderer(): UIRenderer & { instances: UIInstance[] } {
   };
 }
 
-/**
- * Materializer hooks that wire a real `GameEntity` into a real `Scene`.
- * The testing harness intentionally does NOT push dalpeng's user-facing
- * setup context — tests run against raw descriptors with no hook
- * side-effects from `useComponent`/etc. Callers that want the authoring
- * layer should construct the scene via dalpeng's `runApp` equivalent and
- * drive frames via `app._testStep` directly.
- */
 function makeCoreHooks(app: Application): MaterializerHooks {
   return {
     createGameEntity(parent) {
@@ -105,15 +84,6 @@ export interface TestSceneOptions {
   hooks?: (app: Application) => MaterializerHooks;
 }
 
-/**
- * Build an Application + Scene from a descriptor tree, without mounting a
- * canvas or binding input. Returns a `SceneRunner` that can manually step
- * frames and inspect entities.
- *
- * The runner deliberately skips the render pass — no WebGL context is
- * needed. Use this for scene-level invariants (setup, spawn/destroy,
- * component behaviour, script update flow) that don't require GPU state.
- */
 export function testScene(
   rootDescriptors: readonly LogicalDescriptor[],
   opts: TestSceneOptions = {}

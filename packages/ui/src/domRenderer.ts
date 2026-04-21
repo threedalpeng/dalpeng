@@ -5,10 +5,7 @@ import type { TextOpts, UIChild } from "./types";
 
 export interface RenderContext {
   doc: Document;
-  /**
-   * Required only for hosts that expose feature-key bindings
-   * (e.g. `Toggle("shadows", ...)`). Leave unset for devtools-level UI.
-   */
+  /** Required for Toggle("key") bindings; omit for DevTools-level UI. */
   features?: Record<string, unknown>;
   watchFeature?: (key: string, cb: (newVal: unknown, oldVal: unknown) => void) => () => void;
 }
@@ -16,9 +13,7 @@ export interface RenderContext {
 export interface RenderResult {
   element: HTMLElement;
   cleanups: Set<() => void>;
-  /** Snapshot of `usePlacement()` if the descriptor's setup called it. */
   placement?: Placement;
-  /** Snapshot of UI-scope `withLayer()` if the descriptor's setup called it. */
   layer?: string;
 }
 

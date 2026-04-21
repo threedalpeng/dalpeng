@@ -44,10 +44,6 @@ const CUBE_VERTS = new Float32Array([
   -1,  1,  1,   1,  1, -1,  -1,  1, -1,
 ]);
 
-/**
- * Build a column-major 4x4 lookAt matrix for cubemap capture from the origin.
- * eye is always [0,0,0] for IBL captures, but kept general for correctness.
- */
 function lookAt(eye: number[], center: number[], up: number[]): Float32Array {
   const fx = center[0] - eye[0];
   const fy = center[1] - eye[1];
@@ -67,32 +63,16 @@ function lookAt(eye: number[], center: number[], up: number[]): Float32Array {
   const ty = -(u[0] * eye[0] + u[1] * eye[1] + u[2] * eye[2]);
   const tz = f[0] * eye[0] + f[1] * eye[1] + f[2] * eye[2];
 
-  // Column-major layout (WebGL convention):
-  // col0: s,  col1: u,  col2: -f,  col3: translation
+  // column-major (WebGL): col0=s, col1=u, col2=-f, col3=translation
+  // prettier-ignore
   return new Float32Array([
-    s[0],
-    u[0],
-    -f[0],
-    0, // column 0
-    s[1],
-    u[1],
-    -f[1],
-    0, // column 1
-    s[2],
-    u[2],
-    -f[2],
-    0, // column 2
-    tx,
-    ty,
-    tz,
-    1, // column 3
+    s[0], u[0], -f[0], 0,
+    s[1], u[1], -f[1], 0,
+    s[2], u[2], -f[2], 0,
+    tx,   ty,   tz,    1,
   ]);
 }
 
-/**
- * Standard cubemap capture view matrices (from origin).
- * Order: +X, -X, +Y, -Y, +Z, -Z
- */
 function cubemapViewMatrices(): Float32Array[] {
   return [
     lookAt([0, 0, 0], [1, 0, 0], [0, -1, 0]), // +X
@@ -104,14 +84,6 @@ function cubemapViewMatrices(): Float32Array[] {
   ];
 }
 
-/**
- * IBLPrecompute manages GPU-based precomputation of IBL resources from an HDR
- * environment map. Runs four render passes:
- *  1. Equirectangular → Cubemap (512, rgba16f)
- *  2. Diffuse irradiance convolution (32, rgba16f)
- *  3. Specular prefiltered environment map (128, rgba16f, 5 mip levels)
- *  4. BRDF integration LUT (512x512, rg16f)
- */
 export default class IBLPrecompute {
   #resources: IBLResources | null = null;
   #cubeVao: GfxVertexArray | null = null;
@@ -124,10 +96,8 @@ export default class IBLPrecompute {
   }
 
   async precompute(backend: RendererBackend, hdrUrl: string): Promise<void> {
-    // 1. Load HDR file
     const hdr = await loadHdr(hdrUrl);
 
-    // 2. Upload equirectangular 2D texture (rgba16f)
     const equirectTex = backend.createTexture({
       kind: "2d",
       width: hdr.width,
@@ -142,7 +112,6 @@ export default class IBLPrecompute {
       format: "rgba16f",
     });
 
-    // 3. Compile IBL shaders in parallel
     const shaderEquirect = new Shader("ibl-equirect");
     const shaderIrradiance = new Shader("ibl-irradiance");
     const shaderPrefilter = new Shader("ibl-prefilter");
@@ -159,17 +128,14 @@ export default class IBLPrecompute {
       shaderBrdfLut.loadFrom(mainVert, brdfLutFrag),
     ]);
 
-    // 4. Create geometry
     this.#ensureCubeGeometry(backend, shaderEquirect);
     this.#ensureQuadGeometry(backend, shaderBrdfLut);
 
     const captureProjection = Mat4.toWebGL(Mat4.perspective(Math.PI / 2, 1, 0.1, 10.0));
     const captureViews = cubemapViewMatrices();
 
-    // Disable face culling so all cube faces render correctly regardless of winding
-    backend.setCullFace?.(false);
+    backend.setCullFace?.(false); // cube faces may have inconsistent winding
 
-    // === Step A: Equirect → Cubemap (512) ===
     const ENV_SIZE = 512;
     const envCubemap = backend.createTexture({
       kind: "cube",
@@ -188,7 +154,6 @@ export default class IBLPrecompute {
     envCubemap.generateMipmaps!();
     equirectTex.dispose();
 
-    // === Step B: Irradiance Convolution (32) ===
     const IRR_SIZE = 32;
     const irradianceCubemap = backend.createTexture({
       kind: "cube",
@@ -211,7 +176,6 @@ export default class IBLPrecompute {
       shaderIrradiance
     );
 
-    // === Step C: Specular Prefilter (128, 5 mip levels: 128 → 8) ===
     const PREF_SIZE = 128;
     const MAX_MIP = 4; // mip 0..4 = 5 levels
     const prefilteredCubemap = backend.createTexture({
@@ -240,10 +204,8 @@ export default class IBLPrecompute {
       );
     }
 
-    // Re-enable face culling after cube rendering passes
     backend.setCullFace?.(true);
 
-    // === Step D: BRDF LUT (512×512) ===
     const LUT_SIZE = 512;
     const brdfLUT = backend.createTexture({
       kind: "2d",
@@ -274,7 +236,6 @@ export default class IBLPrecompute {
     backend.endPass();
     backend.destroyRenderTarget(brdfRT);
 
-    // Clean up shader programs
     shaderEquirect.clear();
     shaderIrradiance.clear();
     shaderPrefilter.clear();
@@ -283,10 +244,6 @@ export default class IBLPrecompute {
     this.#resources = { envCubemap, irradianceCubemap, prefilteredCubemap, brdfLUT };
   }
 
-  /**
-   * Render the currently bound shader to all 6 faces of a cubemap at a given mip level.
-   * Creates and destroys one RenderTarget (FBO) per face.
-   */
   #renderToCubeFaces(
     backend: RendererBackend,
     cubemap: GfxTexture,
@@ -322,10 +279,6 @@ export default class IBLPrecompute {
     }
   }
 
-  /**
-   * Create and upload the unit cube geometry (36 vertices, no index buffer).
-   * Uses the aPosition attribute location from the given shader.
-   */
   #ensureCubeGeometry(backend: RendererBackend, shader: Shader): void {
     if (this.#cubeVao) return;
     this.#cubeVao = backend.createVertexArray();
@@ -335,16 +288,11 @@ export default class IBLPrecompute {
     this.#cubeVao.setVertexBuffer(posLoc, this.#cubeVbo, 3);
   }
 
-  /**
-   * Create and upload a fullscreen quad (4 vertices, triangle-strip).
-   * Uses the aPosition attribute location from the given shader.
-   * Positions are 3-component to match main.vert's vec3 aPosition.
-   */
   #ensureQuadGeometry(backend: RendererBackend, shader: Shader): void {
     if (this.#quadVao) return;
     this.#quadVao = backend.createVertexArray();
     this.#quadVbo = backend.createBuffer("vertex");
-    // Triangle-strip: BL, BR, TL, TR
+    // Triangle-strip: BL, BR, TL, TR — vec3 positions to match main.vert
     const quad = new Float32Array([-1, -1, 0, 1, -1, 0, -1, 1, 0, 1, 1, 0]);
     this.#quadVbo.update(quad);
     const posLoc = shader.getAttribLocation("aPosition");
@@ -359,7 +307,6 @@ export default class IBLPrecompute {
       this.#resources.brdfLUT.dispose();
       this.#resources = null;
     }
-    // Note: VAO/VBO are lightweight and intentionally kept alive for re-use
-    // across multiple precompute() calls (e.g. if the HDR map changes).
+    // VAO/VBO kept alive for re-use across precompute() calls (e.g. HDR map changes)
   }
 }

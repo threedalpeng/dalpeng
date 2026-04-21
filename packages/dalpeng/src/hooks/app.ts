@@ -78,18 +78,6 @@ export function withFeatures(features: Partial<RenderConfig>) {
   Object.assign(app.features, features);
 }
 
-/**
- * Declare the app's layer set inside `defineApp` setup.
- *
- * Rules:
- *   - Call exactly once. A second call throws.
- *   - Layer names must be unique.
- *   - Backends must be arranged as `[...canvas, ...dom]` — the browser cannot
- *     interleave DOM between canvas content.
- *
- * Omitting `withLayers` is fine — the registry starts with default layers
- * (`world` canvas+y-sort, `hud` dom+insertion).
- */
 export function withLayers(layers: readonly Layer[]) {
   const app = requireApp("withLayers");
   app.layers.declareUser(layers);

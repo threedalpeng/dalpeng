@@ -143,19 +143,19 @@ describe("resolvePlacement — size", () => {
   });
 });
 
-describe("resolvePlacement — Phase 2+ anchors throw", () => {
+describe("resolvePlacement — 3D anchors throw until the 3D milestone", () => {
   it("world anchor throws not-implemented error", () => {
     expect(() =>
       resolvePlacement(
         { anchor: { kind: "world", point: { x: 0, y: 0, z: 0 } as never } },
         VIEWPORT
       )
-    ).toThrow(/world.*not supported in Phase 1/);
+    ).toThrow(/world.*not yet supported/);
   });
 
   it("entity anchor throws not-implemented error", () => {
     expect(() =>
       resolvePlacement({ anchor: { kind: "entity", entity: {} as never } }, VIEWPORT)
-    ).toThrow(/entity.*not supported in Phase 1/);
+    ).toThrow(/entity.*not yet supported/);
   });
 });

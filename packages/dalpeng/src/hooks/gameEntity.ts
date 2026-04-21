@@ -8,10 +8,8 @@ import {
   type Component,
   type EntityNode,
 } from "@dalpeng/core";
-import { getThisEntity, hasActiveCleanupScope, registerCleanup, requireEntity } from "../context";
-// withLayer works in both entity AND UI scope; dispatch to the UI hook when
-// inside a defineUI setup. getThisUI returning null is the cheap test.
 import { getThisUI as uiGetActiveScope, withLayer as uiWithLayer } from "@dalpeng/ui";
+import { getThisEntity, hasActiveCleanupScope, registerCleanup, requireEntity } from "../context";
 
 function uiHasActiveScope(): boolean {
   return uiGetActiveScope() !== null;
@@ -23,8 +21,6 @@ export type GameFactoryWithProps<P> = (props: P) => EntityNode;
 export function defineEntity(setup: () => AppNode[] | void): GameFactory;
 export function defineEntity<P>(setup: (props: P) => AppNode[] | void): GameFactoryWithProps<P>;
 export function defineEntity<P>(setup: (props: P) => AppNode[] | void): (props: P) => EntityNode {
-  // Passing undefined for P=void is sound at runtime; the public overloads
-  // declare the correct external types.
   return (props: P) => ({ [APP_NODE_KIND]: "game", setup, props }) as unknown as EntityNode;
 }
 
@@ -71,16 +67,6 @@ export function withTag(tag: string) {
   entity.tag = tag;
 }
 
-/**
- * Assign the current setup scope to a named layer.
- *
- * Works in both game entity and UI scopes:
- *   - Inside `defineEntity`: stamps the entity with the layer name.
- *   - Inside `defineUI`: forwards to `@dalpeng/ui`'s `withLayer`.
- *
- * Game entity validation happens immediately (entity has app context).
- * UI validation is deferred to mount time (UI is authored before being attached to an app).
- */
 export function withLayer(name: string) {
   if (uiHasActiveScope()) {
     uiWithLayer(name);
@@ -110,10 +96,6 @@ export function spawn(node: EntityNode, parent?: GameEntity): void;
 export function spawn(arg: GameFactory | EntityNode, parent?: GameEntity): void {
   const callingEntity = requireEntity("spawn");
   const app = callingEntity.currentApp;
-  // Factory vs descriptor: factory is `() => EntityNode`, descriptor is the
-  // plain object returned by calling that factory. Either is valid from the
-  // user's perspective — core `Application.spawn` already accepts both, so
-  // collapse the distinction here.
   const descriptor = typeof arg === "function" ? arg() : arg;
   app.spawn(descriptor, parent ?? undefined);
 }
@@ -135,8 +117,7 @@ export function onDestroy(callback: () => void): () => void {
     return script.on("destroy", callback);
   } else if (hasActiveCleanupScope()) {
     registerCleanup(callback);
-    // cleanup scope owns the lifetime — return a noop; cleanup fires on scope end.
-    return () => {};
+    return () => {}; // cleanup scope owns the lifetime; fires on scope end
   } else {
     throw new Error("onDestroy() requires defineEntity or defineUI context.");
   }

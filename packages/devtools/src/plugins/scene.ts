@@ -36,8 +36,6 @@ function matchesFilter(entity: GameEntity, filter: string): boolean {
   return entity.children.some((c) => matchesFilter(c, filter));
 }
 
-// ── Tree panel ──────────────────────────────────────────────────────
-
 function buildTreePanel(host: DevToolsHost, selected: ReturnType<typeof ref<GameEntity | null>>) {
   const root = document.createElement("div");
   root.style.cssText = "display:flex;flex-direction:column;height:100%;min-height:0";

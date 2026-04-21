@@ -41,12 +41,10 @@ function buildTexturesPanel(host: DevToolsHost) {
   bar.appendChild(searchInput);
   bar.appendChild(countBadge);
 
-  // ── Grid ──────────────────────────────────────────────────────────
   const grid = document.createElement("div");
   grid.style.cssText =
     "flex:1;overflow:auto;padding:6px;display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;align-content:start";
 
-  // ── Detail ────────────────────────────────────────────────────────
   const detail = document.createElement("div");
   detail.style.cssText = `border-top:1px solid var(--dt-border);padding:6px 8px;background:${PALETTE.bg};min-height:120px`;
   detail.innerHTML = `<div style="color:${PALETTE.fgDim}">select a texture</div>`;
@@ -188,10 +186,9 @@ export function assetsPlugin(): DevToolsPlugin {
 
       built.refresh();
 
-      // Refresh when scene changes (new textures may be loaded).
       const unwatchScene = watch(host.activeScene, () => built.refresh());
 
-      // Poll for new textures — TextureManager has no change signal yet.
+      // TextureManager has no change signal; poll for new textures
       const interval = setInterval(() => built.refresh(), 1000);
 
       return () => {

@@ -27,28 +27,25 @@ export default class DirectionalShadowSystem {
     }
     this.shadowCaster = dirLight;
 
-    // --- Compute scene bounds from shadow casters ---
     const positions: Vec3[] = [];
     const extents: number[] = [];
     app.forEachActiveComponent(MeshRenderer, (renderer) => {
       const pos = renderer.transform.worldPosition;
-      // World-space scale extracted from model matrix columns
+      // world-space scale from model matrix column lengths
       const m = renderer.transform.modelMatrix;
       const sx = Math.hypot(m[0], m[1], m[2]);
       const sy = Math.hypot(m[4], m[5], m[6]);
       const sz = Math.hypot(m[8], m[9], m[10]);
-      // Bounding sphere radius for a transformed unit mesh
       extents.push(0.5 * Math.sqrt(sx * sx + sy * sy + sz * sz));
       positions.push(pos);
     });
     app.forEachActiveComponent(SkinnedMeshRenderer, (renderer) => {
       const pos = renderer.transform.worldPosition;
-      // World-space scale extracted from model matrix columns
+      // world-space scale from model matrix column lengths
       const m = renderer.transform.modelMatrix;
       const sx = Math.hypot(m[0], m[1], m[2]);
       const sy = Math.hypot(m[4], m[5], m[6]);
       const sz = Math.hypot(m[8], m[9], m[10]);
-      // Bounding sphere radius for a transformed unit mesh
       extents.push(0.5 * Math.sqrt(sx * sx + sy * sy + sz * sz));
       positions.push(pos);
     });
@@ -58,7 +55,6 @@ export default class DirectionalShadowSystem {
       return;
     }
 
-    // Combined bounding sphere
     let center = new Vec3([0, 0, 0]);
     for (const p of positions) center = center.add(p);
     center = center.scale(1 / positions.length);
@@ -69,14 +65,12 @@ export default class DirectionalShadowSystem {
       if (d > radius) radius = d;
     }
 
-    // Optional cap from shadowDistance (0 or undefined = auto)
     const maxDist = app.features.shadowDistance;
     if (maxDist !== undefined && maxDist > 0) {
       radius = Math.min(radius, maxDist);
     }
 
-    // Minimum radius to prevent degenerate projection
-    radius = Math.max(radius, 0.1);
+    radius = Math.max(radius, 0.1); // prevent degenerate projection
 
     // Round up to texel size to reduce shadow edge swimming
     const mapSize = Math.max(16, app.features.shadowMapSize ?? 1024);

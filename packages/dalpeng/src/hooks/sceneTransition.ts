@@ -34,7 +34,6 @@ export function useSceneSwitch(): SceneSwitcher {
     const app = entity.currentApp;
     const oldScene: Scene = entity.scene;
 
-    // Detach persistent roots before destruction so switchScene doesn't destroy them.
     const persistentRoots: GameEntity[] = [];
     for (const pe of persistentEntities) {
       if (pe.scene === oldScene && pe.parent === null) {
@@ -63,8 +62,7 @@ export function useSceneSwitch(): SceneSwitcher {
 
       document.body.appendChild(overlay);
 
-      // Force reflow so the browser registers opacity 0 before transitioning.
-      void overlay.offsetHeight;
+      void overlay.offsetHeight; // force reflow so opacity 0 is registered before transition
 
       await new Promise<void>((resolve) => {
         const fallback = setTimeout(resolve, duration + 100);
@@ -80,8 +78,7 @@ export function useSceneSwitch(): SceneSwitcher {
       });
     }
 
-    // Wrap with app context so defineScene's getThisApp()?.addScene fires
-    // and scene.app is set before entity components are created.
+    // app context needed so defineScene's getThisApp() resolves during wrappedFactory
     let newScene: Scene | null = null;
     const wrappedFactory = (): Scene => {
       const popScope = pushScope({ app });

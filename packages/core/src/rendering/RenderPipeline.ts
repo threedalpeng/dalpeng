@@ -41,17 +41,8 @@ import ssaofrag from "../shaders/ssao.frag?raw";
 import ssaoblurfrag from "../shaders/ssao_blur.frag?raw";
 
 export default class RenderPipeline implements PipelineIntrospection {
-  /**
-   * Public shader surface (back-compat with component renderers that access
-   * `app.pipeline.shader.geometry/shadow/lighting`). Internally this is the
-   * same `PipelineShaders` instance passed to every pass.
-   */
   readonly shader: PipelineShaders = new PipelineShaders();
 
-  /**
-   * Back-compat: Light.renderLight() draws a fullscreen quad per light and
-   * fetches the VAO from here via `app.lightingQuad`.
-   */
   get lightingQuad() {
     return this.#shared?.fullscreenQuad;
   }
@@ -62,7 +53,6 @@ export default class RenderPipeline implements PipelineIntrospection {
   #shared: SharedRenderResources | null = null;
   #renderer: RendererBackend | null = null;
 
-  /** Ordered pass list. Default order mirrors historical RenderPipeline.render(). */
   #passes: RenderPass[] = [
     new ShadowPass(),
     new GeometryPass(),

@@ -127,11 +127,6 @@ export default class Application {
     this.#disposeCallbacks.add(cb);
   }
 
-  /**
-   * Frame-level hook targets. Unlike Script lifecycle (per-entity), these
-   * fire once per Application per frame and receive the delta in ms.
-   * Useful for plugins, DevTools, and systems that need frame boundaries.
-   */
   #frameHooks: Record<"beforeUpdate" | "beforeRender" | "afterRender", Set<(dt: number) => void>> =
     {
       beforeUpdate: new Set(),
@@ -162,11 +157,7 @@ export default class Application {
     }
   }
 
-  /**
-   * Active components keyed by constructor reference. Not by class name —
-   * the string-keyed approach was minification-unsafe and couldn't distinguish
-   * two classes that happened to share a name.
-   */
+  // keyed by constructor reference — class-name strings are minification-unsafe
   activeComponents = new Map<ComponentConstructor<Component>, Set<Component>>();
   #dirtyTransforms = new Set<Transform>();
 
@@ -196,13 +187,6 @@ export default class Application {
     for (const component of components) callback(component);
   }
 
-  /**
-   * Iterate entities that have ALL of the given component types, yielding
-   * each entity with a typed tuple of its components.
-   *
-   * Pivots on the smallest active-component set, then filters each entity by
-   * `entity.getComponent(T)` for the remaining types.
-   */
   query<T extends readonly ComponentConstructor<Component>[]>(
     types: [...T]
   ): Iterable<readonly [GameEntity, ...{ [K in keyof T]: InstanceType<T[K]> }]> {
@@ -258,10 +242,6 @@ export default class Application {
     for (const transform of batch) transform.checkModelMatrixToBeUpdated();
   }
 
-  /**
-   * Iterate every active Script. Backed by `activeComponents.get(Script)` —
-   * no separate map. Multiple Scripts per entity is allowed and each is iterated.
-   */
   forEachActiveScript(callback: (component: Script) => void) {
     const scripts = this.activeComponents.get(Script as ComponentConstructor<Component>) as
       | Set<Script>
@@ -731,18 +711,8 @@ export default class Application {
     Application.#activeInstances.forEach(callback);
   }
 
-  // ──────────────────────────────────────────────────────────────────
-  // Testing primitives
-  // ──────────────────────────────────────────────────────────────────
-  //
-  // `_testStep` runs a single frame body synchronously, bypassing the
-  // browser's rAF loop. Together with `_testSetup` it lets the scene test
-  // harness drive the engine without a real canvas / renderer.
-  //
-  // Intentionally prefixed `_test` rather than `#private` so `testScene()`
-  // (in the sibling `testing/` subpath) can reach them without reflection,
-  // while still signaling "internal; do not rely on in user code."
-
+  // `_test*` prefix (not `#private`) so testScene() can reach them without
+  // reflection while still signalling "not public API".
   _testSetup(): void {
     if (this.state === "new") {
       Time._setFixedUpdateRate(60);

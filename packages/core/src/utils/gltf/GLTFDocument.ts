@@ -1,8 +1,3 @@
-/**
- * Intermediate representation of a parsed glTF document.
- * Pure data — no GPU resources. Safe to create before WebGL context exists.
- */
-
 /** Joints and weights for a skinned primitive. */
 export interface ParsedSkinVertexData {
   joints: Uint8Array | Uint16Array; // 4 joint indices per vertex (ivec4)
@@ -49,7 +44,7 @@ export interface ParsedPrimitive {
   indices: Uint16Array | Uint32Array | null;
   materialIndex: number | null;
   mode: number;
-  skinData: ParsedSkinVertexData | null; // NEW
+  skinData: ParsedSkinVertexData | null;
 }
 
 /** A mesh is a collection of primitives (each may have its own material). */

@@ -1,19 +1,3 @@
-/**
- * Materializer unit tests (M-RUNTIME-1 PR 2 Phase B).
- *
- * The Materializer is tested in isolation here — no real Application,
- * no real GameEntity, no real DOM. We construct it with mock hooks +
- * mock UI renderer and verify:
- *
- *   - descriptor → instance walk produces the expected graph shape
- *   - cross-kind composition (game parent + ui child) materialises
- *   - destroy cascade walks DFS, detaches UI children, calls onDestroy
- *   - idempotent UI detach (cascade can call detach multiple times)
- *
- * The real wiring (Application calls Materializer with real hooks) is
- * tested in PR 3 demo regression.
- */
-
 import { describe, expect, it, vi } from "vitest";
 import type Application from "../src/Application";
 import type Scene from "../src/Scene";

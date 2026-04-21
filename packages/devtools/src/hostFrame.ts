@@ -45,11 +45,7 @@ export interface DevToolsRootHostOptions {
   layout?: "dock" | "fill";
 }
 
-/**
- * Stage CSS properties the dock overrides while attached. Saving and
- * restoring these preserves whatever styling the author put on the stage
- * (e.g., `width:100%; height:100%`), so detaching leaves no trace.
- */
+// Saved/restored on attach/detach so the stage's original CSS is left intact.
 const STAGE_RESET_PROPS = [
   "flex",
   "minWidth",

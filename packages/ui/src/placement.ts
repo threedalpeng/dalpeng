@@ -54,8 +54,7 @@ export function resolvePlacement(
     style.top = `${anchor.y + offset.y}px`;
   } else if (anchor.kind === "world" || anchor.kind === "entity") {
     throw new Error(
-      `Placement: anchor kind "${anchor.kind}" is not supported in Phase 1. ` +
-        `It will be implemented when the 3D milestone introduces world-space UI.`
+      `Placement: anchor kind "${anchor.kind}" is not yet supported — world-space UI lands with the 3D milestone.`
     );
   }
 
