@@ -21,13 +21,16 @@
     "deps:check": "pnpm outdated -r",
     "deps:update": "node scripts/deps-update.mjs",
     "deps:update:apply": "node scripts/deps-update.mjs --apply",
-    "deps:audit": "pnpm audit"
+    "deps:audit": "pnpm audit",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.58.1",
     "@typescript-eslint/parser": "^8.58.1",
     "eslint": "^10.2.0",
     "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
     "prettier-plugin-organize-imports": "^4.0.0",
     "turbo": "^2.8.20",
@@ -41,5 +44,14 @@
       "vitest": "^4.0.8",
       "@vitest/ui": "^4.0.8"
     }
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md,yml,yaml,css,html}": [
+      "prettier --write"
+    ]
   }
 }
