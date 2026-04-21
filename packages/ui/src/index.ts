@@ -57,3 +57,48 @@ export type {
 export { getThisUI, requireUI, type UIContext } from "./context";
 
 export { domUIRenderer } from "./uiRenderer";
+
+// ── PR1 — Foundation runtime (coexists with legacy above) ───────────
+// New primitives land here. Legacy `UIChild` path above stays untouched
+// until PR3 atom migration — see docs/plans/2026-04-22-ui-foundation.md.
+
+export {
+  Fragment,
+  createElement,
+  h,
+  isComponent,
+  isFragment,
+  isHost,
+  isText,
+  normalizeChildren,
+  type Child,
+  type Component,
+  type ComponentElement,
+  type FragmentElement,
+  type HostElement,
+  type HostProps,
+  type PropsWithChildren,
+  type TextElement,
+  type UIElement,
+} from "./element";
+
+export { defineComponent } from "./component";
+
+export {
+  bindAttr,
+  bindClass,
+  bindStyle,
+  bindText,
+  listen,
+  type AttrValue,
+  type Cleanup,
+  type StyleLiteral,
+} from "./bindings";
+
+export {
+  mount,
+  renderElement,
+  type RenderContext as ElementRenderContext,
+  type RenderResult as ElementRenderResult,
+  type MountHandle,
+} from "./render";
