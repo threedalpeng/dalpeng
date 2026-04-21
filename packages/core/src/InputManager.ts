@@ -26,11 +26,41 @@ export default class InputManager {
 
   #actions = new Map<string, string[]>();
 
-  #actionDownCbs = new Map<string, Set<() => void>>();
-  #actionUpCbs = new Map<string, Set<() => void>>();
-  #actionChangeCbs = new Map<string, Set<(pressed: boolean) => void>>();
-  #keyDownCbs = new Map<string, Set<() => void>>();
-  #keyUpCbs = new Map<string, Set<() => void>>();
+  // Callbacks carry the context they were registered in (resolved via
+  // currentInputContext() at registration time, or explicit via opts).
+  // Dispatch only fires callbacks whose context matches the current top.
+  #actionDownCbs = new Map<string, Map<() => void, string>>();
+  #actionUpCbs = new Map<string, Map<() => void, string>>();
+  #actionChangeCbs = new Map<string, Map<(pressed: boolean) => void, string>>();
+  #keyDownCbs = new Map<string, Map<() => void, string>>();
+  #keyUpCbs = new Map<string, Map<() => void, string>>();
+
+  // Context stack for routing callbacks through modal states (menus,
+  // dialogue, pause). Empty stack resolves to `"default"` — that's the
+  // context code registered from normal gameplay sees.
+  #contextStack: string[] = [];
+
+  currentInputContext(): string {
+    return this.#contextStack[this.#contextStack.length - 1] ?? "default";
+  }
+
+  /** Push a new top-of-stack context. Callbacks tagged elsewhere stop firing until popped. */
+  pushInputContext(name: string): void {
+    this.#contextStack.push(name);
+  }
+
+  /** Pop the top context. If `expected` is given, throws when it doesn't match the top — catches mismatched push/pop pairs. */
+  popInputContext(expected?: string): void {
+    if (this.#contextStack.length === 0) {
+      throw new Error("popInputContext() called on empty stack");
+    }
+    if (expected !== undefined && this.#contextStack[this.#contextStack.length - 1] !== expected) {
+      throw new Error(
+        `popInputContext("${expected}") mismatch — top is "${this.#contextStack[this.#contextStack.length - 1]}"`
+      );
+    }
+    this.#contextStack.pop();
+  }
 
   #canvas: HTMLCanvasElement | null = null;
   #boundHandlers: { type: string; handler: EventListener }[] = [];
@@ -187,89 +217,99 @@ export default class InputManager {
     return b !== undefined && b.some((k) => this.#frameUp.has(k));
   }
 
-  onActionDown(action: string, cb: () => void): () => void {
-    let set = this.#actionDownCbs.get(action);
-    if (!set) {
-      set = new Set();
-      this.#actionDownCbs.set(action, set);
+  onActionDown(action: string, cb: () => void, opts?: { context?: string }): () => void {
+    const ctx = opts?.context ?? this.currentInputContext();
+    let map = this.#actionDownCbs.get(action);
+    if (!map) {
+      map = new Map();
+      this.#actionDownCbs.set(action, map);
     }
-    set.add(cb);
+    map.set(cb, ctx);
     return () => {
-      set!.delete(cb);
-      if (set!.size === 0) this.#actionDownCbs.delete(action);
+      map!.delete(cb);
+      if (map!.size === 0) this.#actionDownCbs.delete(action);
     };
   }
-  onActionUp(action: string, cb: () => void): () => void {
-    let set = this.#actionUpCbs.get(action);
-    if (!set) {
-      set = new Set();
-      this.#actionUpCbs.set(action, set);
+  onActionUp(action: string, cb: () => void, opts?: { context?: string }): () => void {
+    const ctx = opts?.context ?? this.currentInputContext();
+    let map = this.#actionUpCbs.get(action);
+    if (!map) {
+      map = new Map();
+      this.#actionUpCbs.set(action, map);
     }
-    set.add(cb);
+    map.set(cb, ctx);
     return () => {
-      set!.delete(cb);
-      if (set!.size === 0) this.#actionUpCbs.delete(action);
+      map!.delete(cb);
+      if (map!.size === 0) this.#actionUpCbs.delete(action);
     };
   }
-  onActionChange(action: string, cb: (pressed: boolean) => void): () => void {
-    let set = this.#actionChangeCbs.get(action);
-    if (!set) {
-      set = new Set();
-      this.#actionChangeCbs.set(action, set);
+  onActionChange(
+    action: string,
+    cb: (pressed: boolean) => void,
+    opts?: { context?: string }
+  ): () => void {
+    const ctx = opts?.context ?? this.currentInputContext();
+    let map = this.#actionChangeCbs.get(action);
+    if (!map) {
+      map = new Map();
+      this.#actionChangeCbs.set(action, map);
     }
-    set.add(cb);
+    map.set(cb, ctx);
     return () => {
-      set!.delete(cb);
-      if (set!.size === 0) this.#actionChangeCbs.delete(action);
+      map!.delete(cb);
+      if (map!.size === 0) this.#actionChangeCbs.delete(action);
     };
   }
-  onKeyDown(key: string, cb: () => void): () => void {
-    let set = this.#keyDownCbs.get(key);
-    if (!set) {
-      set = new Set();
-      this.#keyDownCbs.set(key, set);
+  onKeyDown(key: string, cb: () => void, opts?: { context?: string }): () => void {
+    const ctx = opts?.context ?? this.currentInputContext();
+    let map = this.#keyDownCbs.get(key);
+    if (!map) {
+      map = new Map();
+      this.#keyDownCbs.set(key, map);
     }
-    set.add(cb);
+    map.set(cb, ctx);
     return () => {
-      set!.delete(cb);
-      if (set!.size === 0) this.#keyDownCbs.delete(key);
+      map!.delete(cb);
+      if (map!.size === 0) this.#keyDownCbs.delete(key);
     };
   }
-  onKeyUp(key: string, cb: () => void): () => void {
-    let set = this.#keyUpCbs.get(key);
-    if (!set) {
-      set = new Set();
-      this.#keyUpCbs.set(key, set);
+  onKeyUp(key: string, cb: () => void, opts?: { context?: string }): () => void {
+    const ctx = opts?.context ?? this.currentInputContext();
+    let map = this.#keyUpCbs.get(key);
+    if (!map) {
+      map = new Map();
+      this.#keyUpCbs.set(key, map);
     }
-    set.add(cb);
+    map.set(cb, ctx);
     return () => {
-      set!.delete(cb);
-      if (set!.size === 0) this.#keyUpCbs.delete(key);
+      map!.delete(cb);
+      if (map!.size === 0) this.#keyUpCbs.delete(key);
     };
   }
 
   #dispatchCallbacks() {
     if (this.#frameDown.size === 0 && this.#frameUp.size === 0) return;
+    const activeContext = this.currentInputContext();
 
     for (const key of this.#frameDown) {
       const cbs = this.#keyDownCbs.get(key);
-      if (cbs) for (const cb of cbs) cb();
+      if (cbs) for (const [cb, ctx] of cbs) if (ctx === activeContext) cb();
     }
     for (const key of this.#frameUp) {
       const cbs = this.#keyUpCbs.get(key);
-      if (cbs) for (const cb of cbs) cb();
+      if (cbs) for (const [cb, ctx] of cbs) if (ctx === activeContext) cb();
     }
 
     for (const [action, cbs] of this.#actionDownCbs) {
       const bindings = this.#actions.get(action);
       if (bindings && bindings.some((k) => this.#frameDown.has(k))) {
-        for (const cb of cbs) cb();
+        for (const [cb, ctx] of cbs) if (ctx === activeContext) cb();
       }
     }
     for (const [action, cbs] of this.#actionUpCbs) {
       const bindings = this.#actions.get(action);
       if (bindings && bindings.some((k) => this.#frameUp.has(k))) {
-        for (const cb of cbs) cb();
+        for (const [cb, ctx] of cbs) if (ctx === activeContext) cb();
       }
     }
     for (const [action, cbs] of this.#actionChangeCbs) {
@@ -279,7 +319,7 @@ export default class InputManager {
       const anyUp = bindings.some((k) => this.#frameUp.has(k));
       if (anyDown || anyUp) {
         const pressed = bindings.some((k) => this.#heldKeys.has(k));
-        for (const cb of cbs) cb(pressed);
+        for (const [cb, ctx] of cbs) if (ctx === activeContext) cb(pressed);
       }
     }
   }
