@@ -15,7 +15,7 @@ export {
   Toggle,
   Value,
   defineUI,
-  useFeature,
+  feature,
   useLayout,
   usePlacement,
   withLayer,

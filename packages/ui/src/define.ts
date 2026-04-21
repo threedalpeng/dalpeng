@@ -47,35 +47,28 @@ export function Html(content: string): UIChild {
   return { type: "html", content };
 }
 
-export function Toggle(value: Ref<boolean>, label: string): UIChild;
-export function Toggle(featureKey: string, label: string): UIChild;
-export function Toggle(valueOrKey: Ref<boolean> | string, label: string): UIChild {
-  const source: BindingSource<boolean> = isRef(valueOrKey)
-    ? { kind: "ref", ref: valueOrKey }
-    : { kind: "feature", key: valueOrKey };
-  return { type: "toggle", source, label };
+function toBindingSource<T>(src: Ref<T> | BindingSource<T>): BindingSource<T> {
+  return isRef(src) ? { kind: "ref", ref: src } : src;
 }
 
-export function Range(value: Ref<number>, label: string, opts: RangeOpts): UIChild;
-export function Range(featureKey: string, label: string, opts: RangeOpts): UIChild;
-export function Range(valueOrKey: Ref<number> | string, label: string, opts: RangeOpts): UIChild {
-  const source: BindingSource<number> = isRef(valueOrKey)
-    ? { kind: "ref", ref: valueOrKey }
-    : { kind: "feature", key: valueOrKey };
-  return { type: "range", source, label, opts };
+export function Toggle(source: Ref<boolean> | BindingSource<boolean>, label: string): UIChild {
+  return { type: "toggle", source: toBindingSource(source), label };
 }
 
-export function Select(value: Ref<string>, label: string, options: SelectOption[]): UIChild;
-export function Select(featureKey: string, label: string, options: SelectOption[]): UIChild;
+export function Range(
+  source: Ref<number> | BindingSource<number>,
+  label: string,
+  opts: RangeOpts
+): UIChild {
+  return { type: "range", source: toBindingSource(source), label, opts };
+}
+
 export function Select(
-  valueOrKey: Ref<string> | string,
+  source: Ref<string> | BindingSource<string>,
   label: string,
   options: SelectOption[]
 ): UIChild {
-  const source: BindingSource<string> = isRef(valueOrKey)
-    ? { kind: "ref", ref: valueOrKey }
-    : { kind: "feature", key: valueOrKey };
-  return { type: "select", source, label, options };
+  return { type: "select", source: toBindingSource(source), label, options };
 }
 
 export function Button(label: string, onClick: () => void): UIChild {
@@ -86,12 +79,17 @@ export function Value(label: string, content: string | Ref<string>): UIChild {
   return { type: "value", label, content };
 }
 
-// useFeature creates a Ref<T> tagged for the mount system to wire two-way
-// to app.features[key]. The actual binding is set up by the domRenderer.
-export function useFeature<K extends keyof RenderConfig>(key: K): Ref<RenderConfig[K]> {
-  const r = ref(undefined as any) as Ref<RenderConfig[K]>;
-  (r as any)._featureKey = key;
-  return r;
+/**
+ * Explicit `BindingSource` that points at `app.features[key]`. Pass into
+ * `Toggle` / `Range` / `Select` in place of a ref:
+ *   `Toggle(feature("shadows"), "Shadows")`
+ * The renderer reads/writes `ctx.features[key]` — the atom's two-way binding
+ * is wired there.
+ */
+export function feature<K extends keyof RenderConfig>(
+  key: K
+): BindingSource<RenderConfig[K]> {
+  return { kind: "feature", key: key as string };
 }
 
 export function Menu(items: MenuItem[], onSelect: (item: MenuItem) => void): UIChild {

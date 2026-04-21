@@ -70,6 +70,7 @@ export {
   createDialogueController,
   defineUI,
   Dialogue,
+  feature,
   Html,
   List,
   Menu,
@@ -78,7 +79,6 @@ export {
   Select,
   Text,
   Toggle,
-  useFeature,
   useLayout,
   // The UI-side withLayer is NOT re-exported here separately — gameEntity.ts
   // exports a polymorphic withLayer that dispatches to whichever scope is active.
