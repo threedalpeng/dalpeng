@@ -557,6 +557,14 @@ function renderSplit(node: Extract<UIChild, { type: "split" }>, ctx: RenderConte
   return { element: container, cleanups };
 }
 
+/**
+ * Fine-grained reactive `Tabs`: each tab body is rendered on first visit and
+ * cached by `tab.id`. Switching tabs detaches the previous body (DOM + ref
+ * subscriptions survive) and attaches the target — cached if seen before,
+ * freshly rendered otherwise. Tabs dropped from the list have their cached
+ * body torn down. Adding tabs is lazy — their bodies aren't rendered until
+ * selected.
+ */
 function renderTabs(node: Extract<UIChild, { type: "tabs" }>, ctx: RenderContext): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
@@ -591,22 +599,48 @@ function renderTabs(node: Extract<UIChild, { type: "tabs" }>, ctx: RenderContext
   wrap.appendChild(strip);
   wrap.appendChild(body);
 
-  let bodyCleanups: Set<() => void> | null = null;
-  const clearBody = () => {
-    while (body.firstChild) body.removeChild(body.firstChild);
-    bodyCleanups?.forEach((fn) => fn());
-    bodyCleanups = null;
+  type Slot = { element: HTMLElement; cleanups: Set<() => void> };
+  const bodyCache = new Map<string, Slot>();
+  let currentId: string | null = null;
+
+  const detachCurrent = (): void => {
+    if (currentId === null) return;
+    const prev = bodyCache.get(currentId);
+    if (prev && prev.element.parentNode === body) body.removeChild(prev.element);
+    currentId = null;
   };
 
   const renderActiveBody = () => {
-    clearBody();
     const tabs = opts.tabs.value;
     const idx = Math.max(0, Math.min(opts.active.value, tabs.length - 1));
     const active = tabs[idx];
-    if (!active) return;
-    const result = renderUI(active.body, ctx);
-    body.appendChild(result.element);
-    bodyCleanups = result.cleanups;
+    if (!active) {
+      detachCurrent();
+      return;
+    }
+    if (active.id === currentId) return;
+
+    detachCurrent();
+
+    let slot = bodyCache.get(active.id);
+    if (!slot) {
+      const r = renderUI(active.body, ctx);
+      slot = { element: r.element, cleanups: r.cleanups };
+      bodyCache.set(active.id, slot);
+    }
+    body.appendChild(slot.element);
+    currentId = active.id;
+  };
+
+  const pruneStaleCache = (): void => {
+    const liveIds = new Set(opts.tabs.value.map((t) => t.id));
+    for (const [id, slot] of bodyCache) {
+      if (liveIds.has(id)) continue;
+      slot.cleanups.forEach((fn) => fn());
+      if (slot.element.parentNode) slot.element.parentNode.removeChild(slot.element);
+      bodyCache.delete(id);
+      if (id === currentId) currentId = null;
+    }
   };
 
   const renderStrip = () => {
@@ -646,6 +680,7 @@ function renderTabs(node: Extract<UIChild, { type: "tabs" }>, ctx: RenderContext
   renderActiveBody();
   cleanups.add(
     opts.tabs.subscribe(() => {
+      pruneStaleCache();
       renderStrip();
       renderActiveBody();
     })
@@ -656,7 +691,11 @@ function renderTabs(node: Extract<UIChild, { type: "tabs" }>, ctx: RenderContext
       renderActiveBody();
     })
   );
-  cleanups.add(() => clearBody());
+  cleanups.add(() => {
+    for (const slot of bodyCache.values()) slot.cleanups.forEach((fn) => fn());
+    bodyCache.clear();
+    currentId = null;
+  });
 
   return { element: wrap, cleanups };
 }
@@ -772,6 +811,12 @@ function renderFor(node: Extract<UIChild, { type: "for" }>, ctx: RenderContext):
   return { element: wrap, cleanups };
 }
 
+/**
+ * Fine-grained reactive `Show`: body and fallback are each rendered at most
+ * once per mount. Flipping `when` back and forth detaches / reattaches the
+ * cached element — internal ref subscriptions, DOM state, and cleanups all
+ * survive the round trip. Teardown runs once at the enclosing scope unmount.
+ */
 function renderShow(node: Extract<UIChild, { type: "show" }>, ctx: RenderContext): RenderResult {
   const cleanups = new Set<() => void>();
   const opts = node.opts;
@@ -780,25 +825,50 @@ function renderShow(node: Extract<UIChild, { type: "show" }>, ctx: RenderContext
   const wrap = doc.createElement("div");
   wrap.style.display = "contents";
 
-  let mounted: { cleanups: Set<() => void> } | null = null;
-  const clearMount = () => {
-    while (wrap.firstChild) wrap.removeChild(wrap.firstChild);
-    mounted?.cleanups.forEach((fn) => fn());
-    mounted = null;
+  type Slot = { element: HTMLElement; cleanups: Set<() => void> };
+  let bodySlot: Slot | null = null;
+  let fallbackSlot: Slot | null = null;
+  let current: "body" | "fallback" | null = null;
+
+  const ensureBody = (): Slot => {
+    if (!bodySlot) {
+      const r = renderUI(opts.body, ctx);
+      bodySlot = { element: r.element, cleanups: r.cleanups };
+    }
+    return bodySlot;
+  };
+  const ensureFallback = (): Slot | null => {
+    if (!opts.fallback) return null;
+    if (!fallbackSlot) {
+      const r = renderUI(opts.fallback, ctx);
+      fallbackSlot = { element: r.element, cleanups: r.cleanups };
+    }
+    return fallbackSlot;
   };
 
   const sync = () => {
-    clearMount();
-    const target = opts.when.value ? opts.body : opts.fallback;
-    if (!target) return;
-    const r = renderUI(target, ctx);
-    wrap.appendChild(r.element);
-    mounted = { cleanups: r.cleanups };
+    const targetKind: "body" | "fallback" = opts.when.value ? "body" : "fallback";
+    if (targetKind === current) return;
+
+    const prev = current === "body" ? bodySlot : current === "fallback" ? fallbackSlot : null;
+    if (prev && prev.element.parentNode === wrap) {
+      wrap.removeChild(prev.element);
+    }
+
+    const next = targetKind === "body" ? ensureBody() : ensureFallback();
+    if (next) wrap.appendChild(next.element);
+    current = targetKind;
   };
 
   sync();
   cleanups.add(opts.when.subscribe(() => sync()));
-  cleanups.add(() => clearMount());
+  cleanups.add(() => {
+    bodySlot?.cleanups.forEach((fn) => fn());
+    fallbackSlot?.cleanups.forEach((fn) => fn());
+    bodySlot = null;
+    fallbackSlot = null;
+    current = null;
+  });
 
   return { element: wrap, cleanups };
 }
