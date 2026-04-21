@@ -50,13 +50,80 @@ function buildTreePanel(host: DevToolsHost, selected: ReturnType<typeof ref<Game
   filterBar.appendChild(filterInput);
 
   const listContainer = document.createElement("div");
-  listContainer.style.cssText = "flex:1;overflow:auto;padding:2px 0;font-size:11px;line-height:1.5";
+  listContainer.tabIndex = 0;
+  listContainer.style.cssText =
+    "flex:1;overflow:auto;padding:2px 0;font-size:11px;line-height:1.5;outline:none";
 
   root.appendChild(filterBar);
   root.appendChild(listContainer);
 
+  /** Walk the tree in render order, skipping children of collapsed or filter-excluded parents. */
+  function visibleEntities(): GameEntity[] {
+    const out: GameEntity[] = [];
+    const entities = host.entities.value;
+    const roots = entities.filter((e) => !e.parent && matchesFilter(e, filter));
+    const walk = (e: GameEntity): void => {
+      out.push(e);
+      if (collapsed.has(e.id)) return;
+      for (const c of e.children) if (matchesFilter(c, filter)) walk(c);
+    };
+    for (const r of roots) walk(r);
+    return out;
+  }
+
+  listContainer.addEventListener("keydown", (ev) => {
+    if (ev.target !== listContainer) return;
+    const visible = visibleEntities();
+    if (visible.length === 0) return;
+    const idx = selected.value ? visible.indexOf(selected.value) : -1;
+
+    switch (ev.key) {
+      case "ArrowDown": {
+        ev.preventDefault();
+        const next = visible[Math.min(visible.length - 1, idx + 1)] ?? visible[0];
+        pendingScrollToSelected = true;
+        selected.value = next;
+        host.emit("entitySelected", { entity: next });
+        break;
+      }
+      case "ArrowUp": {
+        ev.preventDefault();
+        const prev = visible[Math.max(0, idx - 1)] ?? visible[0];
+        pendingScrollToSelected = true;
+        selected.value = prev;
+        host.emit("entitySelected", { entity: prev });
+        break;
+      }
+      case "ArrowRight": {
+        if (!selected.value) break;
+        ev.preventDefault();
+        const e = selected.value;
+        if (e.children.length > 0 && collapsed.has(e.id)) {
+          collapsed.delete(e.id);
+          render();
+        }
+        break;
+      }
+      case "ArrowLeft": {
+        if (!selected.value) break;
+        ev.preventDefault();
+        const e = selected.value;
+        if (e.children.length > 0 && !collapsed.has(e.id)) {
+          collapsed.add(e.id);
+          render();
+        } else if (e.parent) {
+          pendingScrollToSelected = true;
+          selected.value = e.parent;
+          host.emit("entitySelected", { entity: e.parent });
+        }
+        break;
+      }
+    }
+  });
+
   const collapsed = new Set<number>();
   let filter = "";
+  let pendingScrollToSelected = false;
   // Set by the input handler, consumed once by render() to scroll the first
   // direct-match row into view. Typing 'p' then 'l' then 'a' shouldn't yank
   // scroll back and forth uncontrollably — only the first match for the
@@ -80,6 +147,7 @@ function buildTreePanel(host: DevToolsHost, selected: ReturnType<typeof ref<Game
     if (directMatch) row.dataset.directMatch = "1";
 
     row.style.cssText = `display:flex;align-items:center;padding:1px 4px 1px ${depth * 12 + 4}px;cursor:pointer;white-space:nowrap;color:${isSelected ? PALETTE.accent : PALETTE.fg};background:${isSelected ? PALETTE.rowSelected : "transparent"}`;
+    if (isSelected) row.dataset.selectedRow = "1";
 
     const twisty = document.createElement("span");
     twisty.textContent = hasChildren ? (isCollapsed ? "▶" : "▼") : " ";
@@ -142,6 +210,11 @@ function buildTreePanel(host: DevToolsHost, selected: ReturnType<typeof ref<Game
       pendingScrollToFirstMatch = false;
       const firstMatch = listContainer.querySelector<HTMLElement>('[data-direct-match="1"]');
       firstMatch?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+    if (pendingScrollToSelected) {
+      pendingScrollToSelected = false;
+      const sel = listContainer.querySelector<HTMLElement>('[data-selected-row="1"]');
+      sel?.scrollIntoView({ block: "nearest" });
     }
   }
 
@@ -450,6 +523,18 @@ function buildInspectorPanel(
 
     const typeName = componentDisplayName(component);
     const folded = foldedComponents.has(typeName);
+    const schema = getComponentSchema(component);
+
+    let patchCount = 0;
+    if (schema) {
+      for (const field of Object.keys(schema.fields)) {
+        if (host.isPatched(entity, typeName, field)) patchCount++;
+      }
+    }
+
+    if (patchCount > 0) {
+      section.style.cssText += `;border-left:2px solid ${PALETTE.modified};padding-left:4px`;
+    }
 
     const head = document.createElement("div");
     head.style.cssText = `color:${PALETTE.accent};font-weight:600;cursor:pointer;padding:2px 8px;user-select:none;display:flex;align-items:center`;
@@ -460,6 +545,13 @@ function buildInspectorPanel(
     const title = document.createElement("span");
     title.textContent = typeName;
     head.appendChild(title);
+    if (patchCount > 0) {
+      const badge = document.createElement("span");
+      badge.textContent = String(patchCount);
+      badge.title = `${patchCount} patched field${patchCount === 1 ? "" : "s"}`;
+      badge.style.cssText = `margin-left:6px;font-size:9px;font-weight:500;color:${PALETTE.modified};border:1px solid ${PALETTE.modified};border-radius:8px;padding:0 5px;min-width:14px;text-align:center`;
+      head.appendChild(badge);
+    }
     head.addEventListener("click", () => {
       if (folded) foldedComponents.delete(typeName);
       else foldedComponents.add(typeName);
@@ -470,7 +562,6 @@ function buildInspectorPanel(
 
     if (folded) return section;
 
-    const schema = getComponentSchema(component);
     const target = component as unknown as Record<string, unknown>;
 
     if (schema) {

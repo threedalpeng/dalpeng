@@ -132,7 +132,10 @@ export function consolePlugin(): DevToolsPlugin {
       .map((e) => {
         const ts = (e.timestamp / 1000).toFixed(2);
         const color = LEVEL_COLORS[e.level];
-        return `<div style="padding:2px 6px;border-bottom:1px solid #1f242c;color:${color};white-space:pre-wrap;word-break:break-word"><span style="color:#6b7280">[${ts}] [${e.module}]</span> ${escapeHtml(e.message)}</div>`;
+        const source = e.source
+          ? ` <span style="color:#4a5568;font-size:9px" title="${escapeHtml(e.source)}">${escapeHtml(e.source)}</span>`
+          : "";
+        return `<div style="padding:2px 6px;border-bottom:1px solid #1f242c;color:${color};white-space:pre-wrap;word-break:break-word"><span style="color:#6b7280">[${ts}] [${e.module}]</span> ${escapeHtml(e.message)}${source}</div>`;
       })
       .join("");
     list.innerHTML = rows;

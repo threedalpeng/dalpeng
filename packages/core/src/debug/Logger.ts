@@ -9,6 +9,43 @@ export interface LogEntry {
   module: LogModule;
   message: string;
   args?: unknown[];
+  /** `path/file.ts:line` extracted from the call-site stack. Undefined when stack parsing fails (non-V8, sourceless prod bundles). */
+  source?: string;
+}
+
+const STACK_FRAME_RE = /(?:\()?((?:https?:\/\/|file:\/\/|webpack:\/\/)?[^\s()]+):(\d+):(\d+)\)?$/;
+
+/** Format a raw URL into a readable `path/file:line` — drops protocol + host. */
+function shortenSource(url: string, line: string): string {
+  let short = url;
+  const protoIdx = short.indexOf("://");
+  if (protoIdx >= 0) {
+    const afterProto = short.slice(protoIdx + 3);
+    const pathIdx = afterProto.indexOf("/");
+    short = pathIdx >= 0 ? afterProto.slice(pathIdx + 1) : afterProto;
+  }
+  const qIdx = short.indexOf("?");
+  if (qIdx >= 0) short = short.slice(0, qIdx);
+  return `${short}:${line}`;
+}
+
+/** Best-effort: walk the stack past Logger's own frames and return `file:line` of the first user frame. */
+function captureSource(): string | undefined {
+  const stack = new Error().stack;
+  if (!stack) return undefined;
+  const lines = stack.split("\n");
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (line.includes("Logger.")) continue;
+    if (line.includes("at captureSource")) continue;
+    const m = STACK_FRAME_RE.exec(line);
+    if (!m) continue;
+    const [, url, lineNum] = m;
+    if (url.includes("/debug/Logger")) continue;
+    return shortenSource(url, lineNum);
+  }
+  return undefined;
 }
 
 const LEVEL_ORDER: Record<LogLevel, number> = {
@@ -42,6 +79,7 @@ export default class Logger {
       module,
       message,
       args: args.length > 0 ? args : undefined,
+      source: captureSource(),
     };
 
     this.#buffer.push(entry);

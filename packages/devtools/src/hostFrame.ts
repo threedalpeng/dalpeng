@@ -107,6 +107,9 @@ export class DevToolsRootHost {
   #layout: StageLayoutAttachment | null = null;
   #explicitContainer: HTMLElement | null;
 
+  #visible = true;
+  #globalKeydown: ((ev: KeyboardEvent) => void) | null = null;
+
   constructor(app: Application, registry: PluginRegistry, opts: DevToolsRootHostOptions = {}) {
     this.#app = app;
     this.#registry = registry;
@@ -143,6 +146,38 @@ export class DevToolsRootHost {
         this.#mountHostUI();
       })
     );
+
+    this.#installGlobalKeydown();
+  }
+
+  show(): void {
+    this.#visible = true;
+    this.#rootDiv.style.display = "flex";
+  }
+  hide(): void {
+    this.#visible = false;
+    this.#rootDiv.style.display = "none";
+  }
+  toggle(): void {
+    if (this.#visible) this.hide();
+    else this.show();
+  }
+
+  #installGlobalKeydown(): void {
+    const handler = (ev: KeyboardEvent): void => {
+      if (!((ev.metaKey || ev.ctrlKey) && ev.shiftKey && ev.code === "KeyD")) return;
+      // Skip when user is typing in an input/textarea/contenteditable so ⌘⇧D in a text field isn't swallowed.
+      const target = ev.target as Element | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
+        if ((target as HTMLElement).isContentEditable) return;
+      }
+      ev.preventDefault();
+      this.toggle();
+    };
+    this.#ownerDoc.addEventListener("keydown", handler);
+    this.#globalKeydown = handler;
   }
 
   #baseRootStyle(): Partial<CSSStyleDeclaration> {
@@ -775,6 +810,10 @@ export class DevToolsRootHost {
     this.#unwatchPanels();
     for (const u of this.#unwatchSettings) u();
     this.#unwatchSettings = [];
+    if (this.#globalKeydown) {
+      this.#ownerDoc.removeEventListener("keydown", this.#globalKeydown);
+      this.#globalKeydown = null;
+    }
     this.#unmountHostUI();
     this.#detachFromStageHost();
     if (this.#poppedWindow && !this.#poppedWindow.closed) {
