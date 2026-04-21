@@ -1,10 +1,10 @@
 import Application from "../Application";
 import GameEntity from "../ecs/GameEntity";
-import Scene from "../Scene";
 import type { LogicalDescriptor } from "../runtime/Descriptor";
 import { INSTANCE_KIND, type EntityInstance, type UIInstance } from "../runtime/Instance";
 import { Materializer, type MaterializerHooks } from "../runtime/Materializer";
 import type { UIRenderer } from "../runtime/UIRenderer";
+import Scene from "../Scene";
 
 /**
  * Runner handed to the callback of `testScene`. Intentionally minimal —

@@ -7,6 +7,7 @@ import {
   type CanvasOptions,
   type EntityInstance,
   type Layer,
+  type LogicalDescriptor,
   type MaterializerHooks,
   type ProjectionContext,
   type RenderConfig,
@@ -15,7 +16,7 @@ import { domUIRenderer } from "@dalpeng/ui";
 import { pushScope, requireApp } from "../context";
 import type { UseScene } from "./scene";
 
-type FeatureListener = (newVal: any, oldVal: any) => void;
+type FeatureListener = (newVal: unknown, oldVal: unknown) => void;
 
 export interface ReactiveFeatures {
   features: RenderConfig;
@@ -26,9 +27,9 @@ function createReactiveFeatures(initial: RenderConfig): ReactiveFeatures {
   const listeners = new Map<string, Set<FeatureListener>>();
   const features = new Proxy(initial, {
     set(target, prop: string, value) {
-      const oldVal = (target as any)[prop];
+      const oldVal = (target as unknown as Record<string, unknown>)[prop];
       if (value === oldVal) return true;
-      (target as any)[prop] = value;
+      (target as unknown as Record<string, unknown>)[prop] = value;
       const cbs = listeners.get(prop);
       if (cbs) {
         cbs.forEach((cb) => cb(value, oldVal));
@@ -180,7 +181,7 @@ export async function runApp(
     const pending = scene._pendingRootDescriptors;
     if (pending.length === 0) continue;
     scene._pendingRootDescriptors = [];
-    materializer.materializeRoots(scene, pending as any);
+    materializer.materializeRoots(scene, pending as unknown as LogicalDescriptor[]);
   }
 
   return app;

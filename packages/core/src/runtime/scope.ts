@@ -50,9 +50,7 @@ export function currentScope(): Scope | null {
   return stack[stack.length - 1] ?? null;
 }
 
-export function findScope<K extends Scope["kind"]>(
-  kind: K
-): Extract<Scope, { kind: K }> | null {
+export function findScope<K extends Scope["kind"]>(kind: K): Extract<Scope, { kind: K }> | null {
   for (let i = stack.length - 1; i >= 0; i--) {
     const s = stack[i];
     if (s.kind === kind) return s as Extract<Scope, { kind: K }>;

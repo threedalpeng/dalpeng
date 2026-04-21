@@ -49,18 +49,18 @@ export function useMesh(
   return renderer;
 }
 
-export function onUpdate(update: () => any): () => void {
+export function onUpdate(update: () => void): () => void {
   requireEntity("onUpdate");
   const script = useComponent(Script);
   return script.on("update", update);
 }
-export function onFixedUpdate(fixedUpdate: () => any): () => void {
+export function onFixedUpdate(fixedUpdate: () => void): () => void {
   requireEntity("onFixedUpdate");
   const script = useComponent(Script);
   return script.on("fixedUpdate", fixedUpdate);
 }
 
-export function onLateUpdate(lateUpdate: () => any): () => void {
+export function onLateUpdate(lateUpdate: () => void): () => void {
   requireEntity("onLateUpdate");
   const script = useComponent(Script);
   return script.on("lateUpdate", lateUpdate);

@@ -7,14 +7,15 @@ import {
   Skeleton,
   SkinnedMeshRenderer,
   Transform,
+  type ModelAsset,
 } from "@dalpeng/core";
 import { Quaternion, Vec3 } from "@dalpeng/math";
 import { requireEntity } from "../context";
 
 export interface ModelHandle {
-  asset: any | null;
+  asset: ModelAsset | null;
   isLoaded: boolean;
-  ready: Promise<any>;
+  ready: Promise<ModelAsset>;
 }
 
 /** Must be called inside defineEntity() setup. */
@@ -27,12 +28,12 @@ export function useModel(url: string): ModelHandle {
     isLoaded: false,
     ready: models
       .load(url)
-      .then((asset: any) => {
+      .then((asset) => {
         handle.asset = asset;
         handle.isLoaded = true;
         return asset;
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         console.error("useModel failed:", url, err);
         throw err;
       }),
@@ -41,7 +42,7 @@ export function useModel(url: string): ModelHandle {
   return handle;
 }
 
-export function spawnModelEntities(asset: any, parentEntity: GameEntity): void {
+export function spawnModelEntities(asset: ModelAsset, parentEntity: GameEntity): void {
   const app = parentEntity.scene?.app;
   if (!app) {
     console.warn("[spawnModelEntities] Parent entity has no scene/app.");
@@ -54,10 +55,10 @@ export function spawnModelEntities(asset: any, parentEntity: GameEntity): void {
 }
 
 function buildNodeTree(
-  asset: any,
+  asset: ModelAsset,
   nodeIndex: number,
   parent: GameEntity,
-  skeletonCache: Map<number, any>
+  skeletonCache: Map<number, Skeleton>
 ): GameEntity {
   const node = asset.nodes[nodeIndex];
   const entity = new GameEntity();

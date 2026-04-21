@@ -274,7 +274,7 @@ export default class Application {
   features: RenderConfig = {
     postToneMapping: false,
   };
-  watchFeature?: (key: string, cb: (val: any, old: any) => void) => () => void;
+  watchFeature?: (key: string, cb: (val: unknown, old: unknown) => void) => () => void;
 
   pipeline = new RenderPipeline();
   canvasController = new CanvasController();
@@ -524,7 +524,7 @@ export default class Application {
   }
 
   static #activeInstances = new Map<number, Application>();
-  static #instanceEvents: (() => any)[] = [];
+  static #instanceEvents: (() => void)[] = [];
   state: "new" | "ready" | "running" = "new";
   start() {
     Application.#activeInstances.set(this.#id, this);

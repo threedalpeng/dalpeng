@@ -5,7 +5,7 @@ import { type Mesh } from "@/utils/mesh";
 
 export default class BaseRenderer extends Component {
   // Reserved for any backend-specific context if needed later
-  context: any;
+  context: unknown;
   mesh!: Mesh;
   transform!: Transform;
 

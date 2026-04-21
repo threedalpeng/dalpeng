@@ -100,8 +100,13 @@ export interface FloatingOpts {
 }
 
 export type UIChild =
-  | { type: "text"; content: string | Ref<any>; formatter?: (v: any) => string; opts?: TextOpts }
-  | { type: "bar"; source?: Ref<any>; formatter?: (v: any) => number; opts: BarOpts }
+  | {
+      type: "text";
+      content: string | Ref<unknown>;
+      formatter?: (v: unknown) => string;
+      opts?: TextOpts;
+    }
+  | { type: "bar"; source?: Ref<unknown>; formatter?: (v: unknown) => number; opts: BarOpts }
   | { type: "html"; content: string }
   | { type: "toggle"; source: BindingSource<boolean>; label: string }
   | { type: "range"; source: BindingSource<number>; label: string; opts: RangeOpts }

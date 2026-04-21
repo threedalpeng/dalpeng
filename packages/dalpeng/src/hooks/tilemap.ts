@@ -56,7 +56,7 @@ export function useTilemap(url: string, pixelsPerUnit = 16): TilemapHandle {
       renderer.build(map, atlasMap);
       handle.collider = new TileCollider(map, pixelsPerUnit);
     })
-    .catch((err: any) => {
+    .catch((err: unknown) => {
       console.error("[useTilemap] Failed to load:", url, err);
       throw err;
     });

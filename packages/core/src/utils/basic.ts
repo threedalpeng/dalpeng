@@ -1,3 +1,3 @@
-export function isNil(val: any) {
+export function isNil(val: unknown) {
   return val === null || val === undefined;
 }

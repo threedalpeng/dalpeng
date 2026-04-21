@@ -44,8 +44,9 @@ export function getComponentSchema(component: Component): ComponentSchema | null
  * `component.constructor.name` directly.
  */
 export function componentDisplayName(component: Component): string {
-  return registry.get(component.constructor as ComponentCtor)?.displayName
-    ?? component.constructor.name;
+  return (
+    registry.get(component.constructor as ComponentCtor)?.displayName ?? component.constructor.name
+  );
 }
 
 // ── Field constructors ───────────────────────────────────────────────

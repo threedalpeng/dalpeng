@@ -51,6 +51,7 @@ export type {
   PassTiming,
   Toast,
 } from "./debug";
+export type { default as GfxTexture } from "./gfx/Texture";
 export type { ParticleEmitterConfig } from "./graphics/ParticleEmitter";
 export type { SpriteAnimationClip } from "./graphics2d/SpriteAnimationClip";
 export type { AtlasFrame } from "./graphics2d/SpriteAtlas";
@@ -82,6 +83,7 @@ export {
 } from "./runtime/Layer";
 
 export { APP_NODE_KIND, type AppNode, type EntityNode, type UINode } from "./AppNode";
+export type { LogicalDescriptor } from "./runtime/Descriptor";
 export {
   INSTANCE_KIND,
   isEntityInstance,
@@ -120,13 +122,7 @@ export {
   registerCleanup,
 } from "./runtime/scope";
 
-export {
-  currentScope,
-  findScope,
-  hasScope,
-  pushScope,
-  type Scope,
-} from "./runtime/scope";
+export { currentScope, findScope, hasScope, pushScope, type Scope } from "./runtime/scope";
 
 export {
   Animator,

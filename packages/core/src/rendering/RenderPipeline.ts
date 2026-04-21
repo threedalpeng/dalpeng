@@ -123,9 +123,7 @@ export default class RenderPipeline implements PipelineIntrospection {
       iblPrecompute: this.#iblPrecompute,
     };
 
-    await Promise.all(
-      this.#passes.map((pass) => pass.init?.(this.#makeInitContext(renderer)))
-    );
+    await Promise.all(this.#passes.map((pass) => pass.init?.(this.#makeInitContext(renderer))));
   }
 
   async initIBL(renderer: RendererBackend, hdrUrl: string): Promise<void> {

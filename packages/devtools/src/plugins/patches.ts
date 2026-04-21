@@ -53,8 +53,7 @@ function liveValueOf(patch: AnyPatch, app: Application | null): unknown {
 
 export function patchesPlugin(): DevToolsPlugin {
   const root = document.createElement("div");
-  root.style.cssText =
-    "display:flex;flex-direction:column;height:100%;min-height:0;font-size:11px";
+  root.style.cssText = "display:flex;flex-direction:column;height:100%;min-height:0;font-size:11px";
 
   // ── Toolbar ─────────────────────────────────────────────────────
   const bar = document.createElement("div");

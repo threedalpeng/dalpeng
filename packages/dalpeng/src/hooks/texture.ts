@@ -1,10 +1,10 @@
-import type { TextureLoadOptions } from "@dalpeng/core";
+import type { GfxTexture, TextureLoadOptions } from "@dalpeng/core";
 import { requireEntity } from "../context";
 
 export interface TextureHandle {
-  texture: any | null;
+  texture: GfxTexture | null;
   isLoaded: boolean;
-  ready: Promise<any>;
+  ready: Promise<GfxTexture>;
 }
 
 /** Must be called inside defineEntity() setup. */
@@ -15,7 +15,7 @@ export function useTexture(url: string, opts?: TextureLoadOptions): TextureHandl
   const handle: TextureHandle = {
     texture: null,
     isLoaded: false,
-    ready: textures.load(url, opts).then((tex: any) => {
+    ready: textures.load(url, opts).then((tex) => {
       handle.texture = tex;
       handle.isLoaded = true;
       return tex;

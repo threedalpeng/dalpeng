@@ -18,25 +18,38 @@ import type {
 export function defineUI(setup: () => UIChild[]): () => UINode;
 export function defineUI<P>(setup: (props: P) => UIChild[]): (props: P) => UINode;
 export function defineUI<P = void>(setup: (props?: P) => UIChild[]) {
-  return ((props?: P) => ({ [APP_NODE_KIND]: "ui", setup, props }) as any) as any;
+  return (props?: P) => ({ [APP_NODE_KIND]: "ui", setup, props }) as unknown as UINode;
 }
 
 export function Text(content: string, opts?: TextOpts): UIChild;
 export function Text<T>(source: Ref<T>, formatter: (v: T) => string, opts?: TextOpts): UIChild;
 export function Text(
-  contentOrSource: string | Ref<any>,
-  formatterOrOpts?: any,
+  contentOrSource: string | Ref<unknown>,
+  formatterOrOpts?: ((v: unknown) => string) | TextOpts,
   opts?: TextOpts
 ): UIChild {
   if (typeof contentOrSource === "string") {
-    return { type: "text", content: contentOrSource, opts: formatterOrOpts };
+    return {
+      type: "text",
+      content: contentOrSource,
+      opts: formatterOrOpts as TextOpts | undefined,
+    };
   }
-  return { type: "text", content: contentOrSource, formatter: formatterOrOpts, opts };
+  return {
+    type: "text",
+    content: contentOrSource,
+    formatter: formatterOrOpts as ((v: unknown) => string) | undefined,
+    opts,
+  };
 }
 
 export function Bar(opts: BarOpts): UIChild;
 export function Bar<T>(source: Ref<T>, formatter: (v: T) => number, opts: BarOpts): UIChild;
-export function Bar(sourceOrOpts: Ref<any> | BarOpts, formatter?: any, opts?: BarOpts): UIChild {
+export function Bar(
+  sourceOrOpts: Ref<unknown> | BarOpts,
+  formatter?: (v: unknown) => number,
+  opts?: BarOpts
+): UIChild {
   if (isRef(sourceOrOpts)) {
     return { type: "bar", source: sourceOrOpts, formatter, opts: opts! };
   }
@@ -88,7 +101,7 @@ export function Value(label: string, content: string | Ref<string>): UIChild {
  */
 export function feature<K extends keyof RenderConfig>(
   key: K
-): BindingSource<RenderConfig[K]> {
+): BindingSource<NonNullable<RenderConfig[K]>> {
   return { kind: "feature", key: key as string };
 }
 

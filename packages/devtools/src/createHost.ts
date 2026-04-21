@@ -446,7 +446,9 @@ export function createDevToolsHost(initial: Application | null = null): {
           );
         }
         const ent = matches[0];
-        const comp = ent.getAllComponents().find((c) => componentDisplayName(c) === rec.componentType);
+        const comp = ent
+          .getAllComponents()
+          .find((c) => componentDisplayName(c) === rec.componentType);
         if (!comp) continue;
         const target = comp as unknown as Record<string, unknown>;
         const key = fieldKey(ent.id, rec.componentType!, rec.field!);

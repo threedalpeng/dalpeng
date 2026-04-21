@@ -33,7 +33,7 @@ export function useSpriteAtlas(
         handle.isLoaded = true;
         return atlas;
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         console.error("[useSpriteAtlas] Failed to load:", imageUrl, err);
         throw err;
       }),

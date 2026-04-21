@@ -1,5 +1,5 @@
 import type { Application, GameEntity, Scene } from "@dalpeng/core";
-import { findScope, hasScope, pushScope as corePushScope, type Scope } from "@dalpeng/core";
+import { pushScope as corePushScope, findScope, hasScope, type Scope } from "@dalpeng/core";
 
 /**
  * Authoring scope facade over `@dalpeng/core`'s shared scope stack.

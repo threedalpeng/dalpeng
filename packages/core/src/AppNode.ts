@@ -8,12 +8,12 @@ export interface AppNode {
 
 export interface EntityNode extends AppNode {
   readonly [DESCRIPTOR_KIND]: "game";
-  readonly setup: (props: any) => readonly AppNode[] | void;
-  readonly props: any;
+  readonly setup: (props: unknown) => readonly AppNode[] | void;
+  readonly props: unknown;
 }
 
 export interface UINode extends AppNode {
   readonly [DESCRIPTOR_KIND]: "ui";
-  readonly setup: (props: any) => readonly unknown[];
-  readonly props: any;
+  readonly setup: (props: unknown) => readonly unknown[];
+  readonly props: unknown;
 }

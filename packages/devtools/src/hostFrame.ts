@@ -238,9 +238,7 @@ export class DevToolsRootHost {
         height: "auto",
         flex: "",
         zIndex: "2147483646",
-        ...(side === "right"
-          ? { right: "0", left: "auto" }
-          : { left: "0", right: "auto" }),
+        ...(side === "right" ? { right: "0", left: "auto" } : { left: "0", right: "auto" }),
       } satisfies Partial<CSSStyleDeclaration>);
       if (!root.isConnected) {
         (this.#explicitContainer ?? this.#ownerDoc.body).appendChild(root);
@@ -438,9 +436,7 @@ export class DevToolsRootHost {
         const sizes = this.#getSizesRef(node);
         // Split.slots expects UINode[]; renderSplit applies flex:1 to each
         // slot container, so the inner UINode wrapper there is harmless.
-        const slots = node.children.map((c) =>
-          defineUI(() => [renderLayoutAsChild(c)])()
-        );
+        const slots = node.children.map((c) => defineUI(() => [renderLayoutAsChild(c)])());
         return Split({ direction: node.direction, sizes, slots });
       }
       return renderTabsAsChild(node);

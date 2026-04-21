@@ -6,5 +6,5 @@ export interface TriggerZone {
   worldY: number;
   worldW: number;
   worldH: number;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
 }
