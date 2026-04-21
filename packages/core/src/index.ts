@@ -111,7 +111,7 @@ export {
   type TestSceneOptions,
 } from "./testing/testScene";
 
-export { computed, isRef, ref, watch, type ReadonlyRef, type Ref } from "./runtime/reactive";
+export { batch, computed, isRef, ref, watch, type ReadonlyRef, type Ref } from "./runtime/reactive";
 
 export {
   beginCleanupScope,

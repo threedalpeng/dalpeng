@@ -13,7 +13,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { createEntityNode, createUINode } from "../src/runtime/Descriptor";
-import { ref } from "../src/runtime/reactive";
+import { batch, computed, ref } from "../src/runtime/reactive";
 import { testScene } from "../src/testing/testScene";
 
 describe("Philosophy invariant — setup runs exactly once", () => {
@@ -93,6 +93,119 @@ describe("Philosophy invariant — ref binding precision", () => {
     expect(calls).toBe(0);
     r.value = 6;
     expect(calls).toBe(1);
+  });
+});
+
+describe("Philosophy invariant — batch() collapses writes", () => {
+  it("N writes to the same ref inside batch fires subscriber once with final value", () => {
+    const r = ref(0);
+    let calls = 0;
+    let seenNew: number | null = null;
+    let seenOld: number | null = null;
+    r.subscribe((n, o) => {
+      calls++;
+      seenNew = n;
+      seenOld = o;
+    });
+
+    batch(() => {
+      r.value = 1;
+      r.value = 2;
+      r.value = 3;
+    });
+
+    expect(calls).toBe(1);
+    expect(seenNew).toBe(3);
+    expect(seenOld).toBe(0); // pre-batch value preserved
+  });
+
+  it("writes to distinct refs inside batch each fire once", () => {
+    const a = ref(0);
+    const b = ref(0);
+    let aCalls = 0;
+    let bCalls = 0;
+    a.subscribe(() => aCalls++);
+    b.subscribe(() => bCalls++);
+
+    batch(() => {
+      a.value = 1;
+      b.value = 1;
+      a.value = 2;
+    });
+
+    expect(aCalls).toBe(1);
+    expect(bCalls).toBe(1);
+  });
+
+  it("write-then-revert inside batch fires nothing", () => {
+    const r = ref(5);
+    let calls = 0;
+    r.subscribe(() => calls++);
+
+    batch(() => {
+      r.value = 10;
+      r.value = 5; // back to pre-batch
+    });
+
+    expect(calls).toBe(0);
+  });
+
+  it("nested batch flushes at outermost close only", () => {
+    const r = ref(0);
+    let calls = 0;
+    r.subscribe(() => calls++);
+
+    batch(() => {
+      r.value = 1;
+      batch(() => {
+        r.value = 2;
+        expect(calls).toBe(0); // still pending
+      });
+      expect(calls).toBe(0); // still pending — inner close did not flush
+      r.value = 3;
+    });
+
+    expect(calls).toBe(1); // collapsed to one fire at outermost close
+  });
+
+  it("sync write outside batch still fires immediately (unchanged path)", () => {
+    const r = ref(0);
+    let calls = 0;
+    r.subscribe(() => calls++);
+
+    r.value = 1;
+    r.value = 2;
+    expect(calls).toBe(2);
+  });
+
+  it("throw inside batch still drains the queue", () => {
+    const r = ref(0);
+    let calls = 0;
+    r.subscribe(() => calls++);
+
+    expect(() =>
+      batch(() => {
+        r.value = 1;
+        throw new Error("boom");
+      })
+    ).toThrow("boom");
+
+    expect(calls).toBe(1);
+    expect(r.value).toBe(1);
+  });
+
+  it("computed over batched refs re-evaluates on read inside batch", () => {
+    const a = ref(1);
+    const b = ref(2);
+    const sum = computed(() => a.value + b.value);
+    expect(sum.value).toBe(3);
+
+    batch(() => {
+      a.value = 10;
+      b.value = 20;
+      // Computed reads during batch see current ref values (not stale snapshot).
+      expect(sum.value).toBe(30);
+    });
   });
 });
 

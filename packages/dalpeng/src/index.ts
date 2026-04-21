@@ -62,7 +62,7 @@ export type {
 } from "@dalpeng/core";
 export * from "./hooks/index";
 
-export { computed, isRef, ref, watch, type ReadonlyRef, type Ref } from "./reactive";
+export { batch, computed, isRef, ref, watch, type ReadonlyRef, type Ref } from "./reactive";
 
 export {
   Bar,

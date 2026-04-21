@@ -16,6 +16,42 @@ function trackAccess(target: ReadonlyRef<unknown>): void {
   if (tracker) tracker.add(target);
 }
 
+// ── Batching ────────────────────────────────────────────────────────
+//
+// During `batch(fn)` ref writes update `_value` immediately but defer
+// listener fires. At the outermost batch close we drain the queue:
+// each ref that changed fires once (captured oldVal, current value),
+// so N writes to the same ref collapse to 1 subscriber invocation.
+// A write-then-revert (back to the pre-batch value) fires nothing.
+//
+// Listeners subscribed to multiple refs still fire once PER ref that
+// changed — there's no cross-ref dedupe. A downstream `computed` wraps
+// several upstream refs into a single fire; use that for dedupe.
+
+interface PendingRef {
+  readonly oldVal: unknown;
+  readonly fire: () => void;
+}
+
+let batchDepth = 0;
+const pendingRefs = new Map<ReadonlyRef<unknown>, PendingRef>();
+
+export function batch<T>(fn: () => T): T {
+  batchDepth++;
+  try {
+    return fn();
+  } finally {
+    batchDepth--;
+    if (batchDepth === 0) {
+      // Drain even on throw — otherwise writes that happened before the
+      // throw would update _value but never notify, desyncing subscribers.
+      const entries = Array.from(pendingRefs.values());
+      pendingRefs.clear();
+      for (const info of entries) info.fire();
+    }
+  }
+}
+
 export function ref<T>(initial: T): Ref<T> {
   let _value = initial;
   const listeners = new Set<(newVal: T, oldVal: T) => void>();
@@ -31,6 +67,22 @@ export function ref<T>(initial: T): Ref<T> {
         return;
       }
       _value = newVal;
+      if (batchDepth > 0) {
+        const key = self as unknown as ReadonlyRef<unknown>;
+        if (!pendingRefs.has(key)) {
+          const capturedOld = oldVal;
+          pendingRefs.set(key, {
+            oldVal: capturedOld,
+            fire: () => {
+              const curr = _value;
+              if (curr === capturedOld) return;
+              const snapshot = Array.from(listeners);
+              for (let i = 0; i < snapshot.length; i++) snapshot[i](curr, capturedOld);
+            },
+          });
+        }
+        return;
+      }
       // Snapshot before notifying: a subscriber may unsubscribe/re-subscribe
       // (e.g. computed reattaching its tracker), which would cause infinite
       // recursion if we iterated the live Set.
@@ -52,6 +104,7 @@ export function ref<T>(initial: T): Ref<T> {
 export function computed<T>(getter: () => T): ReadonlyRef<T> {
   const listeners = new Set<(newVal: T, oldVal: T) => void>();
   let depUnsubs: Array<() => void> = [];
+  let currentDeps = new Set<ReadonlyRef<unknown>>();
   let dirty = true;
   let cached: T;
   let initialized = false;
@@ -72,8 +125,30 @@ export function computed<T>(getter: () => T): ReadonlyRef<T> {
     newDeps.forEach((dep) => {
       depUnsubs.push(dep.subscribe(onDepChanged));
     });
+    currentDeps = newDeps;
     dirty = false;
     initialized = true;
+  };
+
+  // Fresh peek without touching cache or subscriptions. Used inside batch
+  // when a dep has a pending write: cached is stale, onDepChanged hasn't
+  // fired yet, but the reader needs the latest computed value.
+  const peek = (): T => {
+    const sentinel = new Set<ReadonlyRef<unknown>>();
+    trackingStack.push(sentinel);
+    try {
+      return getter();
+    } finally {
+      trackingStack.pop();
+    }
+  };
+
+  const hasPendingDep = (): boolean => {
+    if (pendingRefs.size === 0) return false;
+    for (const dep of currentDeps) {
+      if (pendingRefs.has(dep)) return true;
+    }
+    return false;
   };
 
   const onDepChanged = (): void => {
@@ -108,6 +183,8 @@ export function computed<T>(getter: () => T): ReadonlyRef<T> {
       trackAccess(self as ReadonlyRef<unknown>);
       if (dirty || !initialized) {
         evaluate();
+      } else if (hasPendingDep()) {
+        return peek();
       }
       return cached;
     },
