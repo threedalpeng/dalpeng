@@ -1,4 +1,5 @@
 import { hasActiveCleanupScope, isRef, registerCleanup, type ReadonlyRef } from "@dalpeng/core";
+import { expandShortcut, resolveStyleValue, type Style } from "./style";
 
 export type Cleanup = () => void;
 
@@ -74,28 +75,30 @@ export function bindClass(el: Element, value: string | ReadonlyRef<string>): Cle
   return autoRegister(unsub);
 }
 
-/** Literal-value style prop: typed theme/token support lands in PR2. */
-export type StyleLiteral = {
-  [K in string]?: string | number | ReadonlyRef<string | number>;
-};
+export type { Style };
 
 /**
- * Apply a style object to `el`. Numeric values render as-is (caller chooses
- * units); theme tokens + length shortcuts are PR2. Per-property Refs install
- * a subscription each.
+ * Apply a style object to `el`. Handles theme tokens (`$color.accent`),
+ * length shortcuts (`padding: 4` → `"4px"`), unitless passthrough
+ * (`opacity: 0.5`), multi-property shortcuts (`paddingX` → left + right),
+ * and CSS custom properties (`--panel-alpha`). Per-property Refs install a
+ * subscription each.
  */
-export function bindStyle(el: HTMLElement, style: StyleLiteral): Cleanup {
+export function bindStyle(el: HTMLElement, style: Style): Cleanup {
   const cleanups: Cleanup[] = [];
   for (const key of Object.keys(style)) {
     const val = style[key];
     if (val === undefined) continue;
+    const targets = expandShortcut(key);
     if (isRef(val)) {
       const ref = val as ReadonlyRef<string | number>;
-      applyStyleProp(el, key, ref.value);
-      const unsub = ref.subscribe((next) => applyStyleProp(el, key, next));
+      for (const k of targets) applyStyleProp(el, k, ref.value);
+      const unsub = ref.subscribe((next) => {
+        for (const k of targets) applyStyleProp(el, k, next);
+      });
       cleanups.push(unsub);
     } else {
-      applyStyleProp(el, key, val);
+      for (const k of targets) applyStyleProp(el, k, val);
     }
   }
   if (cleanups.length === 0) return autoRegister(() => {});
@@ -105,12 +108,13 @@ export function bindStyle(el: HTMLElement, style: StyleLiteral): Cleanup {
 }
 
 function applyStyleProp(el: HTMLElement, key: string, value: string | number): void {
+  const resolved = resolveStyleValue(key, value);
   if (key.startsWith("--")) {
-    el.style.setProperty(key, String(value));
+    el.style.setProperty(key, resolved);
     return;
   }
   // @ts-expect-error — CSSStyleDeclaration indexed access is valid for camelCase keys.
-  el.style[key] = typeof value === "number" ? String(value) : value;
+  el.style[key] = resolved;
 }
 
 export function listen<K extends keyof GlobalEventHandlersEventMap>(

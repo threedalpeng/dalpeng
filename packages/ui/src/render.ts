@@ -1,13 +1,5 @@
 import { pushScope, registerCleanup } from "@dalpeng/core";
-import {
-  bindAttr,
-  bindClass,
-  bindStyle,
-  bindText,
-  listen,
-  type Cleanup,
-  type StyleLiteral,
-} from "./bindings";
+import { bindAttr, bindClass, bindStyle, bindText, listen, type Cleanup } from "./bindings";
 import {
   isComponent,
   isFragment,
@@ -20,6 +12,8 @@ import {
   type TextElement,
   type UIElement,
 } from "./element";
+import type { Style } from "./style";
+import { applyTheme, defaultTheme, type Theme } from "./theme";
 
 export interface RenderContext {
   readonly doc: Document;
@@ -144,7 +138,7 @@ function applyHostProps(
     bindClass(node, props.class as string);
   }
   if (props.style !== undefined) {
-    bindStyle(node, props.style as StyleLiteral);
+    bindStyle(node, props.style as Style);
   }
 
   if (typeof props.ref === "function") {
@@ -191,6 +185,11 @@ function teardown(cleanups: Set<Cleanup>): void {
   cleanups.clear();
 }
 
+export interface MountOptions {
+  /** Theme for the mounted subtree. Defaults to `defaultTheme`. CSS vars are applied to the root element. */
+  theme?: Theme;
+}
+
 export interface MountHandle {
   readonly element: Node;
   /** Attach-after hook — flushes ref callbacks. Caller runs after appending `element` to live DOM. */
@@ -200,8 +199,26 @@ export interface MountHandle {
   readonly result: RenderResult;
 }
 
-export function mount(el: UIElement, ctx: RenderContext): MountHandle {
-  const result = renderElement(el, ctx);
+export function mount(el: UIElement, ctx: RenderContext, opts: MountOptions = {}): MountHandle {
+  const theme = opts.theme ?? defaultTheme;
+  // UI scope carries the active theme so components can `useTheme()` in setup.
+  // renderElement pushes its own per-element cleanup scopes inside this one.
+  const uiCleanups = new Set<Cleanup>();
+  const popUI = pushScope({ kind: "ui", ui: { theme }, cleanups: uiCleanups });
+
+  let result: RenderResult;
+  try {
+    result = renderElement(el, ctx);
+  } finally {
+    popUI();
+  }
+
+  // Apply theme CSS vars on the root element so child bindStyle tokens
+  // (`$color.accent` → `var(--ui-color-accent)`) resolve via CSS cascade.
+  // Fragment / text roots skip — they have no style surface.
+  const themeUndo =
+    result.element instanceof HTMLElement ? applyTheme(result.element, theme) : () => {};
+
   let committed = false;
   let unmounted = false;
   return {
@@ -222,6 +239,15 @@ export function mount(el: UIElement, ctx: RenderContext): MountHandle {
       if (unmounted) return;
       unmounted = true;
       teardown(result.cleanups);
+      themeUndo();
+      for (const c of uiCleanups) {
+        try {
+          c();
+        } catch (err) {
+          console.error("[ui unmount]", err);
+        }
+      }
+      uiCleanups.clear();
     },
     result,
   };

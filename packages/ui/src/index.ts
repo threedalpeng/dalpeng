@@ -92,8 +92,19 @@ export {
   listen,
   type AttrValue,
   type Cleanup,
-  type StyleLiteral,
 } from "./bindings";
+
+export {
+  LENGTH_KEYS,
+  UNITLESS_KEYS,
+  expandShortcut,
+  resolveStyleValue,
+  type CSSVarName,
+  type Style,
+  type StyleValue,
+} from "./style";
+
+export { applyTheme, defaultTheme, defineTheme, useTheme, type Theme } from "./theme";
 
 export {
   mount,
@@ -101,4 +112,5 @@ export {
   type RenderContext as ElementRenderContext,
   type RenderResult as ElementRenderResult,
   type MountHandle,
+  type MountOptions,
 } from "./render";
