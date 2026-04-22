@@ -83,8 +83,7 @@ export function useTheme(): Theme {
       "useTheme() requires an active UI context. Call inside defineComponent/defineUI setup."
     );
   }
-  const payload = scope.ui as { theme?: Theme } | null;
-  return payload?.theme ?? defaultTheme;
+  return (scope.ui as { theme?: Theme })?.theme ?? defaultTheme;
 }
 
 function flattenToCssVars(theme: Theme): Array<[string, string]> {

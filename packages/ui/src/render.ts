@@ -1,10 +1,13 @@
 import { pushScope, registerCleanup } from "@dalpeng/core";
 import { bindAttr, bindClass, bindStyle, bindText, listen, type Cleanup } from "./bindings";
+import { pushUIScope, type UIContext } from "./context";
 import {
+  isAdopted,
   isComponent,
   isFragment,
   isHost,
   isText,
+  type AdoptedElement,
   type ComponentElement,
   type FragmentElement,
   type HostElement,
@@ -54,7 +57,15 @@ function buildElement(
   if (isComponent(el)) return buildComponent(el, ctx, cleanups, afterMount);
   if (isText(el)) return buildText(el, ctx);
   if (isFragment(el)) return buildFragment(el, ctx, cleanups, afterMount);
+  if (isAdopted(el)) return buildAdopted(el, cleanups);
   throw new Error("Unknown UIElement kind");
+}
+
+function buildAdopted(el: AdoptedElement, cleanups: Set<Cleanup>): Node {
+  if (el.cleanups) {
+    for (const c of el.cleanups) cleanups.add(c);
+  }
+  return el.element;
 }
 
 function buildHost(
@@ -201,10 +212,14 @@ export interface MountHandle {
 
 export function mount(el: UIElement, ctx: RenderContext, opts: MountOptions = {}): MountHandle {
   const theme = opts.theme ?? defaultTheme;
-  // UI scope carries the active theme so components can `useTheme()` in setup.
-  // renderElement pushes its own per-element cleanup scopes inside this one.
-  const uiCleanups = new Set<Cleanup>();
-  const popUI = pushScope({ kind: "ui", ui: { theme }, cleanups: uiCleanups });
+  const uiCtx: UIContext = {
+    layout: { direction: "column", gap: 4 },
+    theme,
+  };
+  // UI scope carries the UIContext so components can use `useTheme()`,
+  // `useLayout()`, `usePlacement()`, `withLayer()` during setup. renderElement
+  // pushes its own per-element cleanup scopes inside this one.
+  const { cleanups: uiCleanups, pop: popUI } = pushUIScope(uiCtx);
 
   let result: RenderResult;
   try {

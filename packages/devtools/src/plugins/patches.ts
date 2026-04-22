@@ -1,5 +1,5 @@
 import { watch, type Application } from "@dalpeng/core";
-import { defineUI, type UIChild } from "@dalpeng/ui";
+import { adopt, defineUI } from "@dalpeng/ui";
 import type { AnyPatch, DevToolsHost, FeaturePatch } from "../host";
 import type { DevToolsPlugin } from "../plugin";
 import { definePlugin } from "../plugin";
@@ -84,7 +84,7 @@ export function patchesPlugin(): DevToolsPlugin {
   root.appendChild(bar);
   root.appendChild(list);
 
-  const liveNode: UIChild = { type: "live", element: root, cleanups: new Set() };
+  const liveNode = adopt(root);
 
   let currentHost: DevToolsHost | null = null;
   let latest: readonly AnyPatch[] = [];

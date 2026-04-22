@@ -1,5 +1,5 @@
 import { watch } from "@dalpeng/core";
-import { defineUI, type UIChild } from "@dalpeng/ui";
+import { adopt, defineUI } from "@dalpeng/ui";
 import type { DevToolsPlugin } from "../plugin";
 import { definePlugin } from "../plugin";
 
@@ -115,7 +115,7 @@ export function performancePlugin(): DevToolsPlugin {
   root.appendChild(drawLine.element);
   root.appendChild(triLine.element);
 
-  const rootNode: UIChild = { type: "live", element: root, cleanups: new Set() };
+  const rootNode = adopt(root);
 
   return definePlugin({
     name: "@dalpeng/devtools/performance",

@@ -8,15 +8,18 @@ import {
   type UINode,
 } from "@dalpeng/core";
 import {
+  Button,
   Floating,
   For,
   Split,
   Tabs,
   Text,
-  defineUI,
-  renderUI,
+  adopt,
+  h,
+  mount,
+  type MountHandle,
   type TabSpec,
-  type UIChild,
+  type UIElement,
 } from "@dalpeng/ui";
 import {
   collectAllKeys,
@@ -89,7 +92,6 @@ export class DevToolsRootHost {
   #registry: PluginRegistry;
 
   #rootDiv: HTMLElement;
-  #uiCleanups: Set<() => void> = new Set();
   #uiElement: HTMLElement | null = null;
 
   #settingsPopoverOpen = ref(false);
@@ -406,50 +408,51 @@ export class DevToolsRootHost {
     return this.#registry.panels.value.find((p) => p.key === key) ?? null;
   }
 
+  #mountHandle: MountHandle | null = null;
+
   #mountHostUI(): void {
-    const HostFrame = this.#defineHostFrame();
-    const result = renderUI(HostFrame, {
-      doc: this.#ownerDoc,
-      features: this.#app.features as Record<string, any>,
-      watchFeature: this.#app.watchFeature,
-    });
-    result.element.style.flex = "1";
-    result.element.style.minHeight = "0";
-    result.element.style.display = "flex";
-    result.element.style.flexDirection = "column";
-    this.#rootDiv.appendChild(result.element);
-    this.#uiElement = result.element;
-    this.#uiCleanups = result.cleanups;
+    const frame = this.#buildHostFrame();
+    this.#mountHandle = mount(frame, { doc: this.#ownerDoc });
+    const el = this.#mountHandle.element as HTMLElement;
+    el.style.flex = "1";
+    el.style.minHeight = "0";
+    el.style.display = "flex";
+    el.style.flexDirection = "column";
+    this.#rootDiv.appendChild(el);
+    this.#mountHandle.commit();
+    this.#uiElement = el;
   }
 
   #unmountHostUI(): void {
-    if (this.#uiElement) {
-      this.#uiElement.remove();
+    if (this.#mountHandle) {
+      this.#mountHandle.unmount();
+      if (this.#uiElement) this.#uiElement.remove();
       this.#uiElement = null;
+      this.#mountHandle = null;
     }
-    this.#uiCleanups.forEach((fn) => fn());
-    this.#uiCleanups = new Set();
   }
 
-  #defineHostFrame(): UINode {
-    const emptyPanel = (): UINode => defineUI(() => [Text("(missing panel)")])();
+  #buildHostFrame(): UIElement {
+    const emptyPanel = (): UIElement => h("div", null, Text("(missing panel)"));
 
-    // Return UIChild (Split/Tabs) directly rather than wrapping in defineUI.
-    // A defineUI wrapper creates an intrinsic-height flex container that, when
-    // placed inside the outer HostFrame flex column, collapses to 0 height —
-    // which is what caused the whole workspace to disappear. Split/Tabs
-    // renderers set flex:1 on their own containers, so passing them as a
-    // UIChild lets layout flow correctly.
-    const renderTabsAsChild = (node: TabsNode): UIChild => {
+    // Split/Tabs set flex:1 on their container — returning them directly
+    // keeps the outer flex column layout healthy (an extra wrapping div
+    // would collapse to 0 height inside the host frame).
+    const renderTabsAsElement = (node: TabsNode): UIElement => {
       const active = this.#getActiveRef(node);
       const tabsRef: ReadonlyRef<TabSpec[]> = computed(() => {
         const out: TabSpec[] = [];
         for (const key of node.panelKeys) {
           const reg = this.#findPanel(key);
+          // panel.ui() returns UINode; setup runs via materialize elsewhere,
+          // so here we invoke the setup directly to get the UIElement body.
+          const body: UIElement = reg
+            ? (reg.panel.ui().setup(undefined) as UIElement)
+            : emptyPanel();
           out.push({
             id: key,
             title: reg ? reg.panel.title : (key.split(":").pop() ?? key),
-            body: reg ? reg.panel.ui() : emptyPanel(),
+            body,
           });
         }
         return out;
@@ -462,84 +465,67 @@ export class DevToolsRootHost {
       });
     };
 
-    const renderLayoutAsChild = (node: LayoutNode): UIChild => {
+    const renderLayoutAsElement = (node: LayoutNode): UIElement => {
       if (node.kind === "split") {
         const sizes = this.#getSizesRef(node);
-        // Split.slots expects UINode[]; renderSplit applies flex:1 to each
-        // slot container, so the inner UINode wrapper there is harmless.
-        const slots = node.children.map((c) => defineUI(() => [renderLayoutAsChild(c)])());
+        const slots = node.children.map(renderLayoutAsElement);
         return Split({ direction: node.direction, sizes, slots });
       }
-      return renderTabsAsChild(node);
+      return renderTabsAsElement(node);
     };
 
     const footerEl = this.#buildFooterElement();
 
-    const SettingsPopover = defineUI(() => {
+    const settingsPopoverBody = (): UIElement => {
       const themes = listThemes();
-      return [
+      return h(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 6 } },
         Text("preferences", { size: 11, color: "var(--dt-fg-muted)" }),
         For<string>({
           items: ref(themes) as ReadonlyRef<string[]>,
           render: (name) =>
-            defineUI(() => [
-              {
-                type: "button",
-                label: name,
-                onClick: () => {
-                  this.#settings.theme.value = name as never;
-                },
-              },
-            ])(),
+            Button(name, () => {
+              this.#settings.theme.value = name as never;
+            }),
         }),
         Text("font", { size: 11, color: "var(--dt-fg-muted)" }),
         For<string>({
           items: ref(["small", "medium", "large"]) as ReadonlyRef<string[]>,
           render: (name) =>
-            defineUI(() => [
-              {
-                type: "button",
-                label: name,
-                onClick: () => {
-                  this.#settings.fontSize.value = name as never;
-                },
-              },
-            ])(),
+            Button(name, () => {
+              this.#settings.fontSize.value = name as never;
+            }),
         }),
         Text("density", { size: 11, color: "var(--dt-fg-muted)" }),
         For<string>({
           items: ref(["compact", "comfortable"]) as ReadonlyRef<string[]>,
           render: (name) =>
-            defineUI(() => [
-              {
-                type: "button",
-                label: name,
-                onClick: () => {
-                  this.#settings.density.value = name as never;
-                },
-              },
-            ])(),
-        }),
-      ];
-    });
+            Button(name, () => {
+              this.#settings.density.value = name as never;
+            }),
+        })
+      );
+    };
 
-    return defineUI(() => {
-      const ws = this.#settings.workspace.value;
-      const workspaceNode = renderLayoutAsChild(ws.main);
-      const footerNode: UIChild = {
-        type: "live",
-        element: footerEl,
-      };
-      const popoverNode = Floating({
-        body: SettingsPopover(),
-        visible: this.#settingsPopoverOpen,
-        x: 12,
-        y: 60,
-        closeOnEsc: true,
-        closeOnOutside: true,
-      });
-      return [workspaceNode, footerNode, popoverNode];
-    })();
+    const ws = this.#settings.workspace.value;
+    const workspace = renderLayoutAsElement(ws.main);
+    const footer = adopt(footerEl);
+    const popover = Floating({
+      body: settingsPopoverBody(),
+      visible: this.#settingsPopoverOpen,
+      x: 12,
+      y: 60,
+      closeOnEsc: true,
+      closeOnOutside: true,
+    });
+    return h(
+      "div",
+      { style: { display: "flex", flexDirection: "column", flex: 1, minHeight: 0 } },
+      workspace,
+      footer,
+      popover
+    );
   }
 
   #buildFooterElement(): HTMLElement {
@@ -718,15 +704,15 @@ export class DevToolsRootHost {
       zIndex: "5",
     } satisfies Partial<CSSStyleDeclaration>);
     this.#rootDiv.appendChild(wrap);
-    const result = renderUI(descriptor, {
-      doc: this.#ownerDoc,
-      features: this.#app.features as Record<string, any>,
-      watchFeature: this.#app.watchFeature,
-    });
-    wrap.appendChild(result.element);
+    // Invoke the descriptor's setup directly (no UI scope chain needed —
+    // overlays are standalone floats that don't use layout/placement hooks).
+    const element = descriptor.setup(descriptor.props) as UIElement;
+    const handle = mount(element, { doc: this.#ownerDoc });
+    wrap.appendChild(handle.element);
+    handle.commit();
     return {
       detach: () => {
-        result.cleanups.forEach((fn) => fn());
+        handle.unmount();
         wrap.remove();
       },
     };

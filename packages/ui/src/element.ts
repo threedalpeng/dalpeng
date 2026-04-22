@@ -1,6 +1,12 @@
 import { isRef, type ReadonlyRef } from "@dalpeng/core";
+import type { Cleanup } from "./bindings";
 
-export type UIElement = HostElement | ComponentElement<unknown> | TextElement | FragmentElement;
+export type UIElement =
+  | HostElement
+  | ComponentElement<unknown>
+  | TextElement
+  | FragmentElement
+  | AdoptedElement;
 
 export interface HostElement {
   readonly kind: "host";
@@ -23,6 +29,17 @@ export interface TextElement {
 export interface FragmentElement {
   readonly kind: "fragment";
   readonly children: readonly UIElement[];
+}
+
+/**
+ * Escape hatch — wraps a pre-existing DOM node so it can live in a UIElement
+ * tree. The renderer appends the node as-is and registers the supplied
+ * cleanups. For imperative DOM that can't be expressed with atoms.
+ */
+export interface AdoptedElement {
+  readonly kind: "adopted";
+  readonly element: Node;
+  readonly cleanups?: ReadonlySet<Cleanup>;
 }
 
 export type Component<P = Record<string, never>> = (props: P) => UIElement;
@@ -56,6 +73,12 @@ const FRAGMENT_KIND = "fragment" as const;
 const COMPONENT_KIND = "component" as const;
 const HOST_KIND = "host" as const;
 const TEXT_KIND = "text" as const;
+const ADOPTED_KIND = "adopted" as const;
+
+/** Wrap an imperatively-built DOM node as a UIElement. Optional cleanups fire on unmount. */
+export function adopt(element: Node, cleanups?: ReadonlySet<Cleanup>): AdoptedElement {
+  return { kind: ADOPTED_KIND, element, cleanups };
+}
 
 export function createElement<P>(
   component: Component<P>,
@@ -151,4 +174,7 @@ export function isText(el: UIElement): el is TextElement {
 }
 export function isFragment(el: UIElement): el is FragmentElement {
   return el.kind === FRAGMENT_KIND;
+}
+export function isAdopted(el: UIElement): el is AdoptedElement {
+  return el.kind === ADOPTED_KIND;
 }

@@ -1,5 +1,6 @@
 import { APP_NODE_KIND, registerCleanup, type UINode } from "@dalpeng/core";
-import { usePlacement } from "../define";
+import { usePlacement } from "../context";
+import { adopt } from "../element";
 import type { DialogueController } from "./controller";
 import type { DialogueLine } from "./types";
 
@@ -142,7 +143,7 @@ export function Dialogue(controller: DialogueController): UINode {
         }
       }
 
-      return [{ type: "live", element: panel, cleanups }];
+      return adopt(panel, cleanups);
     },
   } as unknown as UINode;
 }

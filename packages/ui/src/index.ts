@@ -1,76 +1,16 @@
-export {
-  Bar,
-  Button,
-  Floating,
-  For,
-  Html,
-  List,
-  Menu,
-  Range,
-  Select,
-  Show,
-  Split,
-  Tabs,
-  Text,
-  Toggle,
-  Value,
-  defineUI,
-  feature,
-  useLayout,
-  usePlacement,
-  withLayer,
-} from "./define";
-
-export { createDialogueController } from "./dialogue/controller";
-export type { DialogueController } from "./dialogue/controller";
-export { Dialogue } from "./dialogue/Dialogue";
-export type { DialogueChoice, DialogueLine } from "./dialogue/types";
-
-export {
-  resolvePlacement,
-  type Anchor,
-  type Placement,
-  type ResolvedPlacement,
-  type Size,
-  type Vec2,
-  type ViewportCorner,
-} from "./placement";
-
-export { renderUI, type RenderContext, type RenderResult } from "./domRenderer";
-
-export type {
-  BarOpts,
-  BindingSource,
-  FloatingOpts,
-  ForOpts,
-  MenuItem,
-  RangeOpts,
-  SelectOption,
-  ShowOpts,
-  SplitOpts,
-  TabSpec,
-  TabsOpts,
-  TextOpts,
-  UIChild,
-} from "./types";
-
-export { getThisUI, requireUI, type UIContext } from "./context";
-
-export { domUIRenderer } from "./uiRenderer";
-
-// ── PR1 — Foundation runtime (coexists with legacy above) ───────────
-// New primitives land here. Legacy `UIChild` path above stays untouched
-// until PR3 atom migration — see docs/plans/2026-04-22-ui-foundation.md.
-
+// ── Runtime primitives ─────────────────────────────────────────────
 export {
   Fragment,
+  adopt,
   createElement,
   h,
+  isAdopted,
   isComponent,
   isFragment,
   isHost,
   isText,
   normalizeChildren,
+  type AdoptedElement,
   type Child,
   type Component,
   type ComponentElement,
@@ -89,6 +29,7 @@ export {
   bindClass,
   bindStyle,
   bindText,
+  bindValue,
   listen,
   type AttrValue,
   type Cleanup,
@@ -109,8 +50,58 @@ export { applyTheme, defaultTheme, defineTheme, useTheme, type Theme } from "./t
 export {
   mount,
   renderElement,
-  type RenderContext as ElementRenderContext,
-  type RenderResult as ElementRenderResult,
   type MountHandle,
   type MountOptions,
+  type RenderContext,
+  type RenderResult,
 } from "./render";
+
+export { defineUI } from "./defineUI";
+
+// ── UI scope + hooks ───────────────────────────────────────────────
+export {
+  getThisUI,
+  pushUIScope,
+  requireUI,
+  useLayout,
+  usePlacement,
+  withLayer,
+  type UIContext,
+} from "./context";
+
+// ── Scene UI renderer plugin ───────────────────────────────────────
+export { domUIRenderer } from "./uiRenderer";
+
+// ── Atoms ──────────────────────────────────────────────────────────
+export { Button } from "./atoms/Button";
+export { Floating, type FloatingOpts } from "./atoms/Floating";
+export { For, type ForOpts } from "./atoms/For";
+export { Html } from "./atoms/Html";
+export { Range, type RangeOpts } from "./atoms/Range";
+export { Select, type SelectOption } from "./atoms/Select";
+export { Show, type ShowOpts } from "./atoms/Show";
+export { Split, type SplitOpts } from "./atoms/Split";
+export { Tabs, type TabSpec, type TabsOpts } from "./atoms/Tabs";
+export { Text, type TextOpts } from "./atoms/Text";
+export { Toggle } from "./atoms/Toggle";
+
+// ── Composites ─────────────────────────────────────────────────────
+export { Bar, type BarOpts } from "./composites/Bar";
+export { Menu, type MenuItem, type MenuOpts } from "./composites/Menu";
+export { Value } from "./composites/Value";
+
+// ── Placement ──────────────────────────────────────────────────────
+export {
+  resolvePlacement,
+  type Anchor,
+  type Placement,
+  type ResolvedPlacement,
+  type Size,
+  type Vec2,
+  type ViewportCorner,
+} from "./placement";
+
+// ── Dialogue ───────────────────────────────────────────────────────
+export { createDialogueController, type DialogueController } from "./dialogue/controller";
+export { Dialogue } from "./dialogue/Dialogue";
+export type { DialogueChoice, DialogueLine } from "./dialogue/types";

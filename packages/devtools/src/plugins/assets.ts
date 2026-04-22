@@ -1,5 +1,5 @@
 import { ref, watch } from "@dalpeng/core";
-import { defineUI, type UIChild } from "@dalpeng/ui";
+import { adopt, defineUI } from "@dalpeng/ui";
 import type { DevToolsHost, TextureInfo } from "../host";
 import type { DevToolsPlugin } from "../plugin";
 import { definePlugin } from "../plugin";
@@ -172,7 +172,7 @@ export function assetsPlugin(): DevToolsPlugin {
     refresh: () => {},
   };
 
-  const rootNode: UIChild = { type: "live", element: panel.root, cleanups: new Set() };
+  const rootNode = adopt(panel.root);
 
   return definePlugin({
     name: "@dalpeng/devtools/assets",
@@ -180,8 +180,7 @@ export function assetsPlugin(): DevToolsPlugin {
 
     setup(host) {
       const built = buildTexturesPanel(host);
-      panel.root.replaceWith(built.root);
-      (rootNode as { element: HTMLElement }).element = built.root;
+      panel.root.appendChild(built.root);
       panel.refresh = built.refresh;
 
       built.refresh();

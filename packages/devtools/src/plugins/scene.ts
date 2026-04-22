@@ -1,5 +1,5 @@
 import { ref, watch, type Component, type GameEntity } from "@dalpeng/core";
-import { defineUI, type UIChild } from "@dalpeng/ui";
+import { adopt, defineUI } from "@dalpeng/ui";
 import { componentDisplayName, getComponentSchema, type FieldSchema } from "../editSchema";
 import type { DevToolsHost } from "../host";
 import type { DevToolsPlugin } from "../plugin";
@@ -685,16 +685,13 @@ function saveFolded(set: Set<string>): void {
 export function scenePlugin(): DevToolsPlugin {
   const selected = ref<GameEntity | null>(null);
 
-  const treeNode: UIChild = {
-    type: "live",
-    element: document.createElement("div"),
-    cleanups: new Set(),
-  };
-  const inspectorNode: UIChild = {
-    type: "live",
-    element: document.createElement("div"),
-    cleanups: new Set(),
-  };
+  // Stable container nodes — populated in setup() below when host connects.
+  const treeHost = document.createElement("div");
+  treeHost.style.cssText = "display:flex;flex-direction:column;height:100%;min-height:0";
+  const inspectorHost = document.createElement("div");
+  inspectorHost.style.cssText = "display:flex;flex-direction:column;height:100%;min-height:0";
+  const treeNode = adopt(treeHost);
+  const inspectorNode = adopt(inspectorHost);
 
   return definePlugin({
     name: "@dalpeng/devtools/scene",
@@ -712,10 +709,8 @@ export function scenePlugin(): DevToolsPlugin {
       const inspector = buildInspectorPanel(host, selected, foldedComponents, () =>
         saveFolded(foldedComponents)
       );
-      treeNode.element.replaceWith(tree.root);
-      (treeNode as { element: HTMLElement }).element = tree.root;
-      inspectorNode.element.replaceWith(inspector.root);
-      (inspectorNode as { element: HTMLElement }).element = inspector.root;
+      treeHost.appendChild(tree.root);
+      inspectorHost.appendChild(inspector.root);
 
       const unwatchEntities = watch(
         host.entities,

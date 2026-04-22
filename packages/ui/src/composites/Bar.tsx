@@ -52,6 +52,7 @@ export function Bar<T>(
         return () => unsub();
       }
       apply(0);
+      return undefined;
     },
   });
 }

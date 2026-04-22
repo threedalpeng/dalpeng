@@ -12,7 +12,9 @@ export interface GameDescriptor<P = unknown> extends Descriptor<"game"> {
 }
 
 export interface UIDescriptor<P = unknown> extends Descriptor<"ui"> {
-  readonly setup: (props: P) => readonly unknown[];
+  // Setup returns an opaque payload — the registered UIRenderer decides its
+  // shape. `@dalpeng/ui`'s domUIRenderer expects a single UIElement.
+  readonly setup: (props: P) => unknown;
   readonly props: P;
 }
 
@@ -43,10 +45,7 @@ export function createEntityNode<P>(
   };
 }
 
-export function createUINode<P>(
-  setup: (props: P) => readonly unknown[],
-  props: P
-): UIDescriptor<P> {
+export function createUINode<P>(setup: (props: P) => unknown, props: P): UIDescriptor<P> {
   return {
     [DESCRIPTOR_KIND]: "ui",
     setup,

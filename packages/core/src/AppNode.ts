@@ -14,6 +14,8 @@ export interface EntityNode extends AppNode {
 
 export interface UINode extends AppNode {
   readonly [DESCRIPTOR_KIND]: "ui";
-  readonly setup: (props: unknown) => readonly unknown[];
+  // Setup returns whatever the UIRenderer implementation expects — an opaque
+  // payload. `@dalpeng/ui`'s domUIRenderer expects a single `UIElement`.
+  readonly setup: (props: unknown) => unknown;
   readonly props: unknown;
 }

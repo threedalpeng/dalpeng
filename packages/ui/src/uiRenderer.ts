@@ -7,8 +7,12 @@ import {
   type UINode,
   type UIRenderer,
 } from "@dalpeng/core";
-import { renderUI } from "./domRenderer";
+import type { Cleanup } from "./bindings";
+import { pushUIScope, type UIContext } from "./context";
+import type { UIElement } from "./element";
 import { resolvePlacement, type Placement } from "./placement";
+import { renderElement } from "./render";
+import { applyTheme, defaultTheme } from "./theme";
 
 const DEFAULT_PLACEMENT: Placement = {
   anchor: { kind: "viewport", corner: "tl" },
@@ -21,31 +25,39 @@ export const domUIRenderer: UIRenderer = {
     context: ProjectionContext,
     owner: EntityInstance | Scene
   ): UIInstance {
-    const result = renderUI(descriptor, {
-      doc: context.doc,
-      features: context.features,
-      watchFeature: context.watchFeature,
-    });
-    const { cleanups } = result;
-    const placement = result.placement ?? DEFAULT_PLACEMENT;
-    const layerName = result.layer;
+    const uiCtx: UIContext = {
+      layout: { direction: "column", gap: 4 },
+      theme: defaultTheme,
+    };
+    const { cleanups: uiCleanups, pop } = pushUIScope(uiCtx);
 
-    const layers = context.layers;
-    const resolvedLayerName = layerName ?? defaultDomLayerName(layers);
-    const layer = layers.get(resolvedLayerName);
+    let element: UIElement;
+    let renderCleanups: Set<Cleanup>;
+    let rootNode: Node;
+    let afterMount: Array<() => void>;
+    try {
+      element = descriptor.setup(descriptor.props) as UIElement;
+      const r = renderElement(element, { doc: context.doc });
+      rootNode = r.element;
+      renderCleanups = r.cleanups;
+      afterMount = r.afterMount;
+    } finally {
+      pop();
+    }
+
+    const placement = uiCtx.placement ?? DEFAULT_PLACEMENT;
+    const layerName = uiCtx.layer ?? defaultDomLayerName(context.layers);
+    const layer = context.layers.get(layerName);
     if (!layer) {
-      const known = layers.ordered.map((l) => l.name).join(", ");
       throw new Error(
-        `domUIRenderer: no layer "${resolvedLayerName}" in this app's ` +
-          `layer registry. Did the UI call withLayer("${resolvedLayerName}") ` +
-          `with a name that wasn't declared in withLayers([...])? ` +
-          `Known layers: ${known}.`
+        `domUIRenderer: layer "${layerName}" not in this app's registry. ` +
+          `Call withLayer(...) with a name declared in withLayers([...]). ` +
+          `Known: ${context.layers.ordered.map((l) => l.name).join(", ")}.`
       );
     }
     if (layer.backend !== "dom") {
       throw new Error(
-        `domUIRenderer: layer "${resolvedLayerName}" is a ${layer.backend} ` +
-          `layer; UI overlays can only mount onto dom layers.`
+        `domUIRenderer: layer "${layerName}" is ${layer.backend} — UI overlays only mount onto dom layers.`
       );
     }
     const zIndex = 1000 + layer.index;
@@ -58,7 +70,7 @@ export const domUIRenderer: UIRenderer = {
     overlay.style.pointerEvents = "none";
     overlay.style.overflow = "hidden";
     overlay.style.zIndex = String(zIndex);
-    overlay.dataset.dalpengLayer = resolvedLayerName;
+    overlay.dataset.dalpengLayer = layerName;
     overlay.style.fontFamily = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
     overlay.style.color = "#fff";
     overlay.style.textShadow = "0 1px 3px rgba(0,0,0,0.7)";
@@ -67,20 +79,21 @@ export const domUIRenderer: UIRenderer = {
     slot.style.pointerEvents = "auto";
     slot.style.userSelect = "none";
 
-    const applyPlacement = () => {
+    const applyPlacement = (): void => {
       const rect = canvas.getBoundingClientRect();
-      const { style } = resolvePlacement(placement, {
-        width: rect.width,
-        height: rect.height,
-      });
+      const { style } = resolvePlacement(placement, { width: rect.width, height: rect.height });
       Object.assign(slot.style, style);
     };
     applyPlacement();
 
-    slot.appendChild(result.element);
+    slot.appendChild(rootNode);
     overlay.appendChild(slot);
 
-    const syncPosition = () => {
+    // Theme CSS vars on the user's root so `$color.*` tokens cascade.
+    const themeUndo =
+      rootNode instanceof HTMLElement && uiCtx.theme ? applyTheme(rootNode, uiCtx.theme) : () => {};
+
+    const syncPosition = (): void => {
       const rect = canvas.getBoundingClientRect();
       overlay.style.left = `${rect.left + window.scrollX}px`;
       overlay.style.top = `${rect.top + window.scrollY}px`;
@@ -96,13 +109,22 @@ export const domUIRenderer: UIRenderer = {
 
     doc.body.appendChild(overlay);
 
-    // detach() is idempotent — safe to call multiple times.
+    // Ref callbacks expect isConnected — DOM is attached now, flush.
+    for (const cb of afterMount) {
+      try {
+        cb();
+      } catch (err) {
+        console.error("[domUIRenderer afterMount]", err);
+      }
+    }
+    afterMount.length = 0;
+
     let detached = false;
     const instance: UIInstance = {
       [INSTANCE_KIND]: "ui",
       descriptor,
       owner,
-      rendererState: { overlay, slot, cleanups, syncPosition },
+      rendererState: { overlay, slot },
       detach() {
         if (detached) return;
         detached = true;
@@ -110,8 +132,24 @@ export const domUIRenderer: UIRenderer = {
         window.removeEventListener("resize", syncPosition);
         window.removeEventListener("scroll", syncPosition);
         overlay.remove();
-        cleanups.forEach((fn) => fn());
-        cleanups.clear();
+        themeUndo();
+        const arr = Array.from(renderCleanups);
+        for (let i = arr.length - 1; i >= 0; i--) {
+          try {
+            arr[i]();
+          } catch (err) {
+            console.error("[domUIRenderer detach]", err);
+          }
+        }
+        renderCleanups.clear();
+        for (const c of uiCleanups) {
+          try {
+            c();
+          } catch (err) {
+            console.error("[domUIRenderer detach]", err);
+          }
+        }
+        uiCleanups.clear();
       },
     };
     return instance;
@@ -123,7 +161,6 @@ function defaultDomLayerName(layers: ProjectionContext["layers"]): string {
     if (layer.backend === "dom") return layer.name;
   }
   throw new Error(
-    "domUIRenderer: no dom layer in the app's layer registry. " +
-      "Declare at least one dom layer via withLayers([...])."
+    "domUIRenderer: no dom layer in the app's layer registry. Declare at least one dom layer via withLayers([...])."
   );
 }

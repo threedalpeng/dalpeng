@@ -1,5 +1,5 @@
 import { watch, type LogEntry, type LogLevel } from "@dalpeng/core";
-import { defineUI, type UIChild } from "@dalpeng/ui";
+import { adopt, defineUI } from "@dalpeng/ui";
 import type { DevToolsPlugin } from "../plugin";
 import { definePlugin } from "../plugin";
 
@@ -72,7 +72,7 @@ export function consolePlugin(): DevToolsPlugin {
   root.appendChild(bar);
   root.appendChild(list);
 
-  const liveNode: UIChild = { type: "live", element: root, cleanups: new Set() };
+  const liveNode = adopt(root);
 
   let minLevel: LogLevel = "info";
   let query = "";
