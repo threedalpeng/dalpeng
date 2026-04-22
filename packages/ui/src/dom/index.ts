@@ -56,6 +56,7 @@ export {
   type ToolbarDensity,
   type ToolbarProps,
 } from "./composites/Toolbar";
+export { Tree, type TreeNode, type TreeProps } from "./composites/Tree";
 export { Value } from "./composites/Value";
 
 export { createDialogueController, type DialogueController } from "./dialogue/controller";
