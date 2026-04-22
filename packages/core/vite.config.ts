@@ -11,19 +11,16 @@ export default defineConfig({
     target: "esnext",
     lib: {
       entry: path.resolve(__dirname, "src/index.ts"),
-      name: "DalpengCore",
-      formats: ["es", "umd"],
-      fileName: (format) => (format === "es" ? "core.js" : "core.umd.cjs"),
+      formats: ["es"],
+      fileName: () => "core.js",
     },
     rollupOptions: {
-      external: ["@dalpeng/math"],
+      external: (id) => /^@dalpeng\/math(\/|$)/.test(id),
       output: {
         exports: "named",
-        globals: {
-          "@dalpeng/math": "DalpengMath",
-        },
       },
     },
+    minify: false,
   },
   plugins: [
     glslInclude(),

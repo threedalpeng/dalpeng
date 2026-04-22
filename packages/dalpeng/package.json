@@ -3,14 +3,12 @@
   "type": "module",
   "version": "0.1.1",
   "description": "A game engine wrapper for user",
-  "main": "./dist/dalpeng.umd.cjs",
   "module": "./dist/dalpeng.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/dalpeng.js",
-      "require": "./dist/dalpeng.umd.cjs"
+      "import": "./dist/dalpeng.js"
     }
   },
   "files": [

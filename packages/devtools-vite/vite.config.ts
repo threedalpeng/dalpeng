@@ -10,14 +10,11 @@ export default defineConfig({
         index: path.resolve(__dirname, "src/index.ts"),
         runtime: path.resolve(__dirname, "src/runtime.ts"),
       },
-      formats: ["es", "cjs"],
-      fileName: (format, name) =>
-        format === "es"
-          ? `${name === "index" ? "dalpeng-devtools-vite" : name}.js`
-          : `${name === "index" ? "dalpeng-devtools-vite" : name}.umd.cjs`,
+      formats: ["es"],
+      fileName: (_format, name) => `${name}.js`,
     },
     rollupOptions: {
-      external: ["vite", "@dalpeng/devtools"],
+      external: (id) => id === "vite" || /^@dalpeng\/devtools(\/|$)/.test(id),
       output: {
         exports: "named",
       },

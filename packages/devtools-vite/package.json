@@ -3,19 +3,16 @@
   "type": "module",
   "version": "0.1.0",
   "description": "Vite plugin to auto-inject @dalpeng/devtools in dev mode",
-  "main": "./dist/dalpeng-devtools-vite.umd.cjs",
-  "module": "./dist/dalpeng-devtools-vite.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/dalpeng-devtools-vite.js",
-      "require": "./dist/dalpeng-devtools-vite.umd.cjs"
+      "import": "./dist/index.js"
     },
     "./runtime": {
       "types": "./dist/runtime.d.ts",
-      "import": "./dist/runtime.js",
-      "require": "./dist/runtime.umd.cjs"
+      "import": "./dist/runtime.js"
     }
   },
   "files": [

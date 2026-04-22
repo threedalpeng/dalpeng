@@ -7,15 +7,15 @@ export default defineConfig({
     target: "esnext",
     lib: {
       entry: path.resolve(__dirname, "src/index.ts"),
-      name: "DalpengMath",
-      formats: ["es", "umd"],
-      fileName: (format) => (format === "es" ? "math.js" : "math.umd.cjs"),
+      formats: ["es"],
+      fileName: () => "math.js",
     },
     rollupOptions: {
       output: {
         exports: "named",
       },
     },
+    minify: false,
   },
   plugins: [
     dts({

@@ -7,18 +7,14 @@ export default defineConfig({
     target: "esnext",
     lib: {
       entry: path.resolve(__dirname, "src/index.ts"),
-      name: "Dalpeng",
-      formats: ["es", "umd"],
-      fileName: (format) => (format === "es" ? "dalpeng.js" : "dalpeng.umd.cjs"),
+      formats: ["es"],
+      fileName: () => "dalpeng.js",
     },
     rollupOptions: {
-      external: ["@dalpeng/core", "@dalpeng/math"],
+      // Match subpaths too (`@dalpeng/ui/jsx-runtime` etc.).
+      external: (id) => /^@dalpeng\/(core|math|ui)(\/|$)/.test(id),
       output: {
         exports: "named",
-        globals: {
-          "@dalpeng/core": "DalpengCore",
-          "@dalpeng/math": "DalpengMath",
-        },
       },
     },
     minify: false,
