@@ -31,7 +31,42 @@ export {
   type StyleValue,
 } from "./style";
 
-export { defaultTheme, defineTheme, useTheme, type Theme } from "./theme";
+export {
+  auditTheme,
+  defaultTheme,
+  defineTheme,
+  isThemeToken,
+  pushTheme,
+  resolveToken,
+  toColorRole,
+  useTheme,
+  type ColorMode,
+  type ColorRole,
+  type ColorScale,
+  type ColorSeeds,
+  type ColorSteps,
+  type DefineThemeInput,
+  type DurationKey,
+  type EasingKey,
+  type FontFamilyKey,
+  type FontSizeKey,
+  type FontTokens,
+  type FontWeightKey,
+  type LetterSpacingKey,
+  type LineHeightKey,
+  type MotionTokens,
+  type RadiusKey,
+  type ShadowKey,
+  type SpacingKey,
+  type StylePreset,
+  type Surface,
+  type TextPalette,
+  type Theme,
+  type ThemeColor,
+  type ThemeColorExtensions,
+  type ToColorRoleOptions,
+  type ZIndexKey,
+} from "./theme/index";
 
 export { defineUI } from "./defineUI";
 

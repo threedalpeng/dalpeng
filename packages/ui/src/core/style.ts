@@ -1,4 +1,5 @@
 import type { ReadonlyRef } from "@dalpeng/core";
+import { resolveToken } from "./theme/tokens";
 
 /**
  * Numeric value on these keys is auto-suffixed with `px`. Anything unlisted:
@@ -86,17 +87,10 @@ export function resolveStyleValue(key: string, value: string | number): string {
     return typeof value === "number" ? String(value) : value;
   }
   if (typeof value === "string") {
-    if (value.startsWith("$")) return tokenToCssVar(value);
+    if (value.startsWith("$")) return resolveToken(value);
     return value;
   }
   if (UNITLESS_KEYS.has(key)) return String(value);
   if (LENGTH_KEYS.has(key)) return `${value}px`;
   return String(value);
-}
-
-function tokenToCssVar(token: string): string {
-  // token = "$color.accent" / "$font.size.sm" / "$font.family.mono"
-  const path = token.slice(1);
-  const flat = path.replace(/\./g, "-").replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
-  return `var(--ui-${flat})`;
 }
