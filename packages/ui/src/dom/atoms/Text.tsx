@@ -1,5 +1,5 @@
 import { computed, isRef, type ReadonlyRef } from "@dalpeng/core";
-import { h, type UIElement } from "../../core/element";
+import type { UIElement } from "../../core/element";
 import type { Style } from "../../core/style";
 
 export interface TextOpts {
@@ -26,14 +26,18 @@ export function Text(
     const source = contentOrSource as ReadonlyRef<unknown>;
     const fmt = formatterOrOpts as (v: unknown) => string;
     const projected = computed(() => fmt(source.value));
-    return h("span", toProps(opts), projected);
+    const props = toProps(opts);
+    return props ? <span style={props.style}>{projected}</span> : <span>{projected}</span>;
   }
   // (content, opts?) — content is string / number / Ref<string|number>.
   const textOpts = typeof formatterOrOpts === "object" ? formatterOrOpts : undefined;
-  return h(
-    "span",
-    toProps(textOpts),
-    contentOrSource as string | number | ReadonlyRef<string | number>
+  const props = toProps(textOpts);
+  return props ? (
+    <span style={props.style}>
+      {contentOrSource as string | number | ReadonlyRef<string | number>}
+    </span>
+  ) : (
+    <span>{contentOrSource as string | number | ReadonlyRef<string | number>}</span>
   );
 }
 

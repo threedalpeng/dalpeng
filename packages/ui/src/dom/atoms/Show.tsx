@@ -1,5 +1,5 @@
 import type { ReadonlyRef } from "@dalpeng/core";
-import { h, type UIElement } from "../../core/element";
+import type { UIElement } from "../../core/element";
 import type { Cleanup } from "../bindings";
 import { renderElement } from "../render";
 
@@ -15,10 +15,7 @@ export interface ShowOpts {
  * subscriptions and DOM state survive the round trip.
  */
 export function Show(opts: ShowOpts): UIElement {
-  return h("div", {
-    style: { display: "contents" },
-    ref: (el) => initShow(el as HTMLElement, opts),
-  });
+  return <div style={{ display: "contents" }} ref={(el) => initShow(el as HTMLElement, opts)} />;
 }
 
 interface Slot {

@@ -3,6 +3,11 @@ import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@dalpeng/ui/jsx-runtime": path.resolve(__dirname, "src/core/jsx-runtime.ts"),
+    },
+  },
   build: {
     target: "esnext",
     lib: {

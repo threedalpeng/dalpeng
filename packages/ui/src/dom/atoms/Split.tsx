@@ -1,5 +1,5 @@
 import type { Ref } from "@dalpeng/core";
-import { h, type UIElement } from "../../core/element";
+import type { UIElement } from "../../core/element";
 import type { Cleanup } from "../bindings";
 import { renderElement } from "../render";
 
@@ -15,19 +15,21 @@ export interface SplitOpts {
  * handles between slots update `sizes` in place.
  */
 export function Split(opts: SplitOpts): UIElement {
-  return h("div", {
-    style: {
-      display: "flex",
-      flexDirection: opts.direction === "row" ? "row" : "column",
-      flex: 1,
-      minWidth: 0,
-      minHeight: 0,
-      overflow: "hidden",
-      width: "100%",
-      height: "100%",
-    },
-    ref: (el) => initSplit(el as HTMLElement, opts),
-  });
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: opts.direction === "row" ? "row" : "column",
+        flex: 1,
+        minWidth: 0,
+        minHeight: 0,
+        overflow: "hidden",
+        width: "100%",
+        height: "100%",
+      }}
+      ref={(el) => initSplit(el as HTMLElement, opts)}
+    />
+  );
 }
 
 function initSplit(container: HTMLElement, opts: SplitOpts): Cleanup {

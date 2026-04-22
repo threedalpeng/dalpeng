@@ -1,5 +1,5 @@
 import { ref, watch, type ReadonlyRef } from "@dalpeng/core";
-import { defineComponent, h, type Child, type UIElement } from "../../core/element";
+import { defineComponent, type Child, type UIElement } from "../../core/element";
 
 export interface TreeNode {
   id: string;
@@ -83,55 +83,57 @@ export const Tree = defineComponent<TreeProps>((props): UIElement => {
     }
   };
 
-  return h("div", {
-    role: "tree",
-    tabIndex: 0,
-    ref: (el) => {
-      const root = el as HTMLElement;
-      let disposeRows: () => void = () => {};
-      const rebuild = (): void => {
-        disposeRows();
-        const nodes = readNodes(props.nodes);
-        const flat = flatten(nodes, expanded.value);
-        disposeRows = renderRows(root, flat, {
-          selected,
-          focused,
-          density: props.density ?? "compact",
-          onRowClick: (id) => {
-            focused.value = id;
-            select(id);
-          },
-          onToggleClick: (id) => toggle(id),
-        });
-      };
-      rebuild();
+  return (
+    <div
+      role="tree"
+      tabIndex={0}
+      ref={(el) => {
+        const root = el as HTMLElement;
+        let disposeRows: () => void = () => {};
+        const rebuild = (): void => {
+          disposeRows();
+          const nodes = readNodes(props.nodes);
+          const flat = flatten(nodes, expanded.value);
+          disposeRows = renderRows(root, flat, {
+            selected,
+            focused,
+            density: props.density ?? "compact",
+            onRowClick: (id) => {
+              focused.value = id;
+              select(id);
+            },
+            onToggleClick: (id) => toggle(id),
+          });
+        };
+        rebuild();
 
-      const unwatchNodes = Array.isArray(props.nodes)
-        ? () => {}
-        : watch(props.nodes, rebuild, { immediate: false });
-      const unwatchExp = watch(expanded, rebuild, { immediate: false });
+        const unwatchNodes = Array.isArray(props.nodes)
+          ? () => {}
+          : watch(props.nodes, rebuild, { immediate: false });
+        const unwatchExp = watch(expanded, rebuild, { immediate: false });
 
-      const keyHandler = (e: KeyboardEvent): void => {
-        const flat = flatten(readNodes(props.nodes), expanded.value);
-        onKey(e, flat);
-      };
-      root.addEventListener("keydown", keyHandler);
+        const keyHandler = (e: KeyboardEvent): void => {
+          const flat = flatten(readNodes(props.nodes), expanded.value);
+          onKey(e, flat);
+        };
+        root.addEventListener("keydown", keyHandler);
 
-      return () => {
-        root.removeEventListener("keydown", keyHandler);
-        unwatchNodes();
-        unwatchExp();
-        disposeRows();
-      };
-    },
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      outline: "none",
-      overflow: "auto",
-      paddingY: "$spacing.xs",
-    },
-  });
+        return () => {
+          root.removeEventListener("keydown", keyHandler);
+          unwatchNodes();
+          unwatchExp();
+          disposeRows();
+        };
+      }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        outline: "none",
+        overflow: "auto",
+        paddingY: "$spacing.xs",
+      }}
+    />
+  );
 });
 
 // ─── internals ─────────────────────────────────────────────────────────────

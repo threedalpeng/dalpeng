@@ -1,5 +1,5 @@
 import { ref, type Ref } from "@dalpeng/core";
-import { h, type UIElement } from "../../core/element";
+import type { UIElement } from "../../core/element";
 import type { Cleanup } from "../bindings";
 
 export interface MenuItem {
@@ -29,16 +29,18 @@ export function Menu(
     ? { items: optsOrItems, onSelect: onSelect! }
     : optsOrItems;
 
-  return h("ul", {
-    tabindex: 0,
-    style: {
-      listStyle: "none",
-      margin: 0,
-      padding: 0,
-      outline: "none",
-    },
-    ref: (el) => initMenu(el as HTMLUListElement, resolved),
-  });
+  return (
+    <ul
+      tabindex={0}
+      style={{
+        listStyle: "none",
+        margin: 0,
+        padding: 0,
+        outline: "none",
+      }}
+      ref={(el) => initMenu(el as HTMLUListElement, resolved)}
+    />
+  );
 }
 
 function initMenu(ul: HTMLUListElement, opts: MenuOpts): Cleanup {

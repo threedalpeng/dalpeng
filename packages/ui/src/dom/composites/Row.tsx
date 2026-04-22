@@ -1,5 +1,5 @@
 import type { ReadonlyRef } from "@dalpeng/core";
-import { defineComponent, h, type Child, type UIElement } from "../../core/element";
+import { defineComponent, type Child, type UIElement } from "../../core/element";
 
 export interface RowProps {
   /** Left slot — icon, checkbox, avatar. */
@@ -25,53 +25,48 @@ export const Row = defineComponent<RowProps>((props): UIElement => {
   const paddingY = density === "compact" ? "$spacing.xs" : "$spacing.sm";
   const paddingX = "$spacing.sm";
 
-  const content = h(
-    "div",
-    {
-      style: {
+  const content = (
+    <div
+      style={{
         display: "flex",
         flexDirection: "column",
         minWidth: 0,
         flex: 1,
-      },
-    },
-    h(
-      "div",
-      {
-        style: {
+      }}
+    >
+      <div
+        style={{
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
           fontSize: "$font.size.sm",
           color: "$color.text.primary",
-        },
-      },
-      props.children
-    ),
-    props.subtitle
-      ? h(
-          "div",
-          {
-            style: {
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              fontSize: "$font.size.xs",
-              color: "$color.text.secondary",
-            },
-          },
-          props.subtitle
-        )
-      : null
+        }}
+      >
+        {props.children}
+      </div>
+      {props.subtitle ? (
+        <div
+          style={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            fontSize: "$font.size.xs",
+            color: "$color.text.secondary",
+          }}
+        >
+          {props.subtitle}
+        </div>
+      ) : null}
+    </div>
   );
 
-  return h(
-    "div",
-    {
-      onClick: props.onClick,
-      role: props.onClick ? "button" : undefined,
-      tabIndex: props.onClick ? 0 : undefined,
-      style: {
+  return (
+    <div
+      onClick={props.onClick}
+      role={props.onClick ? "button" : undefined}
+      tabIndex={props.onClick ? 0 : undefined}
+      style={{
         display: "flex",
         alignItems: "center",
         gap: "$spacing.sm",
@@ -82,10 +77,13 @@ export const Row = defineComponent<RowProps>((props): UIElement => {
         borderRadius: "$radius.sm",
         cursor: props.onClick ? "pointer" : "default",
         minHeight: density === "compact" ? 24 : 32,
-      },
-    },
-    props.leading ? h("div", { style: { display: "flex", flexShrink: 0 } }, props.leading) : null,
-    content,
-    props.trailing ? h("div", { style: { display: "flex", flexShrink: 0 } }, props.trailing) : null
+      }}
+    >
+      {props.leading ? <div style={{ display: "flex", flexShrink: 0 }}>{props.leading}</div> : null}
+      {content}
+      {props.trailing ? (
+        <div style={{ display: "flex", flexShrink: 0 }}>{props.trailing}</div>
+      ) : null}
+    </div>
   );
 });

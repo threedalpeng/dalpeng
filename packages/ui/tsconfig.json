@@ -9,10 +9,7 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "jsx": "react-jsx",
-    "jsxImportSource": ".",
-    "paths": {
-      "./jsx-runtime": ["./src/core/jsx-runtime.ts"]
-    }
+    "jsxImportSource": "@dalpeng/ui"
   },
   "include": ["src"]
 }

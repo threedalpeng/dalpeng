@@ -1,5 +1,5 @@
 import type { ReadonlyRef } from "@dalpeng/core";
-import { h, type UIElement } from "../../core/element";
+import type { UIElement } from "../../core/element";
 import type { Cleanup } from "../bindings";
 import { renderElement } from "../render";
 
@@ -21,10 +21,12 @@ export interface ForOpts<T> {
  * dupe-key case gets a fresh slot rather than silently merging.
  */
 export function For<T>(opts: ForOpts<T>): UIElement {
-  return h("div", {
-    style: { display: "flex", flexDirection: "column" },
-    ref: (el) => initForReconciler(el as HTMLElement, opts),
-  });
+  return (
+    <div
+      style={{ display: "flex", flexDirection: "column" }}
+      ref={(el) => initForReconciler(el as HTMLElement, opts)}
+    />
+  );
 }
 
 interface Slot {

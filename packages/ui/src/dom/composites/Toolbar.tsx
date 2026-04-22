@@ -1,4 +1,4 @@
-import { defineComponent, h, type Child, type UIElement } from "../../core/element";
+import { defineComponent, type Child, type UIElement } from "../../core/element";
 
 export type ToolbarDensity = "compact" | "comfortable";
 export type ToolbarAlign = "start" | "center" | "end" | "between";
@@ -17,11 +17,10 @@ export interface ToolbarProps {
 export const Toolbar = defineComponent<ToolbarProps>((props): UIElement => {
   const density = props.density ?? "compact";
   const align = props.align ?? "start";
-  return h(
-    "div",
-    {
-      role: "toolbar",
-      style: {
+  return (
+    <div
+      role="toolbar"
+      style={{
         display: "flex",
         alignItems: "center",
         gap: density === "compact" ? "$spacing.xs" : "$spacing.sm",
@@ -31,9 +30,10 @@ export const Toolbar = defineComponent<ToolbarProps>((props): UIElement => {
         borderBottom: props.border ? "1px solid" : undefined,
         borderColor: props.border ? "$color.neutral.border" : undefined,
         minHeight: density === "compact" ? 28 : 40,
-      },
-    },
-    props.children
+      }}
+    >
+      {props.children}
+    </div>
   );
 });
 

@@ -1,4 +1,4 @@
-import { defineComponent, h, type Child, type UIElement } from "../../core/element";
+import { defineComponent, type Child, type UIElement } from "../../core/element";
 
 export type IconButtonSize = "sm" | "md" | "lg";
 export type IconButtonVariant = "ghost" | "subtle" | "solid";
@@ -28,15 +28,14 @@ export const IconButton = defineComponent<IconButtonProps>((props): UIElement =>
   const size = props.size ?? "md";
   const variant = props.variant ?? "ghost";
   const dim = SIZE_PX[size];
-  return h(
-    "button",
-    {
-      type: "button",
-      "aria-label": props.label ?? props.title,
-      title: props.title,
-      disabled: props.disabled ?? false,
-      onClick: props.onClick,
-      style: {
+  return (
+    <button
+      type="button"
+      aria-label={props.label ?? props.title}
+      title={props.title}
+      disabled={props.disabled ?? false}
+      onClick={props.onClick}
+      style={{
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
@@ -53,9 +52,10 @@ export const IconButton = defineComponent<IconButtonProps>((props): UIElement =>
         lineHeight: 1,
         opacity: props.disabled ? 0.5 : 1,
         transition: "background var(--ui-motion-duration-fast) var(--ui-motion-easing-standard)",
-      },
-    },
-    props.children
+      }}
+    >
+      {props.children}
+    </button>
   );
 });
 

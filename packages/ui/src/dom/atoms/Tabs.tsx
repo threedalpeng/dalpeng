@@ -1,5 +1,5 @@
 import type { ReadonlyRef, Ref } from "@dalpeng/core";
-import { h, type UIElement } from "../../core/element";
+import type { UIElement } from "../../core/element";
 import type { Cleanup } from "../bindings";
 import { renderElement } from "../render";
 
@@ -24,18 +24,19 @@ export interface TabsOpts {
  * visit. Tabs dropped from the list tear down their cached body.
  */
 export function Tabs(opts: TabsOpts): UIElement {
-  const wrap = h("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      flex: 1,
-      minHeight: 0,
-      overflow: "hidden",
-    },
-    ref: (el) => initTabs(el as HTMLElement, opts),
-    ...(opts.dataAttrs ?? {}),
-  });
-  return wrap;
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        minHeight: 0,
+        overflow: "hidden",
+      }}
+      ref={(el) => initTabs(el as HTMLElement, opts)}
+      {...(opts.dataAttrs ?? {})}
+    />
+  );
 }
 
 interface Slot {

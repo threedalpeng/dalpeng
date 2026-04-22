@@ -1,5 +1,5 @@
 import { ref, watch, type ReadonlyRef } from "@dalpeng/core";
-import { defineComponent, h, type Child, type UIElement } from "../../core/element";
+import { defineComponent, type Child, type UIElement } from "../../core/element";
 
 export interface SectionProps {
   title: string | ReadonlyRef<string>;
@@ -33,42 +33,39 @@ export const Section = defineComponent<SectionProps>((props): UIElement => {
 
   // Body visibility mirrors state. Caveat: children render regardless —
   // collapsing hides but keeps DOM. For heavy subtrees use <Show> inside.
-  const body = h(
-    "div",
-    {
-      ref: (el) => {
+  const body = (
+    <div
+      ref={(el) => {
         const root = el as HTMLElement;
         const apply = (collapsed: boolean): void => {
           root.style.display = collapsed ? "none" : "block";
         };
         apply(state.value);
         return watch(state, (v) => apply(v));
-      },
-      style: {
+      }}
+      style={{
         paddingX: "$spacing.sm",
         paddingY: "$spacing.xs",
-      },
-    },
-    props.children
+      }}
+    >
+      {props.children}
+    </div>
   );
 
-  return h(
-    "div",
-    {
-      style: {
+  return (
+    <div
+      style={{
         display: "flex",
         flexDirection: "column",
         borderBottom: "1px solid",
         borderColor: "$color.neutral.border",
-      },
-    },
-    h(
-      "div",
-      {
-        onClick: onHeaderClick,
-        role: "button",
-        tabIndex: 0,
-        style: {
+      }}
+    >
+      <div
+        onClick={onHeaderClick}
+        role="button"
+        tabIndex={0}
+        style={{
           display: "flex",
           alignItems: "center",
           gap: "$spacing.xs",
@@ -80,39 +77,36 @@ export const Section = defineComponent<SectionProps>((props): UIElement => {
           fontWeight: "$font.weight.semibold",
           color: "$color.text.primary",
           userSelect: "none",
-        },
-      },
-      h(
-        "span",
-        {
-          ref: (el) => {
+        }}
+      >
+        <span
+          ref={(el) => {
             const caret = el as HTMLElement;
             const apply = (collapsed: boolean): void => {
               caret.style.transform = collapsed ? "rotate(-90deg)" : "rotate(0deg)";
             };
             apply(state.value);
             return watch(state, (v) => apply(v));
-          },
-          style: {
+          }}
+          style={{
             display: "inline-block",
             width: 12,
             transition: "transform var(--ui-motion-duration-fast) var(--ui-motion-easing-standard)",
-          },
-        },
-        "▾"
-      ),
-      h("span", { style: { flex: 1 } }, props.title),
-      props.actions
-        ? h(
-            "div",
-            {
-              onClick: (e: MouseEvent) => e.stopPropagation(),
-              style: { display: "flex", alignItems: "center", gap: "$spacing.xs" },
-            },
-            props.actions
-          )
-        : null
-    ),
-    body
+          }}
+        >
+          ▾
+        </span>
+        <span style={{ flex: 1 }}>{props.title}</span>
+        {props.actions ? (
+          <div
+            onClick={(e: MouseEvent) => e.stopPropagation()}
+            style={{ display: "flex", alignItems: "center", gap: "$spacing.xs" }}
+          >
+            {props.actions}
+          </div>
+        ) : null}
+      </div>
+      {body}
+    </div>
   );
 });

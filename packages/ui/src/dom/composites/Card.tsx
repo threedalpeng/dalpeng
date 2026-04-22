@@ -1,4 +1,4 @@
-import { defineComponent, h, type Child, type UIElement } from "../../core/element";
+import { defineComponent, type Child, type UIElement } from "../../core/element";
 
 export type CardElevation = "flat" | "raised" | "high";
 export type CardPadding = "none" | "sm" | "md" | "lg";
@@ -19,11 +19,10 @@ export interface CardProps {
 export const Card = defineComponent<CardProps>((props): UIElement => {
   const elevation = props.elevation ?? "raised";
   const padding = props.padding ?? "md";
-  return h(
-    "div",
-    {
-      onClick: props.onClick,
-      style: {
+  return (
+    <div
+      onClick={props.onClick}
+      style={{
         background: surfaceToken(elevation),
         border: `1px solid`,
         borderColor: "$color.neutral.border",
@@ -34,9 +33,10 @@ export const Card = defineComponent<CardProps>((props): UIElement => {
         transition: props.interactive
           ? "background var(--ui-motion-duration-fast) var(--ui-motion-easing-standard)"
           : undefined,
-      },
-    },
-    props.children
+      }}
+    >
+      {props.children}
+    </div>
   );
 });
 

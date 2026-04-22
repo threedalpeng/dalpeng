@@ -1,5 +1,9 @@
-import { h, type UIElement } from "../../core/element";
+import type { UIElement } from "../../core/element";
 
 export function Button(label: string, onClick: () => void): UIElement {
-  return h("button", { type: "button", onClick }, label);
+  return (
+    <button type="button" onClick={onClick}>
+      {label}
+    </button>
+  );
 }

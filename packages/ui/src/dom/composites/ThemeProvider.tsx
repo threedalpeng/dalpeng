@@ -1,6 +1,6 @@
 import type { ReadonlyRef } from "@dalpeng/core";
 import { isRef } from "@dalpeng/core";
-import { defineComponent, h, type Child, type UIElement } from "../../core/element";
+import { defineComponent, type Child, type UIElement } from "../../core/element";
 import type { Theme } from "../../core/theme";
 import { applyTheme } from "../applyTheme";
 
@@ -21,9 +21,9 @@ export interface ThemeProviderProps {
  * cascade without JS lookup.
  */
 export const ThemeProvider = defineComponent<ThemeProviderProps>(
-  ({ theme, children }): UIElement =>
-    h("div", {
-      ref: (el: Element) => {
+  ({ theme, children }): UIElement => (
+    <div
+      ref={(el: Element) => {
         const root = el as HTMLElement;
         let undo = applyTheme(root, isRef(theme) ? theme.value : theme);
         if (isRef(theme)) {
@@ -37,7 +37,9 @@ export const ThemeProvider = defineComponent<ThemeProviderProps>(
           };
         }
         return undo;
-      },
-      children,
-    })
+      }}
+    >
+      {children}
+    </div>
+  )
 );

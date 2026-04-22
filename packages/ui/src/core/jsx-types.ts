@@ -13,17 +13,4 @@ export namespace JSX {
   }
 }
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace JSX {
-    type Element = UIElement;
-    interface ElementChildrenAttribute {
-      children: Record<string, never>;
-    }
-    interface IntrinsicElements {
-      [tag: string]: HostProps;
-    }
-  }
-}
-
 export {};
