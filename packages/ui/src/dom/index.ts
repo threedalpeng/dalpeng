@@ -37,8 +37,17 @@ export { Tabs, type TabSpec, type TabsOpts } from "./atoms/Tabs";
 export { Text, type TextOpts } from "./atoms/Text";
 export { Toggle } from "./atoms/Toggle";
 
+export { Badge, type BadgeProps, type BadgeRole, type BadgeVariant } from "./composites/Badge";
 export { Bar, type BarOpts } from "./composites/Bar";
+export { Card, type CardElevation, type CardPadding, type CardProps } from "./composites/Card";
+export {
+  IconButton,
+  type IconButtonProps,
+  type IconButtonSize,
+  type IconButtonVariant,
+} from "./composites/IconButton";
 export { Menu, type MenuItem, type MenuOpts } from "./composites/Menu";
+export { ThemeProvider, type ThemeProviderProps } from "./composites/ThemeProvider";
 export { Value } from "./composites/Value";
 
 export { createDialogueController, type DialogueController } from "./dialogue/controller";
