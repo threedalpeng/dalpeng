@@ -1,6 +1,6 @@
 import type { ReadonlyRef } from "@dalpeng/core";
+import { h, type UIElement } from "../../core/element";
 import type { Cleanup } from "../bindings";
-import { h, type UIElement } from "../element";
 import { renderElement } from "../render";
 
 export interface ShowOpts {

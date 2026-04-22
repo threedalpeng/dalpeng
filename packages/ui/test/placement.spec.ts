@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolvePlacement } from "../src/placement";
+import { resolvePlacement } from "../src/dom/placement";
 
 const VIEWPORT = { width: 800, height: 600 };
 

@@ -7,12 +7,14 @@ import {
   type UINode,
   type UIRenderer,
 } from "@dalpeng/core";
-import type { Cleanup } from "./bindings";
-import { pushUIScope, type UIContext } from "./context";
-import type { UIElement } from "./element";
-import { resolvePlacement, type Placement } from "./placement";
+import type { Cleanup } from "../core/context";
+import { pushUIScope, type UIContext } from "../core/context";
+import type { UIElement } from "../core/element";
+import type { Placement } from "../core/placement";
+import { defaultTheme } from "../core/theme";
+import { applyTheme } from "./applyTheme";
+import { resolvePlacement } from "./placement";
 import { renderElement } from "./render";
-import { applyTheme, defaultTheme } from "./theme";
 
 const DEFAULT_PLACEMENT: Placement = {
   anchor: { kind: "viewport", corner: "tl" },
@@ -79,6 +81,17 @@ export const domUIRenderer: UIRenderer = {
     slot.style.pointerEvents = "auto";
     slot.style.userSelect = "none";
 
+    // Auto-wrap: UI layout from useLayout() lives on this flex container so
+    // the user's UIElement can be a plain node (or Fragment). Previously this
+    // lived in defineUI; moved to the DOM backend so scene renderers aren't
+    // forced into a flex model.
+    const wrap = doc.createElement("div");
+    wrap.style.display = "flex";
+    wrap.style.flexDirection = uiCtx.layout.direction;
+    wrap.style.gap = `${uiCtx.layout.gap}px`;
+    if (uiCtx.layout.align !== undefined) wrap.style.alignItems = uiCtx.layout.align;
+    wrap.appendChild(rootNode);
+
     const applyPlacement = (): void => {
       const rect = canvas.getBoundingClientRect();
       const { style } = resolvePlacement(placement, { width: rect.width, height: rect.height });
@@ -86,12 +99,11 @@ export const domUIRenderer: UIRenderer = {
     };
     applyPlacement();
 
-    slot.appendChild(rootNode);
+    slot.appendChild(wrap);
     overlay.appendChild(slot);
 
-    // Theme CSS vars on the user's root so `$color.*` tokens cascade.
-    const themeUndo =
-      rootNode instanceof HTMLElement && uiCtx.theme ? applyTheme(rootNode, uiCtx.theme) : () => {};
+    // Theme CSS vars on the wrap so `$color.*` tokens cascade through the subtree.
+    const themeUndo = uiCtx.theme ? applyTheme(wrap, uiCtx.theme) : () => {};
 
     const syncPosition = (): void => {
       const rect = canvas.getBoundingClientRect();

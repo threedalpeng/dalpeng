@@ -1,9 +1,9 @@
 import { ref } from "@dalpeng/core";
 import { describe, expect, it } from "vitest";
-import { Bar } from "../../src/composites/Bar";
-import { Menu } from "../../src/composites/Menu";
-import { Value } from "../../src/composites/Value";
-import { mount } from "../../src/render";
+import { Bar } from "../../src/dom/composites/Bar";
+import { Menu } from "../../src/dom/composites/Menu";
+import { Value } from "../../src/dom/composites/Value";
+import { mount } from "../../src/dom/render";
 
 const ctx = { doc: document };
 

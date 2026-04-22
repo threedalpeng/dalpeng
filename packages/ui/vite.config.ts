@@ -6,18 +6,21 @@ export default defineConfig({
   build: {
     target: "esnext",
     lib: {
-      entry: path.resolve(__dirname, "src/index.ts"),
-      name: "DalpengUI",
-      formats: ["es", "umd"],
-      fileName: (format) => (format === "es" ? "dalpeng-ui.js" : "dalpeng-ui.umd.cjs"),
+      entry: {
+        index: path.resolve(__dirname, "src/index.ts"),
+        "core/index": path.resolve(__dirname, "src/core/index.ts"),
+        "dom/index": path.resolve(__dirname, "src/dom/index.ts"),
+        "core/jsx-runtime": path.resolve(__dirname, "src/core/jsx-runtime.ts"),
+      },
+      formats: ["es"],
     },
     rollupOptions: {
-      external: ["@dalpeng/core"],
+      external: ["@dalpeng/core", "@dalpeng/math"],
       output: {
         exports: "named",
-        globals: {
-          "@dalpeng/core": "DalpengCore",
-        },
+        preserveModules: false,
+        entryFileNames: "[name].js",
+        chunkFileNames: "chunks/[name]-[hash].js",
       },
     },
     minify: false,
@@ -26,7 +29,7 @@ export default defineConfig({
     dts({
       tsconfigPath: path.resolve(__dirname, "tsconfig.json"),
       insertTypesEntry: true,
-      rollupTypes: true,
+      rollupTypes: false,
     }),
   ],
 });

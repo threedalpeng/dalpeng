@@ -1,6 +1,5 @@
 import { pushScope, registerCleanup } from "@dalpeng/core";
-import { bindAttr, bindClass, bindStyle, bindText, listen, type Cleanup } from "./bindings";
-import { pushUIScope, type UIContext } from "./context";
+import { pushUIScope, type UIContext } from "../core/context";
 import {
   isAdopted,
   isComponent,
@@ -14,9 +13,11 @@ import {
   type HostProps,
   type TextElement,
   type UIElement,
-} from "./element";
-import type { Style } from "./style";
-import { applyTheme, defaultTheme, type Theme } from "./theme";
+} from "../core/element";
+import type { Style } from "../core/style";
+import { defaultTheme, type Theme } from "../core/theme";
+import { applyTheme } from "./applyTheme";
+import { bindAttr, bindClass, bindStyle, bindText, listen, type Cleanup } from "./bindings";
 
 export interface RenderContext {
   readonly doc: Document;

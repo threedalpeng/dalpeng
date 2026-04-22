@@ -1,6 +1,6 @@
 import { computed, isRef, type ReadonlyRef } from "@dalpeng/core";
-import { h, type UIElement } from "../element";
-import type { Style } from "../style";
+import { h, type UIElement } from "../../core/element";
+import type { Style } from "../../core/style";
 
 export interface TextOpts {
   size?: number | string;

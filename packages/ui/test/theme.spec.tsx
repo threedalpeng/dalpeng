@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { bindStyle } from "../src/bindings";
-import { defineComponent } from "../src/component";
-import { h } from "../src/element";
-import { mount } from "../src/render";
-import { resolveStyleValue } from "../src/style";
-import { applyTheme, defaultTheme, defineTheme, useTheme, type Theme } from "../src/theme";
+import { defineComponent, h } from "../src/core/element";
+import { resolveStyleValue } from "../src/core/style";
+import { defaultTheme, defineTheme, useTheme, type Theme } from "../src/core/theme";
+import { applyTheme } from "../src/dom/applyTheme";
+import { bindStyle } from "../src/dom/bindings";
+import { mount } from "../src/dom/render";
 
 const ctx = { doc: document };
 

@@ -1,9 +1,9 @@
 import { ref } from "@dalpeng/core";
 import { describe, expect, it } from "vitest";
-import { Range } from "../../src/atoms/Range";
-import { Select } from "../../src/atoms/Select";
-import { Toggle } from "../../src/atoms/Toggle";
-import { mount } from "../../src/render";
+import { Range } from "../../src/dom/atoms/Range";
+import { Select } from "../../src/dom/atoms/Select";
+import { Toggle } from "../../src/dom/atoms/Toggle";
+import { mount } from "../../src/dom/render";
 
 const ctx = { doc: document };
 

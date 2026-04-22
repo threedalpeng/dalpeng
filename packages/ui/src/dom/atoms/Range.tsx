@@ -1,5 +1,5 @@
 import { ref, type Ref } from "@dalpeng/core";
-import { h, type UIElement } from "../element";
+import { h, type UIElement } from "../../core/element";
 
 export interface RangeOpts {
   min: number;

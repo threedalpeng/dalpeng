@@ -1,5 +1,5 @@
 import type { ReadonlyRef } from "@dalpeng/core";
-import { h, type UIElement } from "../element";
+import { h, type UIElement } from "../../core/element";
 
 /** Label / value row. `content` can be static string or a reactive Ref. */
 export function Value(label: string, content: string | ReadonlyRef<string>): UIElement {

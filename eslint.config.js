@@ -42,5 +42,24 @@ export default [
       "@typescript-eslint/no-non-null-assertion": "off",
     },
   },
+  {
+    // Backend hygiene — @dalpeng/ui/core must stay backend-agnostic.
+    // core/* may NOT import from dom/* (scene/* also forbidden in the future).
+    files: ["packages/ui/src/core/**/*.ts", "packages/ui/src/core/**/*.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/dom/**", "../dom/*", "../dom"],
+              message:
+                "core/ must stay backend-agnostic — don't import from dom/. If a type is needed on both sides, lift it into core or @dalpeng/core.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   prettier,
 ];

@@ -1,9 +1,8 @@
 import { ref, type ReadonlyRef } from "@dalpeng/core";
 import { describe, expect, it } from "vitest";
-import { bindText, listen, type Cleanup } from "../src/bindings";
-import { defineComponent } from "../src/component";
-import { Fragment, createElement, h, type Child } from "../src/element";
-import { mount, renderElement } from "../src/render";
+import { createElement, defineComponent, Fragment, h, type Child } from "../src/core/element";
+import { bindText, listen, type Cleanup } from "../src/dom/bindings";
+import { mount, renderElement } from "../src/dom/render";
 
 const ctx = { doc: document };
 

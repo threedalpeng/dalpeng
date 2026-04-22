@@ -1,6 +1,6 @@
 import type { Ref } from "@dalpeng/core";
+import { h, type UIElement } from "../../core/element";
 import { bindValue } from "../bindings";
-import { h, type UIElement } from "../element";
 
 export interface SelectOption {
   value: string;

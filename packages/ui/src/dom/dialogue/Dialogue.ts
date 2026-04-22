@@ -1,6 +1,6 @@
 import { APP_NODE_KIND, registerCleanup, type UINode } from "@dalpeng/core";
-import { usePlacement } from "../context";
-import { adopt } from "../element";
+import { usePlacement } from "../../core/context";
+import { adopt } from "../adopt";
 import type { DialogueController } from "./controller";
 import type { DialogueLine } from "./types";
 

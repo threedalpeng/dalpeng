@@ -5,9 +5,10 @@ import {
   type ReadonlyRef,
   type Ref,
 } from "@dalpeng/core";
-import { expandShortcut, resolveStyleValue, type Style } from "./style";
+import type { Cleanup } from "../core/context";
+import { expandShortcut, resolveStyleValue, type Style } from "../core/style";
 
-export type Cleanup = () => void;
+export type { Cleanup };
 
 /** All cleanups returned from bind* / listen are idempotent — calling twice is a safe no-op. */
 function idempotent(fn: Cleanup): Cleanup {

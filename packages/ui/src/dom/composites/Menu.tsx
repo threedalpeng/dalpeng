@@ -1,6 +1,6 @@
 import { ref, type Ref } from "@dalpeng/core";
+import { h, type UIElement } from "../../core/element";
 import type { Cleanup } from "../bindings";
-import { h, type UIElement } from "../element";
 
 export interface MenuItem {
   label: string;

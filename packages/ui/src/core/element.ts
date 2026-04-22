@@ -1,5 +1,5 @@
 import { isRef, type ReadonlyRef } from "@dalpeng/core";
-import type { Cleanup } from "./bindings";
+import type { Cleanup } from "./context";
 
 export type UIElement =
   | HostElement
@@ -32,9 +32,11 @@ export interface FragmentElement {
 }
 
 /**
- * Escape hatch — wraps a pre-existing DOM node so it can live in a UIElement
- * tree. The renderer appends the node as-is and registers the supplied
- * cleanups. For imperative DOM that can't be expressed with atoms.
+ * Escape hatch — wraps a pre-existing DOM Node so it can live in a UIElement
+ * tree. The `adopt()` factory ships with the DOM backend (`@dalpeng/ui/dom`);
+ * scene backends will define their own analogue with a backend-specific node
+ * type. The element field is typed `Node` here for the DOM case — future
+ * work may generalize to `AdoptedElement<T>`.
  */
 export interface AdoptedElement {
   readonly kind: "adopted";
@@ -75,9 +77,11 @@ const HOST_KIND = "host" as const;
 const TEXT_KIND = "text" as const;
 const ADOPTED_KIND = "adopted" as const;
 
-/** Wrap an imperatively-built DOM node as a UIElement. Optional cleanups fire on unmount. */
-export function adopt(element: Node, cleanups?: ReadonlySet<Cleanup>): AdoptedElement {
-  return { kind: ADOPTED_KIND, element, cleanups };
+export function defineComponent<P = Record<string, never>>(
+  setup: (props: P) => UIElement
+): Component<P> {
+  // Setup runs once per component instance. Ref props patch bindings, not setup.
+  return (props: P) => setup(props);
 }
 
 export function createElement<P>(
@@ -134,6 +138,9 @@ export function createElement(
 }
 
 export const h = createElement;
+
+/** Internal — used by `adopt()` in `dom/adopt.ts`. Not exported from public API. */
+export const ADOPTED_KIND_SYMBOL = ADOPTED_KIND;
 
 export function normalizeChildren(children: readonly Child[]): UIElement[] {
   const out: UIElement[] = [];

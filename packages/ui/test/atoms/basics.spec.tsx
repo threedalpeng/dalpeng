@@ -1,9 +1,9 @@
 import { ref } from "@dalpeng/core";
 import { describe, expect, it } from "vitest";
-import { Button } from "../../src/atoms/Button";
-import { Html } from "../../src/atoms/Html";
-import { Text } from "../../src/atoms/Text";
-import { mount } from "../../src/render";
+import { Button } from "../../src/dom/atoms/Button";
+import { Html } from "../../src/dom/atoms/Html";
+import { Text } from "../../src/dom/atoms/Text";
+import { mount } from "../../src/dom/render";
 
 const ctx = { doc: document };
 

@@ -1,7 +1,8 @@
 import { findScope, pushScope } from "@dalpeng/core";
-import type { Cleanup } from "./bindings";
 import type { Placement } from "./placement";
 import type { Theme } from "./theme";
+
+export type Cleanup = () => void;
 
 export interface UIContext {
   /** Written by `useLayout`. Applied by the UI mount root (if any). */
