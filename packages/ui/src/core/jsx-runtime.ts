@@ -1,4 +1,4 @@
-import { createElement, Fragment, type Child } from "./element";
+import { createElement, Fragment, type Child, type HostProps, type UIElement } from "./element";
 
 export { Fragment };
 
@@ -23,4 +23,18 @@ export const jsx = jsxImpl;
 export const jsxs = jsxImpl;
 export const jsxDEV = jsxImpl;
 
-export type { JSX } from "./jsx-types";
+// JSX namespace declared directly in the jsx-runtime module so TypeScript's
+// automatic runtime lookup (jsxImportSource) finds IntrinsicElements / Element.
+// Re-exporting via `export type { JSX }` from a separate module doesn't always
+// reconstitute the namespace for JSX resolution (varies across TS versions).
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace JSX {
+  export type Element = UIElement;
+  export interface ElementChildrenAttribute {
+    children: Record<string, never>;
+  }
+  // Every HTML tag accepts HostProps. Stricter per-tag typing lands later.
+  export interface IntrinsicElements {
+    [tag: string]: HostProps;
+  }
+}
