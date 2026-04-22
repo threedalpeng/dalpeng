@@ -1,5 +1,6 @@
 import { isRef, type ReadonlyRef } from "@dalpeng/core";
 import type { Cleanup } from "./context";
+import type { Style } from "./style";
 
 export type UIElement =
   | HostElement
@@ -60,11 +61,85 @@ export type PropsWithChildren<P = Record<string, never>, C = Child> = P & {
   children?: C;
 };
 
-export interface HostProps {
-  children?: Child;
-  ref?: (el: Element) => void | (() => void);
+/**
+ * DOM event handler surface every HostProps accepts. camelCase (`onClick`)
+ * matches the JSX-ecosystem convention; runtime lowercases for
+ * `addEventListener`. The event-argument type is inferred so consumers get
+ * autocomplete without needing to annotate the handler.
+ */
+export interface HostEventHandlers {
+  onClick?: (e: MouseEvent) => void;
+  onDblClick?: (e: MouseEvent) => void;
+  onContextMenu?: (e: MouseEvent) => void;
+  onMouseEnter?: (e: MouseEvent) => void;
+  onMouseLeave?: (e: MouseEvent) => void;
+  onMouseDown?: (e: MouseEvent) => void;
+  onMouseUp?: (e: MouseEvent) => void;
+  onMouseMove?: (e: MouseEvent) => void;
+  onMouseOver?: (e: MouseEvent) => void;
+  onMouseOut?: (e: MouseEvent) => void;
+  onPointerDown?: (e: PointerEvent) => void;
+  onPointerUp?: (e: PointerEvent) => void;
+  onPointerMove?: (e: PointerEvent) => void;
+  onPointerEnter?: (e: PointerEvent) => void;
+  onPointerLeave?: (e: PointerEvent) => void;
+  onPointerCancel?: (e: PointerEvent) => void;
+  onKeyDown?: (e: KeyboardEvent) => void;
+  onKeyUp?: (e: KeyboardEvent) => void;
+  onFocus?: (e: FocusEvent) => void;
+  onBlur?: (e: FocusEvent) => void;
+  onFocusIn?: (e: FocusEvent) => void;
+  onFocusOut?: (e: FocusEvent) => void;
+  onChange?: (e: Event) => void;
+  onInput?: (e: Event) => void;
+  onSubmit?: (e: SubmitEvent) => void;
+  onReset?: (e: Event) => void;
+  onInvalid?: (e: Event) => void;
+  onScroll?: (e: Event) => void;
+  onWheel?: (e: WheelEvent) => void;
+  onCopy?: (e: ClipboardEvent) => void;
+  onCut?: (e: ClipboardEvent) => void;
+  onPaste?: (e: ClipboardEvent) => void;
+  onDragStart?: (e: DragEvent) => void;
+  onDragEnd?: (e: DragEvent) => void;
+  onDragEnter?: (e: DragEvent) => void;
+  onDragLeave?: (e: DragEvent) => void;
+  onDragOver?: (e: DragEvent) => void;
+  onDrop?: (e: DragEvent) => void;
+  onTouchStart?: (e: TouchEvent) => void;
+  onTouchEnd?: (e: TouchEvent) => void;
+  onTouchMove?: (e: TouchEvent) => void;
+  onTouchCancel?: (e: TouchEvent) => void;
+  onAnimationStart?: (e: AnimationEvent) => void;
+  onAnimationEnd?: (e: AnimationEvent) => void;
+  onAnimationIteration?: (e: AnimationEvent) => void;
+  onTransitionEnd?: (e: TransitionEvent) => void;
+  onError?: (e: Event) => void;
+  onLoad?: (e: Event) => void;
+}
+
+/** Common HTML attributes typed so typos surface. Per-tag attrs (e.g. `type` on `<input>`) fall through the index signature. */
+export interface HostCommonAttrs {
+  id?: string;
   class?: string | ReadonlyRef<string>;
-  style?: unknown;
+  title?: string;
+  role?: string;
+  tabIndex?: number;
+  hidden?: boolean;
+  draggable?: boolean;
+  lang?: string;
+  dir?: "ltr" | "rtl" | "auto";
+  contentEditable?: boolean | "inherit";
+  spellCheck?: boolean;
+  slot?: string;
+}
+
+export interface HostProps extends HostEventHandlers, HostCommonAttrs {
+  children?: Child;
+  /** Fires after DOM subtree attaches (post-commit). Return a Cleanup to tear down. */
+  ref?: (el: Element) => void | (() => void);
+  style?: Style | ReadonlyRef<Style>;
+  /** Escape hatch for per-tag attrs + `data-*` / `aria-*` / SVG-specific props. */
   [key: string]: unknown;
 }
 

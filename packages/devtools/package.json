@@ -3,14 +3,12 @@
   "type": "module",
   "version": "0.1.0",
   "description": "DevTools host frame and plugin platform for the dalpeng game engine",
-  "main": "./dist/dalpeng-devtools.umd.cjs",
   "module": "./dist/dalpeng-devtools.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/dalpeng-devtools.js",
-      "require": "./dist/dalpeng-devtools.umd.cjs"
+      "import": "./dist/dalpeng-devtools.js"
     }
   },
   "files": [

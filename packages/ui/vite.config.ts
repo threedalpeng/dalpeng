@@ -20,7 +20,8 @@ export default defineConfig({
       formats: ["es"],
     },
     rollupOptions: {
-      external: ["@dalpeng/core", "@dalpeng/math"],
+      // Match subpaths too (e.g. `@dalpeng/core/subpath`).
+      external: (id) => /^@dalpeng\/(core|math)(\/|$)/.test(id),
       output: {
         exports: "named",
         preserveModules: false,

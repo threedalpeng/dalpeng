@@ -27,14 +27,21 @@ export const jsxDEV = jsxImpl;
 // automatic runtime lookup (jsxImportSource) finds IntrinsicElements / Element.
 // Re-exporting via `export type { JSX }` from a separate module doesn't always
 // reconstitute the namespace for JSX resolution (varies across TS versions).
+//
+// Intrinsics derive from lib.dom.d.ts's tag maps. An index signature alone
+// doesn't always register every HTML tag with the TS language server —
+// some editors fail to see `<input>` / `<select>` unless each key appears.
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {
   export type Element = UIElement;
   export interface ElementChildrenAttribute {
     children: Record<string, never>;
   }
-  // Every HTML tag accepts HostProps. Stricter per-tag typing lands later.
-  export interface IntrinsicElements {
+  export type IntrinsicElements = {
+    [K in keyof HTMLElementTagNameMap]: HostProps;
+  } & {
+    [K in keyof SVGElementTagNameMap]: HostProps;
+  } & {
     [tag: string]: HostProps;
-  }
+  };
 }
