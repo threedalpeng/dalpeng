@@ -1,4 +1,10 @@
-import { hasActiveCleanupScope, isRef, registerCleanup, type ReadonlyRef } from "@dalpeng/core";
+import {
+  hasActiveCleanupScope,
+  isRef,
+  registerCleanup,
+  type ReadonlyRef,
+  type Ref,
+} from "@dalpeng/core";
 import { expandShortcut, resolveStyleValue, type Style } from "./style";
 
 export type Cleanup = () => void;
@@ -137,4 +143,30 @@ export function listen(
 ): Cleanup {
   target.addEventListener(event, handler, opts);
   return autoRegister(() => target.removeEventListener(event, handler, opts));
+}
+
+/**
+ * Two-way bind a Ref to an input IDL property (`checked` / `value`). Sets the
+ * property (not attribute — attributes stop reflecting after user interaction)
+ * and wires a `change` / `input` listener back to the Ref. Returns a combined
+ * idempotent cleanup. Call inside a `ref` callback where the element exists.
+ */
+export function bindValue<T>(
+  el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
+  prop: "checked" | "value",
+  source: Ref<T>,
+  event: "change" | "input" = "change"
+): Cleanup {
+  (el as unknown as Record<string, unknown>)[prop] = source.value;
+  const unsubRef = source.subscribe((next) => {
+    (el as unknown as Record<string, unknown>)[prop] = next;
+  });
+  const handler = (): void => {
+    source.value = (el as unknown as Record<string, unknown>)[prop] as T;
+  };
+  el.addEventListener(event, handler);
+  return idempotent(() => {
+    unsubRef();
+    el.removeEventListener(event, handler);
+  });
 }
