@@ -47,7 +47,15 @@ export {
   type IconButtonVariant,
 } from "./composites/IconButton";
 export { Menu, type MenuItem, type MenuOpts } from "./composites/Menu";
+export { Row, type RowProps } from "./composites/Row";
+export { Section, type SectionProps } from "./composites/Section";
 export { ThemeProvider, type ThemeProviderProps } from "./composites/ThemeProvider";
+export {
+  Toolbar,
+  type ToolbarAlign,
+  type ToolbarDensity,
+  type ToolbarProps,
+} from "./composites/Toolbar";
 export { Value } from "./composites/Value";
 
 export { createDialogueController, type DialogueController } from "./dialogue/controller";
