@@ -1,4 +1,3 @@
-import { defineComponent } from "../component";
 import { h, type UIElement } from "../element";
 
 /**
@@ -6,9 +5,9 @@ import { h, type UIElement } from "../element";
  * sanitization — dangerouslySetInnerHTML-equivalent.
  */
 export function Html(content: string): UIElement {
-  return h(HtmlRoot, { content });
+  return h("div", {
+    ref: (el) => {
+      (el as HTMLElement).innerHTML = content;
+    },
+  });
 }
-
-const HtmlRoot = defineComponent<{ content: string }>(({ content }) =>
-  h("div", { ref: (el) => ((el as HTMLElement).innerHTML = content) })
-);
