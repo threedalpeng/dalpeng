@@ -57,22 +57,22 @@ export function patchesPlugin(): DevToolsPlugin {
 
   const bar = document.createElement("div");
   bar.style.cssText =
-    "display:flex;gap:4px;padding:4px 6px;border-bottom:1px solid var(--dt-border);align-items:center";
+    "display:flex;gap:4px;padding:4px 6px;border-bottom:1px solid var(--ui-color-neutral-border);align-items:center";
 
   const countBadge = document.createElement("span");
-  countBadge.style.cssText = "color:var(--dt-fg-dim);font-size:10px;flex:1";
+  countBadge.style.cssText = "color:var(--ui-color-text-muted);font-size:10px;flex:1";
 
   const exportBtn = document.createElement("button");
   exportBtn.textContent = "export";
   exportBtn.title = "copy all patches to clipboard as code comment";
   exportBtn.style.cssText =
-    "background:var(--dt-bg-sunken);color:var(--dt-fg);border:1px solid var(--dt-border);border-radius:2px;padding:2px 8px;font:inherit;font-size:10px;cursor:pointer";
+    "background:var(--ui-color-surface-low);color:var(--ui-color-text-primary);border:1px solid var(--ui-color-neutral-border);border-radius:2px;padding:2px 8px;font:inherit;font-size:10px;cursor:pointer";
 
   const clearAllBtn = document.createElement("button");
   clearAllBtn.textContent = "revert all";
   clearAllBtn.title = "revert every ephemeral + pinned patch";
   clearAllBtn.style.cssText =
-    "background:var(--dt-bg-sunken);color:var(--dt-fg-muted);border:1px solid var(--dt-border);border-radius:2px;padding:2px 8px;font:inherit;font-size:10px;cursor:pointer";
+    "background:var(--ui-color-surface-low);color:var(--ui-color-text-secondary);border:1px solid var(--ui-color-neutral-border);border-radius:2px;padding:2px 8px;font:inherit;font-size:10px;cursor:pointer";
 
   bar.appendChild(countBadge);
   bar.appendChild(exportBtn);
@@ -122,13 +122,13 @@ export function patchesPlugin(): DevToolsPlugin {
           : '<span style="color:#6b7280;font-size:9px;padding:1px 4px;border:1px solid #3a4048;border-radius:2px">ephemeral</span>';
         return `<div class="patch-row" data-id="${escapeHtml(p.id)}" style="padding:4px 6px;border-bottom:1px solid #1f242c;display:flex;flex-direction:column;gap:2px">
           <div style="display:flex;align-items:center;gap:6px">
-            <span style="flex:1;color:var(--dt-fg)">${title}</span>
+            <span style="flex:1;color:var(--ui-color-text-primary)">${title}</span>
             ${kindBadge}
-            <button class="patch-pin" data-id="${escapeHtml(p.id)}" ${pinned ? "disabled" : ""} title="pin patch (survives reload)" style="background:var(--dt-bg-sunken);color:var(--dt-fg-muted);border:1px solid var(--dt-border);border-radius:2px;padding:1px 6px;font:inherit;font-size:10px;cursor:${pinned ? "default" : "pointer"};opacity:${pinned ? "0.4" : "1"}">pin</button>
-            <button class="patch-revert" data-id="${escapeHtml(p.id)}" title="revert to baseline" style="background:var(--dt-bg-sunken);color:#e26b6b;border:1px solid var(--dt-border);border-radius:2px;padding:1px 6px;font:inherit;font-size:10px;cursor:pointer">revert</button>
+            <button class="patch-pin" data-id="${escapeHtml(p.id)}" ${pinned ? "disabled" : ""} title="pin patch (survives reload)" style="background:var(--ui-color-surface-low);color:var(--ui-color-text-secondary);border:1px solid var(--ui-color-neutral-border);border-radius:2px;padding:1px 6px;font:inherit;font-size:10px;cursor:${pinned ? "default" : "pointer"};opacity:${pinned ? "0.4" : "1"}">pin</button>
+            <button class="patch-revert" data-id="${escapeHtml(p.id)}" title="revert to baseline" style="background:var(--ui-color-surface-low);color:#e26b6b;border:1px solid var(--ui-color-neutral-border);border-radius:2px;padding:1px 6px;font:inherit;font-size:10px;cursor:pointer">revert</button>
           </div>
-          <div style="color:var(--dt-fg-dim);font-size:10px;padding-left:2px">
-            <span style="color:#6b7280">baseline:</span> ${escapeHtml(formatValue(p.baselineValue))} → <span style="color:var(--dt-fg)">${escapeHtml(formatValue(live))}</span>
+          <div style="color:var(--ui-color-text-muted);font-size:10px;padding-left:2px">
+            <span style="color:#6b7280">baseline:</span> ${escapeHtml(formatValue(p.baselineValue))} → <span style="color:var(--ui-color-text-primary)">${escapeHtml(formatValue(live))}</span>
           </div>
         </div>`;
       })

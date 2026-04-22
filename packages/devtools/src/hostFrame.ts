@@ -184,8 +184,8 @@ export class DevToolsRootHost {
 
   #baseRootStyle(): Partial<CSSStyleDeclaration> {
     return {
-      background: "var(--dt-bg)",
-      color: "var(--dt-fg)",
+      background: "var(--ui-color-surface-base)",
+      color: "var(--ui-color-text-primary)",
       fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
       fontSize: "var(--dt-font-size)",
       display: "flex",
@@ -254,9 +254,10 @@ export class DevToolsRootHost {
       alignSelf: "stretch",
       flex: "0 0 auto",
       zIndex: "",
-      boxShadow: side === "right" ? "-2px 0 12px var(--dt-shadow)" : "2px 0 12px var(--dt-shadow)",
-      borderLeft: side === "right" ? "1px solid var(--dt-border)" : "none",
-      borderRight: side === "left" ? "1px solid var(--dt-border)" : "none",
+      boxShadow:
+        side === "right" ? "-2px 0 12px var(--ui-shadow-md)" : "2px 0 12px var(--ui-shadow-md)",
+      borderLeft: side === "right" ? "1px solid var(--ui-color-neutral-border)" : "none",
+      borderRight: side === "left" ? "1px solid var(--ui-color-neutral-border)" : "none",
     } satisfies Partial<CSSStyleDeclaration>);
 
     const attached = this.#attachToStageHost(side);
@@ -481,7 +482,7 @@ export class DevToolsRootHost {
       return h(
         "div",
         { style: { display: "flex", flexDirection: "column", gap: 6 } },
-        Text("preferences", { size: 11, color: "var(--dt-fg-muted)" }),
+        Text("preferences", { size: 11, color: "var(--ui-color-text-secondary)" }),
         For<string>({
           items: ref(themes) as ReadonlyRef<string[]>,
           render: (name) =>
@@ -489,7 +490,7 @@ export class DevToolsRootHost {
               this.#settings.theme.value = name as never;
             }),
         }),
-        Text("font", { size: 11, color: "var(--dt-fg-muted)" }),
+        Text("font", { size: 11, color: "var(--ui-color-text-secondary)" }),
         For<string>({
           items: ref(["small", "medium", "large"]) as ReadonlyRef<string[]>,
           render: (name) =>
@@ -497,7 +498,7 @@ export class DevToolsRootHost {
               this.#settings.fontSize.value = name as never;
             }),
         }),
-        Text("density", { size: 11, color: "var(--dt-fg-muted)" }),
+        Text("density", { size: 11, color: "var(--ui-color-text-secondary)" }),
         For<string>({
           items: ref(["compact", "comfortable"]) as ReadonlyRef<string[]>,
           render: (name) =>
@@ -535,12 +536,12 @@ export class DevToolsRootHost {
       display: "flex",
       flexDirection: "row",
       alignItems: "center",
-      borderTop: "1px solid var(--dt-border)",
-      background: "var(--dt-bg-muted)",
+      borderTop: "1px solid var(--ui-color-neutral-border)",
+      background: "var(--ui-color-surface-low)",
       flexShrink: "0",
       minHeight: "26px",
       padding: "0 6px",
-      color: "var(--dt-fg-muted)",
+      color: "var(--ui-color-text-secondary)",
     } satisfies Partial<CSSStyleDeclaration>);
 
     const spacer = doc.createElement("div");
@@ -553,7 +554,7 @@ export class DevToolsRootHost {
       b.title = title;
       Object.assign(b.style, {
         background: "transparent",
-        color: "var(--dt-fg-muted)",
+        color: "var(--ui-color-text-secondary)",
         border: "none",
         padding: "0 10px",
         height: "100%",
@@ -603,16 +604,16 @@ export class DevToolsRootHost {
       top: `${downEv.clientY + 6}px`,
       left: `${downEv.clientX + 6}px`,
       padding: "4px 10px",
-      background: "var(--dt-selected)",
-      color: "var(--dt-fg)",
-      border: "1px solid var(--dt-accent)",
+      background: "var(--ui-color-primary-muted)",
+      color: "var(--ui-color-text-primary)",
+      border: "1px solid var(--ui-color-primary-text)",
       borderRadius: "4px",
       fontFamily: "inherit",
       fontSize: "var(--dt-font-size)",
       pointerEvents: "none",
       zIndex: "2147483647",
       opacity: "0.85",
-      boxShadow: "0 4px 12px var(--dt-shadow)",
+      boxShadow: "0 4px 12px var(--ui-shadow-md)",
     } satisfies Partial<CSSStyleDeclaration>);
     this.#ownerDoc.body.appendChild(ghost);
 
@@ -736,8 +737,8 @@ export class DevToolsRootHost {
     Object.assign(popup.document.body.style, {
       margin: "0",
       padding: "0",
-      background: "var(--dt-bg-sunken, #0a0c10)",
-      color: "var(--dt-fg, #e6e8ec)",
+      background: "var(--ui-color-surface-low, #0a0c10)",
+      color: "var(--ui-color-text-primary, #e6e8ec)",
       overflow: "hidden",
     } satisfies Partial<CSSStyleDeclaration>);
     popup.document.body.appendChild(this.#rootDiv);
@@ -780,9 +781,9 @@ export class DevToolsRootHost {
       left: "4px",
       right: "4px",
       padding: "6px 10px",
-      background: "var(--dt-bg-sunken, #1a1d23)",
-      color: "var(--dt-fg, #e6e8ec)",
-      border: "1px solid var(--dt-accent, #f59e0b)",
+      background: "var(--ui-color-surface-low, #1a1d23)",
+      color: "var(--ui-color-text-primary, #e6e8ec)",
+      border: "1px solid var(--ui-color-primary-text, #f59e0b)",
       borderRadius: "3px",
       fontSize: "11px",
       zIndex: "2147483647",

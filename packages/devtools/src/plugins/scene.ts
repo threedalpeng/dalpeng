@@ -5,19 +5,12 @@ import type { DevToolsHost } from "../host";
 import type { DevToolsPlugin } from "../plugin";
 import { definePlugin } from "../plugin";
 
-const PALETTE = {
-  fg: "#cbd5e1",
-  fgMuted: "#9ba3b0",
-  fgDim: "#6b7280",
-  accent: "#7be0a1",
-  modified: "#f59e0b",
-  pinned: "#a78bfa",
-  rowHover: "rgba(255,255,255,0.04)",
-  rowSelected: "rgba(123,224,161,0.15)",
-  axisX: "#ff6b6b",
-  axisY: "#51cf66",
-  axisZ: "#4dabf7",
-};
+const MODIFIED_COLOR = "#f59e0b";
+const ROW_HOVER_COLOR = "rgba(255,255,255,0.04)";
+const ROW_SELECTED_COLOR = "rgba(123,224,161,0.15)";
+const AXIS_X_COLOR = "#ff6b6b";
+const AXIS_Y_COLOR = "#51cf66";
+const AXIS_Z_COLOR = "#4dabf7";
 
 function entityLabel(e: GameEntity): string {
   const name = e.name || `<#${e.id}>`;
@@ -41,12 +34,13 @@ function buildTreePanel(host: DevToolsHost, selected: ReturnType<typeof ref<Game
   root.style.cssText = "display:flex;flex-direction:column;height:100%;min-height:0";
 
   const filterBar = document.createElement("div");
-  filterBar.style.cssText = "padding:4px 6px;border-bottom:1px solid var(--dt-border)";
+  filterBar.style.cssText =
+    "padding:4px 6px;border-bottom:1px solid var(--ui-color-neutral-border)";
   const filterInput = document.createElement("input");
   filterInput.type = "text";
   filterInput.placeholder = "🔍 filter entities…";
   filterInput.style.cssText =
-    "width:100%;background:var(--dt-bg-sunken);color:var(--dt-fg);border:1px solid var(--dt-border);border-radius:3px;padding:3px 6px;font:inherit;outline:none;box-sizing:border-box";
+    "width:100%;background:var(--ui-color-surface-low);color:var(--ui-color-text-primary);border:1px solid var(--ui-color-neutral-border);border-radius:3px;padding:3px 6px;font:inherit;outline:none;box-sizing:border-box";
   filterBar.appendChild(filterInput);
 
   const listContainer = document.createElement("div");
@@ -146,12 +140,12 @@ function buildTreePanel(host: DevToolsHost, selected: ReturnType<typeof ref<Game
       filter.length > 0 && entity.name.toLowerCase().includes(filter.toLowerCase());
     if (directMatch) row.dataset.directMatch = "1";
 
-    row.style.cssText = `display:flex;align-items:center;padding:1px 4px 1px ${depth * 12 + 4}px;cursor:pointer;white-space:nowrap;color:${isSelected ? PALETTE.accent : PALETTE.fg};background:${isSelected ? PALETTE.rowSelected : "transparent"}`;
+    row.style.cssText = `display:flex;align-items:center;padding:1px 4px 1px ${depth * 12 + 4}px;cursor:pointer;white-space:nowrap;color:${isSelected ? "var(--ui-color-primary-text)" : "var(--ui-color-text-primary)"};background:${isSelected ? ROW_SELECTED_COLOR : "transparent"}`;
     if (isSelected) row.dataset.selectedRow = "1";
 
     const twisty = document.createElement("span");
     twisty.textContent = hasChildren ? (isCollapsed ? "▶" : "▼") : " ";
-    twisty.style.cssText = `display:inline-block;width:10px;color:${PALETTE.fgDim};font-size:8px;margin-right:2px`;
+    twisty.style.cssText = `display:inline-block;width:10px;color:var(--ui-color-text-muted);font-size:8px;margin-right:2px`;
     if (hasChildren) {
       twisty.style.cursor = "pointer";
       twisty.addEventListener("click", (e) => {
@@ -172,7 +166,7 @@ function buildTreePanel(host: DevToolsHost, selected: ReturnType<typeof ref<Game
       host.emit("entitySelected", { entity });
     });
     row.addEventListener("mouseenter", () => {
-      if (!isSelected) row.style.background = PALETTE.rowHover;
+      if (!isSelected) row.style.background = ROW_HOVER_COLOR;
     });
     row.addEventListener("mouseleave", () => {
       if (!isSelected) row.style.background = "transparent";
@@ -196,7 +190,7 @@ function buildTreePanel(host: DevToolsHost, selected: ReturnType<typeof ref<Game
     if (entities.length === 0) {
       const empty = document.createElement("div");
       empty.textContent = "no entities";
-      empty.style.cssText = `padding:8px;color:${PALETTE.fgDim}`;
+      empty.style.cssText = `padding:8px;color:var(--ui-color-text-muted)`;
       listContainer.appendChild(empty);
       return;
     }
@@ -243,7 +237,7 @@ function makeCopyButton(getText: () => string): HTMLElement {
   const btn = document.createElement("button");
   btn.textContent = "📋";
   btn.style.cssText =
-    "background:none;border:none;color:var(--dt-fg-muted);cursor:pointer;font-size:10px;padding:0 4px;margin-left:4px;opacity:0.5";
+    "background:none;border:none;color:var(--ui-color-text-secondary);cursor:pointer;font-size:10px;padding:0 4px;margin-left:4px;opacity:0.5";
   btn.addEventListener("mouseenter", () => {
     btn.style.opacity = "1";
     btn.title = `Copy: ${getText()}`;
@@ -281,13 +275,13 @@ function makeNumberDrag(
   if (label) {
     const lbl = document.createElement("span");
     lbl.textContent = label;
-    lbl.style.cssText = `color:${color ?? PALETTE.fgDim};margin-right:3px;font-weight:600;user-select:none`;
+    lbl.style.cssText = `color:${color ?? "var(--ui-color-text-muted)"};margin-right:3px;font-weight:600;user-select:none`;
     wrap.appendChild(lbl);
   }
 
   const input = document.createElement("input");
   input.type = "text";
-  input.style.cssText = `width:58px;background:var(--dt-bg-sunken);color:${PALETTE.fg};border:1px solid var(--dt-border);border-radius:2px;padding:1px 4px;font:inherit;font-size:10px;outline:none;text-align:right;cursor:ew-resize`;
+  input.style.cssText = `width:58px;background:var(--ui-color-surface-low);color:var(--ui-color-text-primary);border:1px solid var(--ui-color-neutral-border);border-radius:2px;padding:1px 4px;font:inherit;font-size:10px;outline:none;text-align:right;cursor:ew-resize`;
   input.value = formatNumber(getValue());
 
   const step = binding.schema.step ?? 0.1;
@@ -346,7 +340,7 @@ function makeNumberDrag(
     tick() {
       if (document.activeElement === input || isDragging) return;
       input.value = formatNumber(getValue());
-      input.style.color = binding.isPatched() ? PALETTE.modified : PALETTE.fg;
+      input.style.color = binding.isPatched() ? MODIFIED_COLOR : "var(--ui-color-text-primary)";
     },
   };
 }
@@ -358,7 +352,7 @@ function makeFieldEditor(binding: FieldBinding, host: DevToolsHost): Editor {
 
   const label = document.createElement("span");
   label.textContent = schema.label ?? "";
-  label.style.cssText = `color:${PALETTE.fgMuted};min-width:90px;font-size:10px`;
+  label.style.cssText = `color:var(--ui-color-text-secondary);min-width:90px;font-size:10px`;
   wrap.appendChild(label);
 
   const valueWrap = document.createElement("span");
@@ -367,12 +361,12 @@ function makeFieldEditor(binding: FieldBinding, host: DevToolsHost): Editor {
 
   const refreshers: (() => void)[] = [];
   const updateLabelColor = () => {
-    label.style.color = binding.isPatched() ? PALETTE.modified : PALETTE.fgMuted;
+    label.style.color = binding.isPatched() ? MODIFIED_COLOR : "var(--ui-color-text-secondary)";
   };
 
   if (schema.kind === "readonly") {
     const span = document.createElement("span");
-    span.style.cssText = `color:${PALETTE.fgDim};font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap`;
+    span.style.cssText = `color:var(--ui-color-text-muted);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap`;
     const updateText = () => {
       const v = binding.getValue();
       span.textContent = schema.formatter ? schema.formatter(v) : String(v);
@@ -390,7 +384,7 @@ function makeFieldEditor(binding: FieldBinding, host: DevToolsHost): Editor {
     refreshers.push(ed.tick);
   } else if (schema.kind === "vec3") {
     const axes = ["X", "Y", "Z"] as const;
-    const colors = [PALETTE.axisX, PALETTE.axisY, PALETTE.axisZ];
+    const colors = [AXIS_X_COLOR, AXIS_Y_COLOR, AXIS_Z_COLOR];
     const editors: Editor[] = axes.map((axis, i) => {
       return makeNumberDrag(
         binding,
@@ -422,7 +416,7 @@ function makeFieldEditor(binding: FieldBinding, host: DevToolsHost): Editor {
     const input = document.createElement("input");
     input.type = "text";
     input.value = String(binding.getValue() ?? "");
-    input.style.cssText = `background:var(--dt-bg-sunken);color:${PALETTE.fg};border:1px solid var(--dt-border);border-radius:2px;padding:1px 4px;font:inherit;font-size:10px;outline:none;width:140px`;
+    input.style.cssText = `background:var(--ui-color-surface-low);color:var(--ui-color-text-primary);border:1px solid var(--ui-color-neutral-border);border-radius:2px;padding:1px 4px;font:inherit;font-size:10px;outline:none;width:140px`;
     input.addEventListener("change", () => binding.setValue(input.value));
     valueWrap.appendChild(input);
     refreshers.push(() => {
@@ -430,7 +424,7 @@ function makeFieldEditor(binding: FieldBinding, host: DevToolsHost): Editor {
     });
   } else if (schema.kind === "enum") {
     const sel = document.createElement("select");
-    sel.style.cssText = `background:var(--dt-bg-sunken);color:${PALETTE.fg};border:1px solid var(--dt-border);border-radius:2px;padding:1px 4px;font:inherit;font-size:10px;outline:none`;
+    sel.style.cssText = `background:var(--ui-color-surface-low);color:var(--ui-color-text-primary);border:1px solid var(--ui-color-neutral-border);border-radius:2px;padding:1px 4px;font:inherit;font-size:10px;outline:none`;
     for (const opt of schema.options ?? []) {
       const o = document.createElement("option");
       o.value = opt;
@@ -455,7 +449,7 @@ function makeFieldEditor(binding: FieldBinding, host: DevToolsHost): Editor {
   clearBtn.textContent = "↺";
   clearBtn.title = "Revert to baseline";
   clearBtn.style.cssText =
-    "background:none;border:none;color:var(--dt-fg-muted);cursor:pointer;font-size:10px;padding:0 3px;opacity:0";
+    "background:none;border:none;color:var(--ui-color-text-secondary);cursor:pointer;font-size:10px;padding:0 3px;opacity:0";
   clearBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     revertPatch();
@@ -507,7 +501,7 @@ function buildInspectorPanel(
     "display:flex;flex-direction:column;height:100%;min-height:0;font-size:11px;line-height:1.5";
 
   const header = document.createElement("div");
-  header.style.cssText = `padding:4px 8px;border-bottom:1px solid var(--dt-border);color:${PALETTE.fg};font-weight:600`;
+  header.style.cssText = `padding:4px 8px;border-bottom:1px solid var(--ui-color-neutral-border);color:var(--ui-color-text-primary);font-weight:600`;
 
   const body = document.createElement("div");
   body.style.cssText = "flex:1;overflow:auto;padding:4px 0";
@@ -533,14 +527,14 @@ function buildInspectorPanel(
     }
 
     if (patchCount > 0) {
-      section.style.cssText += `;border-left:2px solid ${PALETTE.modified};padding-left:4px`;
+      section.style.cssText += `;border-left:2px solid ${MODIFIED_COLOR};padding-left:4px`;
     }
 
     const head = document.createElement("div");
-    head.style.cssText = `color:${PALETTE.accent};font-weight:600;cursor:pointer;padding:2px 8px;user-select:none;display:flex;align-items:center`;
+    head.style.cssText = `color:var(--ui-color-primary-text);font-weight:600;cursor:pointer;padding:2px 8px;user-select:none;display:flex;align-items:center`;
     const twisty = document.createElement("span");
     twisty.textContent = folded ? "▶" : "▼";
-    twisty.style.cssText = `font-size:8px;margin-right:4px;color:${PALETTE.fgDim}`;
+    twisty.style.cssText = `font-size:8px;margin-right:4px;color:var(--ui-color-text-muted)`;
     head.appendChild(twisty);
     const title = document.createElement("span");
     title.textContent = typeName;
@@ -549,7 +543,7 @@ function buildInspectorPanel(
       const badge = document.createElement("span");
       badge.textContent = String(patchCount);
       badge.title = `${patchCount} patched field${patchCount === 1 ? "" : "s"}`;
-      badge.style.cssText = `margin-left:6px;font-size:9px;font-weight:500;color:${PALETTE.modified};border:1px solid ${PALETTE.modified};border-radius:8px;padding:0 5px;min-width:14px;text-align:center`;
+      badge.style.cssText = `margin-left:6px;font-size:9px;font-weight:500;color:${MODIFIED_COLOR};border:1px solid ${MODIFIED_COLOR};border-radius:8px;padding:0 5px;min-width:14px;text-align:center`;
       head.appendChild(badge);
     }
     head.addEventListener("click", () => {
@@ -586,13 +580,13 @@ function buildInspectorPanel(
       for (const key of keys) {
         const value = target[key];
         const row = document.createElement("div");
-        row.style.cssText = `padding:1px 0 1px 12px;color:${PALETTE.fgMuted};font-size:10px`;
+        row.style.cssText = `padding:1px 0 1px 12px;color:var(--ui-color-text-secondary);font-size:10px`;
         const lbl = document.createElement("span");
         lbl.textContent = key;
         lbl.style.cssText = `min-width:90px;display:inline-block`;
         row.appendChild(lbl);
         const val = document.createElement("span");
-        val.style.cssText = `color:${PALETTE.fg}`;
+        val.style.cssText = `color:var(--ui-color-text-primary)`;
         if (value == null) val.textContent = String(value);
         else if (value instanceof Float32Array)
           val.textContent = `[${Array.from(value)
@@ -616,7 +610,7 @@ function buildInspectorPanel(
       body.innerHTML = "";
       const empty = document.createElement("div");
       empty.textContent = "no entity selected";
-      empty.style.cssText = `padding:8px;color:${PALETTE.fgDim}`;
+      empty.style.cssText = `padding:8px;color:var(--ui-color-text-muted)`;
       body.appendChild(empty);
       return;
     }
@@ -628,7 +622,7 @@ function buildInspectorPanel(
     if (components.length === 0) {
       const empty = document.createElement("div");
       empty.textContent = "no components";
-      empty.style.cssText = `padding:8px;color:${PALETTE.fgDim}`;
+      empty.style.cssText = `padding:8px;color:var(--ui-color-text-muted)`;
       body.appendChild(empty);
       return;
     }

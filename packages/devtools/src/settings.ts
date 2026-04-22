@@ -1,4 +1,6 @@
 import { ref, watch, type Ref } from "@dalpeng/core";
+import { defineTheme, type Theme } from "@dalpeng/ui";
+import { applyTheme } from "@dalpeng/ui/dom";
 import {
   defaultWorkspace,
   deserializeWorkspace,
@@ -11,64 +13,25 @@ export type DockSide = "right" | "left";
 export type FontSize = "small" | "medium" | "large";
 export type Density = "compact" | "comfortable";
 
-/** Token bag applied as CSS custom properties on the host root. */
-export interface DevToolsTheme {
-  bg: string;
-  bgMuted: string;
-  bgSunken: string;
-  fg: string;
-  fgMuted: string;
-  fgDim: string;
-  border: string;
-  accent: string;
-  hover: string;
-  selected: string;
-  shadow: string;
-}
-
-const THEMES: Record<ThemeName, DevToolsTheme> = {
-  dark: {
-    bg: "rgba(18, 20, 24, 0.96)",
-    bgMuted: "#15171c",
-    bgSunken: "#0f1116",
-    fg: "#e6e8ec",
-    fgMuted: "#9ba3b0",
-    fgDim: "#6b7280",
-    border: "#2a2e35",
-    accent: "#4a90e2",
-    hover: "rgba(255, 255, 255, 0.04)",
-    selected: "#1f242c",
-    shadow: "rgba(0, 0, 0, 0.4)",
-  },
-  midnight: {
-    bg: "rgba(8, 12, 22, 0.98)",
-    bgMuted: "#070b16",
-    bgSunken: "#04060d",
-    fg: "#dee5f1",
-    fgMuted: "#7d8aa3",
-    fgDim: "#4a5468",
-    border: "#1a2237",
-    accent: "#7aa2f7",
-    hover: "rgba(122, 162, 247, 0.08)",
-    selected: "#152033",
-    shadow: "rgba(0, 0, 0, 0.6)",
-  },
-  light: {
-    bg: "rgba(252, 252, 253, 0.98)",
-    bgMuted: "#f0f1f3",
-    bgSunken: "#e6e8ec",
-    fg: "#1f242c",
-    fgMuted: "#5a6270",
-    fgDim: "#9098a4",
-    border: "#d4d8df",
-    accent: "#1f6feb",
-    hover: "rgba(0, 0, 0, 0.04)",
-    selected: "#dbe5f1",
-    shadow: "rgba(0, 0, 0, 0.12)",
-  },
+// DevTools derives its panel theme from @dalpeng/ui's `defineTheme` — CSS vars
+// emitted onto the panel root cascade through every plugin subtree. No
+// DevTools-private color palette anymore; all tokens flow through --ui-color-*.
+const THEMES: Record<ThemeName, Theme> = {
+  dark: defineTheme({
+    mode: "dark",
+    seeds: { primary: "#4a90e2", neutral: "#2a2e35" },
+  }),
+  midnight: defineTheme({
+    mode: "dark",
+    seeds: { primary: "#7aa2f7", neutral: "#1a2237" },
+  }),
+  light: defineTheme({
+    mode: "light",
+    seeds: { primary: "#1f6feb", neutral: "#d4d8df" },
+  }),
 };
 
-export function getTheme(name: ThemeName): DevToolsTheme {
+export function getTheme(name: ThemeName): Theme {
   return THEMES[name];
 }
 
@@ -156,7 +119,6 @@ export function regionForDock(dock: string | undefined): RegionId {
 export function getSettings(): DevToolsSettings {
   if (settingsSingleton) return settingsSingleton;
   const persisted = loadPersisted();
-  // corrupt JSON / schema bump → fall back to default; never block startup
   const restoredWs = deserializeWorkspace(persisted.workspace) ?? defaultWorkspace();
 
   const settings: DevToolsSettings = {
@@ -187,20 +149,14 @@ export function getSettings(): DevToolsSettings {
   return settings;
 }
 
-export function applyThemeVariables(el: HTMLElement, theme: DevToolsTheme): void {
-  el.style.setProperty("--dt-bg", theme.bg);
-  el.style.setProperty("--dt-bg-muted", theme.bgMuted);
-  el.style.setProperty("--dt-bg-sunken", theme.bgSunken);
-  el.style.setProperty("--dt-fg", theme.fg);
-  el.style.setProperty("--dt-fg-muted", theme.fgMuted);
-  el.style.setProperty("--dt-fg-dim", theme.fgDim);
-  el.style.setProperty("--dt-border", theme.border);
-  el.style.setProperty("--dt-accent", theme.accent);
-  el.style.setProperty("--dt-hover", theme.hover);
-  el.style.setProperty("--dt-selected", theme.selected);
-  el.style.setProperty("--dt-shadow", theme.shadow);
+// Applies the theme's full CSS var surface on the panel root. The previous
+// `--dt-*` slot palette is gone — plugins reference `var(--ui-color-*)` now.
+export function applyThemeVariables(el: HTMLElement, theme: Theme): () => void {
+  return applyTheme(el, theme);
 }
 
+// DevTools-specific sizing slots (not colors). Kept because DevTools UI has
+// its own density / font-size toggles independent of the theme's token scale.
 export function applySizingVariables(el: HTMLElement, fontSize: FontSize, density: Density): void {
   el.style.setProperty("--dt-font-size", fontSizePx(fontSize));
   el.style.setProperty("--dt-pad", densityPad(density));

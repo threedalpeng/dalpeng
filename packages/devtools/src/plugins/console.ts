@@ -31,11 +31,11 @@ export function consolePlugin(): DevToolsPlugin {
 
   const bar = document.createElement("div");
   bar.style.cssText =
-    "display:flex;gap:4px;padding:4px 6px;border-bottom:1px solid var(--dt-border);align-items:center";
+    "display:flex;gap:4px;padding:4px 6px;border-bottom:1px solid var(--ui-color-neutral-border);align-items:center";
 
   const levelSelect = document.createElement("select");
   levelSelect.style.cssText =
-    "background:var(--dt-bg-sunken);color:var(--dt-fg);border:1px solid var(--dt-border);border-radius:2px;padding:2px 4px;font:inherit;font-size:10px;outline:none";
+    "background:var(--ui-color-surface-low);color:var(--ui-color-text-primary);border:1px solid var(--ui-color-neutral-border);border-radius:2px;padding:2px 4px;font:inherit;font-size:10px;outline:none";
   for (const lv of LEVEL_OPTIONS) {
     const o = document.createElement("option");
     o.value = lv;
@@ -48,16 +48,16 @@ export function consolePlugin(): DevToolsPlugin {
   searchInput.type = "text";
   searchInput.placeholder = "🔍 filter…";
   searchInput.style.cssText =
-    "flex:1;background:var(--dt-bg-sunken);color:var(--dt-fg);border:1px solid var(--dt-border);border-radius:2px;padding:2px 6px;font:inherit;font-size:10px;outline:none";
+    "flex:1;background:var(--ui-color-surface-low);color:var(--ui-color-text-primary);border:1px solid var(--ui-color-neutral-border);border-radius:2px;padding:2px 6px;font:inherit;font-size:10px;outline:none";
 
   const clearBtn = document.createElement("button");
   clearBtn.textContent = "clear";
   clearBtn.style.cssText =
-    "background:var(--dt-bg-sunken);color:var(--dt-fg-muted);border:1px solid var(--dt-border);border-radius:2px;padding:2px 8px;font:inherit;font-size:10px;cursor:pointer";
+    "background:var(--ui-color-surface-low);color:var(--ui-color-text-secondary);border:1px solid var(--ui-color-neutral-border);border-radius:2px;padding:2px 8px;font:inherit;font-size:10px;cursor:pointer";
 
   const countBadge = document.createElement("span");
   countBadge.style.cssText =
-    "color:var(--dt-fg-dim);font-size:10px;min-width:50px;text-align:right";
+    "color:var(--ui-color-text-muted);font-size:10px;min-width:50px;text-align:right";
 
   bar.appendChild(levelSelect);
   bar.appendChild(searchInput);

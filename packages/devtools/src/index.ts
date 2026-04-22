@@ -52,7 +52,6 @@ export {
   listThemes,
   type Density,
   type DevToolsSettings,
-  type DevToolsTheme,
   type DockSide,
   type FontSize,
   type ThemeName,
