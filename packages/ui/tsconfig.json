@@ -8,9 +8,11 @@
     "noImplicitReturns": true,
     "rootDir": "./src",
     "outDir": "./dist",
-    "jsx": "react",
-    "jsxFactory": "h",
-    "jsxFragmentFactory": "Fragment"
+    "jsx": "react-jsx",
+    "jsxImportSource": ".",
+    "paths": {
+      "./jsx-runtime": ["./src/core/jsx-runtime.ts"]
+    }
   },
   "include": ["src"]
 }
