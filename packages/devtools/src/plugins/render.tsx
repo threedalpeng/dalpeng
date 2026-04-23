@@ -9,36 +9,10 @@ import { definePlugin } from "../plugin";
 //
 // Application.features (RenderConfig) is plain mutation — the renderer reads
 // it every frame. DevTools wants reactive atoms (Toggle / Range / Select)
-// bound to each knob; featureRef bridges the gap.
-//
-// Writes from the Ref propagate to app.features immediately. External
-// mutations to app.features (e.g. game code toggling a feature at runtime)
-// are detected by a 1 Hz polling sync — DevTools UI converges within 1 s.
-// Full push-based interception would require redesigning RenderConfig as
-// reactive refs (scope: large), which we defer to a separate track. See
-// decisions.md D-FEATUREREF.
-
-const FEATURE_REFS: Array<{ key: string; app: Application; ref: Ref<unknown> }> = [];
-let pollHandle: ReturnType<typeof setInterval> | null = null;
-
-function startFeaturePolling(): void {
-  if (pollHandle !== null) return;
-  pollHandle = setInterval(() => {
-    for (const entry of FEATURE_REFS) {
-      const live = (entry.app.features as unknown as Record<string, unknown>)[entry.key];
-      if (!Object.is(live, entry.ref.value)) {
-        entry.ref.value = live;
-      }
-    }
-  }, 1000);
-}
-
-function stopFeaturePollingIfIdle(): void {
-  if (FEATURE_REFS.length === 0 && pollHandle !== null) {
-    clearInterval(pollHandle);
-    pollHandle = null;
-  }
-}
+// bound to each knob; featureRef bridges the gap. Writes from the Ref
+// propagate to app.features; reads reflect the last known value. External
+// mutations to app.features won't push back (no getter/setter interception);
+// DevTools is the only writer in practice.
 
 function featureRef<K extends keyof RenderConfig>(
   app: Application,
@@ -47,22 +21,10 @@ function featureRef<K extends keyof RenderConfig>(
 ): Ref<NonNullable<RenderConfig[K]>> {
   const initial = (app.features[key] ?? fallback) as NonNullable<RenderConfig[K]>;
   const r = ref<NonNullable<RenderConfig[K]>>(initial);
-  const entry = { key: key as string, app, ref: r as Ref<unknown> };
-  FEATURE_REFS.push(entry);
-  startFeaturePolling();
   watch(r, (v) => {
     (app.features as unknown as Record<string, unknown>)[key as string] = v;
   });
   return r;
-}
-
-// Exposed for render plugin's panel teardown — drops polling entries when
-// DevTools panel unmounts so we don't hold stale Application refs.
-function releaseFeatureRefsForApp(app: Application): void {
-  for (let i = FEATURE_REFS.length - 1; i >= 0; i--) {
-    if (FEATURE_REFS[i].app === app) FEATURE_REFS.splice(i, 1);
-  }
-  stopFeaturePollingIfIdle();
 }
 
 // ─── Plugin ───────────────────────────────────────────────────────────────
@@ -77,15 +39,10 @@ export function renderPlugin(): DevToolsPlugin {
     setup(host: DevToolsHost) {
       currentApp = host.app.value;
       const unwatchApp = watch(host.app, (app) => {
-        // Releasing entries from a destroyed Application prevents the poll
-        // loop from holding stale references. The new app's Refs register
-        // on next panel render.
-        if (currentApp && currentApp !== app) releaseFeatureRefsForApp(currentApp);
         currentApp = app;
       });
       return () => {
         unwatchApp();
-        if (currentApp) releaseFeatureRefsForApp(currentApp);
         currentApp = null;
       };
     },
