@@ -1,6 +1,6 @@
 import { computed, ref, watch, type Component, type GameEntity } from "@dalpeng/core";
 import { For, Show, defineUI } from "@dalpeng/ui";
-import { Section, Toolbar, Tree, type TreeNode } from "@dalpeng/ui/dom";
+import { Badge, Section, Toolbar, Tree, type TreeNode } from "@dalpeng/ui/dom";
 import { componentDisplayName, getComponentSchema, type FieldSchema } from "../editSchema";
 import type { DevToolsHost } from "../host";
 import type { DevToolsPlugin } from "../plugin";
@@ -570,14 +570,59 @@ function ComponentSection({
   onFoldToggle,
 }: InspectorCtx & { component: Component }) {
   const typeName = componentDisplayName(component);
+  const host = hostRef();
+
+  // Track patched-field count reactively — watches host.patches so when a user
+  // reverts or pins a field, the badge + border indicator update without a
+  // full inspector rebuild.
+  const patchCount = computed(() => {
+    const entity = selected.value;
+    if (!entity) return 0;
+    const schema = getComponentSchema(component);
+    if (!schema) return 0;
+    // depend on host.patches so the computed re-evaluates on any patch change
+    void host.patches.value;
+    let n = 0;
+    for (const field of Object.keys(schema.fields)) {
+      if (host.isPatched(entity, typeName, field)) n++;
+    }
+    return n;
+  });
+
+  const hasPatches = computed(() => patchCount.value > 0);
+  const countLabel = computed(() => String(patchCount.value));
+
   return (
-    <Section
-      title={typeName}
-      defaultCollapsed={foldedComponents.has(typeName)}
-      onToggle={(folded) => onFoldToggle(typeName, folded)}
+    <div
+      ref={(el) => {
+        const wrap = el as HTMLElement;
+        const apply = (n: number): void => {
+          if (n > 0) {
+            wrap.style.borderLeft = "2px solid var(--ui-color-warning-text)";
+            wrap.style.paddingLeft = "4px";
+          } else {
+            wrap.style.borderLeft = "";
+            wrap.style.paddingLeft = "";
+          }
+        };
+        apply(patchCount.value);
+        return watch(patchCount, apply);
+      }}
     >
-      <ComponentFields component={component} selected={selected} host={hostRef()} />
-    </Section>
+      <Section
+        title={typeName}
+        defaultCollapsed={foldedComponents.has(typeName)}
+        onToggle={(folded) => onFoldToggle(typeName, folded)}
+        actions={
+          <Show
+            when={hasPatches}
+            body={<Badge label={countLabel} role="warning" variant="outline" />}
+          />
+        }
+      >
+        <ComponentFields component={component} selected={selected} host={host} />
+      </Section>
+    </div>
   );
 }
 

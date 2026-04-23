@@ -12,14 +12,18 @@ import type {
   ThemeColor,
 } from "./types";
 
+// Defaults spaced ≥ 30° apart in hue to avoid `auditTheme` collision warnings
+// and to give each role a visually distinct identity. Games choosing their
+// own palette should keep similar spacing — overlap breaks role recognition
+// (user can't tell "primary action" from "success" at a glance).
 const DEFAULT_SEEDS: Required<ColorSeeds> = {
-  primary: "#7be0a1",
-  accent: "#6ca0ff",
-  neutral: "#8b92a0",
-  success: "#3fb950",
-  warning: "#f0b33a",
-  danger: "#e26b6b",
-  info: "#5ab8e6",
+  primary: "#3a86ff", // blue
+  accent: "#a855f7", // violet
+  neutral: "#8b92a0", // desaturated gray
+  success: "#22c55e", // green
+  warning: "#f59e0b", // amber
+  danger: "#ef4444", // red
+  info: "#06b6d4", // cyan
 };
 
 /**
