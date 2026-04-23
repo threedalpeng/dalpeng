@@ -1,9 +1,17 @@
-import type { UIElement } from "../../core/element";
+import type { ReadonlyRef } from "@dalpeng/core";
+import { defineComponent, type UIElement } from "../../core/element";
 
-export function Button(label: string, onClick: () => void): UIElement {
-  return (
-    <button type="button" onClick={onClick}>
+export interface ButtonProps {
+  label: string | ReadonlyRef<string>;
+  onClick: () => void;
+  disabled?: boolean | ReadonlyRef<boolean>;
+  title?: string;
+}
+
+export const Button = defineComponent<ButtonProps>(
+  ({ label, onClick, disabled, title }): UIElement => (
+    <button type="button" onClick={onClick} disabled={disabled} title={title}>
       {label}
     </button>
-  );
-}
+  )
+);

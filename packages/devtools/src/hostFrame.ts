@@ -434,7 +434,7 @@ export class DevToolsRootHost {
   }
 
   #buildHostFrame(): UIElement {
-    const emptyPanel = (): UIElement => h("div", null, Text("(missing panel)"));
+    const emptyPanel = (): UIElement => h("div", null, Text({ value: "(missing panel)" }));
 
     // Split/Tabs set flex:1 on their container — returning them directly
     // keeps the outer flex column layout healthy (an extra wrapping div
@@ -482,28 +482,37 @@ export class DevToolsRootHost {
       return h(
         "div",
         { style: { display: "flex", flexDirection: "column", gap: 6 } },
-        Text("preferences", { size: 11, color: "var(--ui-color-text-secondary)" }),
+        Text({ value: "preferences", size: 11, color: "var(--ui-color-text-secondary)" }),
         For<string>({
           items: ref(themes) as ReadonlyRef<string[]>,
           render: (name) =>
-            Button(name, () => {
-              this.#settings.theme.value = name as never;
+            Button({
+              label: name,
+              onClick: () => {
+                this.#settings.theme.value = name as never;
+              },
             }),
         }),
-        Text("font", { size: 11, color: "var(--ui-color-text-secondary)" }),
+        Text({ value: "font", size: 11, color: "var(--ui-color-text-secondary)" }),
         For<string>({
           items: ref(["small", "medium", "large"]) as ReadonlyRef<string[]>,
           render: (name) =>
-            Button(name, () => {
-              this.#settings.fontSize.value = name as never;
+            Button({
+              label: name,
+              onClick: () => {
+                this.#settings.fontSize.value = name as never;
+              },
             }),
         }),
-        Text("density", { size: 11, color: "var(--ui-color-text-secondary)" }),
+        Text({ value: "density", size: 11, color: "var(--ui-color-text-secondary)" }),
         For<string>({
           items: ref(["compact", "comfortable"]) as ReadonlyRef<string[]>,
           render: (name) =>
-            Button(name, () => {
-              this.#settings.density.value = name as never;
+            Button({
+              label: name,
+              onClick: () => {
+                this.#settings.density.value = name as never;
+              },
             }),
         })
       );

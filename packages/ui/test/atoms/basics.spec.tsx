@@ -9,7 +9,7 @@ const ctx = { doc: document };
 
 describe("Text — static content", () => {
   it("renders a string inside a span", () => {
-    const handle = mount(Text("hello"), ctx);
+    const handle = mount(Text({ value: "hello" }), ctx);
     const span = handle.element as HTMLElement;
     expect(span.tagName).toBe("SPAN");
     expect(span.textContent).toBe("hello");
@@ -17,7 +17,7 @@ describe("Text — static content", () => {
   });
 
   it("applies TextOpts to style", () => {
-    const handle = mount(Text("hi", { size: 16, color: "#fff", bold: true }), ctx);
+    const handle = mount(Text({ value: "hi", size: 16, color: "#fff", bold: true }), ctx);
     const span = handle.element as HTMLElement;
     expect(span.style.fontSize).toBe("16px");
     expect(span.style.color).toBe("#fff");
@@ -29,7 +29,7 @@ describe("Text — static content", () => {
 describe("Text — reactive content", () => {
   it("string Ref patches textContent on write without re-rendering span", () => {
     const value = ref("one");
-    const handle = mount(Text(value), ctx);
+    const handle = mount(Text({ value }), ctx);
     const span = handle.element as HTMLElement;
     expect(span.textContent).toBe("one");
 
@@ -42,10 +42,7 @@ describe("Text — reactive content", () => {
 
   it("Ref + formatter projects value through formatter", () => {
     const count = ref(0);
-    const handle = mount(
-      Text(count, (n) => `count: ${n}`),
-      ctx
-    );
+    const handle = mount(Text({ value: count, format: (n) => `count: ${n}` }), ctx);
     const span = handle.element as HTMLElement;
     expect(span.textContent).toBe("count: 0");
 
@@ -57,7 +54,7 @@ describe("Text — reactive content", () => {
 
 describe("Html — raw markup escape hatch", () => {
   it("sets innerHTML from content string", () => {
-    const handle = mount(Html("<b>bold</b> text"), ctx);
+    const handle = mount(Html({ content: "<b>bold</b> text" }), ctx);
     document.body.appendChild(handle.element);
     handle.commit();
     const div = handle.element as HTMLElement;
@@ -71,10 +68,7 @@ describe("Html — raw markup escape hatch", () => {
 describe("Button — click handler", () => {
   it("renders a button element with label + wired click", () => {
     let clicks = 0;
-    const handle = mount(
-      Button("Click me", () => clicks++),
-      ctx
-    );
+    const handle = mount(Button({ label: "Click me", onClick: () => clicks++ }), ctx);
     const btn = handle.element as HTMLButtonElement;
     expect(btn.tagName).toBe("BUTTON");
     expect(btn.type).toBe("button");
@@ -88,10 +82,7 @@ describe("Button — click handler", () => {
 
   it("click handler is removed after unmount", () => {
     let clicks = 0;
-    const handle = mount(
-      Button("x", () => clicks++),
-      ctx
-    );
+    const handle = mount(Button({ label: "x", onClick: () => clicks++ }), ctx);
     const btn = handle.element as HTMLButtonElement;
     btn.click();
     expect(clicks).toBe(1);

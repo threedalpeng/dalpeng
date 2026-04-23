@@ -1,15 +1,16 @@
-import type { UIElement } from "../../core/element";
+import { defineComponent, type UIElement } from "../../core/element";
 
-/**
- * Escape hatch for raw HTML markup. Caller is responsible for trust /
- * sanitization — dangerouslySetInnerHTML-equivalent.
- */
-export function Html(content: string): UIElement {
-  return (
+export interface HtmlProps {
+  /** Raw HTML string. Caller is responsible for trust / sanitization (dangerouslySetInnerHTML-equivalent). */
+  content: string;
+}
+
+export const Html = defineComponent<HtmlProps>(
+  ({ content }): UIElement => (
     <div
       ref={(el) => {
         (el as HTMLElement).innerHTML = content;
       }}
     />
-  );
-}
+  )
+);

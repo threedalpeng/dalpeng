@@ -10,7 +10,7 @@ const ctx = { doc: document };
 describe("Toggle — two-way checkbox binding", () => {
   it("reflects Ref<boolean> state and commits user toggles back", () => {
     const enabled = ref(false);
-    const handle = mount(Toggle(enabled, "Enabled"), ctx);
+    const handle = mount(Toggle({ source: enabled, label: "Enabled" }), ctx);
     document.body.appendChild(handle.element);
     handle.commit();
 
@@ -30,7 +30,7 @@ describe("Toggle — two-way checkbox binding", () => {
 
   it("cleans up subscription on unmount — later Ref writes don't touch DOM", () => {
     const enabled = ref(false);
-    const handle = mount(Toggle(enabled, "x"), ctx);
+    const handle = mount(Toggle({ source: enabled, label: "x" }), ctx);
     document.body.appendChild(handle.element);
     handle.commit();
 
@@ -45,7 +45,7 @@ describe("Toggle — two-way checkbox binding", () => {
 describe("Range — value + display + event", () => {
   it("mirrors Ref<number> on input element and commits user slides back", () => {
     const source = ref(50);
-    const handle = mount(Range(source, "Volume", { min: 0, max: 100, step: 1 }), ctx);
+    const handle = mount(Range({ source, label: "Volume", min: 0, max: 100, step: 1 }), ctx);
     document.body.appendChild(handle.element);
     handle.commit();
 
@@ -68,7 +68,7 @@ describe("Range — value + display + event", () => {
 
   it("renders a live display span that tracks the value", () => {
     const source = ref(42);
-    const handle = mount(Range(source, "x", { min: 0, max: 100 }), ctx);
+    const handle = mount(Range({ source, label: "x", min: 0, max: 100 }), ctx);
     document.body.appendChild(handle.element);
     handle.commit();
 
@@ -91,7 +91,7 @@ describe("Select — option list + two-way binding", () => {
       { value: "b", label: "B" },
       { value: "c", label: "C" },
     ];
-    const handle = mount(Select(choice, "Pick", opts), ctx);
+    const handle = mount(Select({ source: choice, label: "Pick", options: opts }), ctx);
     document.body.appendChild(handle.element);
     handle.commit();
 

@@ -1,13 +1,15 @@
-import { ref, type Ref } from "@dalpeng/core";
-import type { UIElement } from "../../core/element";
+import { ref, type ReadonlyRef, type Ref } from "@dalpeng/core";
+import { defineComponent, type UIElement } from "../../core/element";
 
-export interface RangeOpts {
+export interface RangeProps {
+  source: Ref<number>;
+  label: string | ReadonlyRef<string>;
   min: number;
   max: number;
   step?: number;
 }
 
-export function Range(source: Ref<number>, label: string, opts: RangeOpts): UIElement {
+export const Range = defineComponent<RangeProps>(({ source, label, min, max, step }): UIElement => {
   const display = ref(String(source.value));
 
   return (
@@ -15,9 +17,9 @@ export function Range(source: Ref<number>, label: string, opts: RangeOpts): UIEl
       <span>{label}</span>
       <input
         type="range"
-        min={opts.min}
-        max={opts.max}
-        step={opts.step ?? 1}
+        min={min}
+        max={max}
+        step={step ?? 1}
         ref={(el) => {
           const input = el as HTMLInputElement;
           input.value = String(source.value);
@@ -41,4 +43,4 @@ export function Range(source: Ref<number>, label: string, opts: RangeOpts): UIEl
       <span style={{ minWidth: 40, textAlign: "right" }}>{display}</span>
     </div>
   );
-}
+});

@@ -26,16 +26,28 @@ export function settingsPlugin(): DevToolsPlugin {
           // `Ref<T>` is invariant in T — cast is safe because each Select's
           // option list is the exact domain of the underlying ref.
           return [
-            Select(s.theme as unknown as Ref<string>, "theme", themeOptions),
-            Select(s.fontSize as unknown as Ref<string>, "font size", [
-              { value: "small", label: "small" },
-              { value: "medium", label: "medium" },
-              { value: "large", label: "large" },
-            ]),
-            Select(s.density as unknown as Ref<string>, "density", [
-              { value: "compact", label: "compact" },
-              { value: "comfortable", label: "comfortable" },
-            ]),
+            Select({
+              source: s.theme as unknown as Ref<string>,
+              label: "theme",
+              options: themeOptions,
+            }),
+            Select({
+              source: s.fontSize as unknown as Ref<string>,
+              label: "font size",
+              options: [
+                { value: "small", label: "small" },
+                { value: "medium", label: "medium" },
+                { value: "large", label: "large" },
+              ],
+            }),
+            Select({
+              source: s.density as unknown as Ref<string>,
+              label: "density",
+              options: [
+                { value: "compact", label: "compact" },
+                { value: "comfortable", label: "comfortable" },
+              ],
+            }),
           ];
         }),
       },

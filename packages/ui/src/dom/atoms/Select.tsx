@@ -1,5 +1,5 @@
-import type { Ref } from "@dalpeng/core";
-import type { UIElement } from "../../core/element";
+import type { ReadonlyRef, Ref } from "@dalpeng/core";
+import { defineComponent, type UIElement } from "../../core/element";
 import { bindValue } from "../bindings";
 
 export interface SelectOption {
@@ -7,8 +7,14 @@ export interface SelectOption {
   label: string;
 }
 
-export function Select(source: Ref<string>, label: string, options: SelectOption[]): UIElement {
-  return (
+export interface SelectProps {
+  source: Ref<string>;
+  label: string | ReadonlyRef<string>;
+  options: SelectOption[];
+}
+
+export const Select = defineComponent<SelectProps>(
+  ({ source, label, options }): UIElement => (
     <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <span>{label}</span>
       <select ref={(el) => bindValue(el as HTMLSelectElement, "value", source)}>
@@ -17,5 +23,5 @@ export function Select(source: Ref<string>, label: string, options: SelectOption
         ))}
       </select>
     </label>
-  );
-}
+  )
+);

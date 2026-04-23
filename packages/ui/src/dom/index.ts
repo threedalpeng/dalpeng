@@ -25,17 +25,17 @@ export { domUIRenderer } from "./uiRenderer";
 
 export { resolvePlacement, type ResolvedPlacement } from "./placement";
 
-export { Button } from "./atoms/Button";
+export { Button, type ButtonProps } from "./atoms/Button";
 export { Floating, type FloatingOpts } from "./atoms/Floating";
 export { For, type ForOpts } from "./atoms/For";
-export { Html } from "./atoms/Html";
-export { Range, type RangeOpts } from "./atoms/Range";
-export { Select, type SelectOption } from "./atoms/Select";
+export { Html, type HtmlProps } from "./atoms/Html";
+export { Range, type RangeProps } from "./atoms/Range";
+export { Select, type SelectOption, type SelectProps } from "./atoms/Select";
 export { Show, type ShowOpts } from "./atoms/Show";
 export { Split, type SplitOpts } from "./atoms/Split";
 export { Tabs, type TabSpec, type TabsOpts } from "./atoms/Tabs";
-export { Text, type TextOpts } from "./atoms/Text";
-export { Toggle } from "./atoms/Toggle";
+export { Text, type TextProps } from "./atoms/Text";
+export { Toggle, type ToggleProps } from "./atoms/Toggle";
 
 export { Badge, type BadgeProps, type BadgeRole, type BadgeVariant } from "./composites/Badge";
 export { Bar, type BarOpts } from "./composites/Bar";

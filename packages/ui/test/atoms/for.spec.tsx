@@ -10,7 +10,10 @@ const ctx = { doc: document };
 describe("For — key-based diffing preserves identity", () => {
   it("appending an item keeps existing slot DOM refs", () => {
     const items = ref<{ id: number }[]>([{ id: 1 }, { id: 2 }]);
-    const handle = mount(For({ items, key: (i) => i.id, render: (i) => Text(String(i.id)) }), ctx);
+    const handle = mount(
+      For({ items, key: (i) => i.id, render: (i) => Text({ value: String(i.id) }) }),
+      ctx
+    );
     document.body.appendChild(handle.element);
     handle.commit();
 
@@ -30,7 +33,10 @@ describe("For — key-based diffing preserves identity", () => {
 
   it("removing an item tears down exactly that slot", () => {
     const items = ref<{ id: number }[]>([{ id: 1 }, { id: 2 }, { id: 3 }]);
-    const handle = mount(For({ items, key: (i) => i.id, render: (i) => Text(String(i.id)) }), ctx);
+    const handle = mount(
+      For({ items, key: (i) => i.id, render: (i) => Text({ value: String(i.id) }) }),
+      ctx
+    );
     document.body.appendChild(handle.element);
     handle.commit();
 
@@ -49,7 +55,10 @@ describe("For — key-based diffing preserves identity", () => {
 
   it("reorder preserves nodes and reshuffles position", () => {
     const items = ref<{ id: number }[]>([{ id: 1 }, { id: 2 }, { id: 3 }]);
-    const handle = mount(For({ items, key: (i) => i.id, render: (i) => Text(String(i.id)) }), ctx);
+    const handle = mount(
+      For({ items, key: (i) => i.id, render: (i) => Text({ value: String(i.id) }) }),
+      ctx
+    );
     document.body.appendChild(handle.element);
     handle.commit();
 
@@ -102,7 +111,7 @@ describe("For — empty fallback", () => {
     const handle = mount(
       For({
         items,
-        render: (n) => Text(String(n)),
+        render: (n) => Text({ value: String(n) }),
         empty: h("span", { class: "empty" }, "none"),
       }),
       ctx
@@ -128,7 +137,10 @@ describe("For — empty fallback", () => {
 describe("For — duplicate keys get separate slots", () => {
   it("two items with same key both render without collapsing", () => {
     const items = ref<string[]>(["a", "a"]);
-    const handle = mount(For({ items, key: (s) => s, render: (s, i) => Text(`${s}-${i}`) }), ctx);
+    const handle = mount(
+      For({ items, key: (s) => s, render: (s, i) => Text({ value: `${s}-${i}` }) }),
+      ctx
+    );
     document.body.appendChild(handle.element);
     handle.commit();
 

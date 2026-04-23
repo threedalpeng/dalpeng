@@ -117,7 +117,7 @@ describe("Show/Tabs — Text ref inside body survives toggles", () => {
   it("Show: the ref inside body keeps its subscription across toggles", () => {
     const when = ref(true);
     const n = ref(0);
-    const handle = mount(Show({ when, body: Text(n, (v) => String(v)) }), ctx);
+    const handle = mount(Show({ when, body: Text({ value: n, format: (v) => String(v) }) }), ctx);
     document.body.appendChild(handle.element);
     handle.commit();
 

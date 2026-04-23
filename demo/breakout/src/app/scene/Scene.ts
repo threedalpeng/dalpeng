@@ -12,7 +12,7 @@ const ScoreHUD = defineUI(() => {
     anchor: { kind: "viewport", corner: "tl" },
     offset: { x: 12, y: 12 },
   });
-  return [Text(score, (v) => `Score: ${v}`, { size: 24 })];
+  return [Text({ value: score, format: (v) => `Score: ${v}`, size: 24 })];
 });
 
 const LivesHUD = defineUI(() => {
@@ -20,7 +20,7 @@ const LivesHUD = defineUI(() => {
     anchor: { kind: "viewport", corner: "tr" },
     offset: { x: 12, y: 12 },
   });
-  return [Text(lives, (v) => "\u2665".repeat(Math.max(0, v)), { size: 24 })];
+  return [Text({ value: lives, format: (v) => "\u2665".repeat(Math.max(0, v)), size: 24 })];
 });
 
 const MessageHUD = defineUI(() => {
@@ -30,8 +30,8 @@ const MessageHUD = defineUI(() => {
   });
   useLayout("column", { gap: 4, align: "center" });
   return [
-    Text(message, (v) => v, { size: 48, bold: true }),
-    Text(message, (v) => (v ? "Press R to restart" : ""), { size: 18 }),
+    Text({ value: message, format: (v) => v, size: 48, bold: true }),
+    Text({ value: message, format: (v) => (v ? "Press R to restart" : ""), size: 18 }),
   ];
 });
 
