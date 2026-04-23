@@ -14,7 +14,6 @@ import {
   Split,
   Tabs,
   Text,
-  adopt,
   h,
   mount,
   type MountHandle,
@@ -475,8 +474,6 @@ export class DevToolsRootHost {
       return renderTabsAsElement(node);
     };
 
-    const footerEl = this.#buildFooterElement();
-
     const settingsPopoverBody = (): UIElement => {
       const themes = listThemes();
       return h(
@@ -520,7 +517,7 @@ export class DevToolsRootHost {
 
     const ws = this.#settings.workspace.value;
     const workspace = renderLayoutAsElement(ws.main);
-    const footer = adopt(footerEl);
+    const footer = this.#buildFooter();
     const popover = Floating({
       body: settingsPopoverBody(),
       visible: this.#settingsPopoverOpen,
@@ -538,68 +535,84 @@ export class DevToolsRootHost {
     );
   }
 
-  #buildFooterElement(): HTMLElement {
-    const doc = this.#ownerDoc;
-    const footer = doc.createElement("div");
-    Object.assign(footer.style, {
-      display: "flex",
-      flexDirection: "row",
-      alignItems: "center",
-      borderTop: "1px solid var(--ui-color-neutral-border)",
-      background: "var(--ui-color-surface-low)",
-      flexShrink: "0",
-      minHeight: "26px",
-      padding: "0 6px",
+  #buildFooter(): UIElement {
+    const flipLabel = computed(() => (this.#settings.side.value === "right" ? "⇤" : "⇥"));
+    const flipTitleRight = "Move dock to left side";
+    const flipTitleLeft = "Move dock to right side";
+
+    const footerBtnStyle = {
+      background: "transparent",
       color: "var(--ui-color-text-secondary)",
-    } satisfies Partial<CSSStyleDeclaration>);
+      border: "none",
+      padding: "0 10px",
+      height: "100%",
+      cursor: "pointer",
+      fontFamily: "inherit",
+      fontSize: "14px",
+      flexShrink: 0,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    } as const;
 
-    const spacer = doc.createElement("div");
-    spacer.style.flex = "1";
-
-    const btn = (label: string, title: string, onClick: () => void): HTMLButtonElement => {
-      const b = doc.createElement("button");
-      b.type = "button";
-      b.textContent = label;
-      b.title = title;
-      Object.assign(b.style, {
-        background: "transparent",
-        color: "var(--ui-color-text-secondary)",
-        border: "none",
-        padding: "0 10px",
-        height: "100%",
-        cursor: "pointer",
-        fontFamily: "inherit",
-        fontSize: "14px",
-        flexShrink: "0",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      } satisfies Partial<CSSStyleDeclaration>);
-      b.addEventListener("click", onClick);
-      return b;
-    };
-
-    const settingsBtn = btn("⚙", "Preferences", () => {
-      this.#settingsPopoverOpen.value = !this.#settingsPopoverOpen.value;
-    });
-    const flipBtn = btn("⇤", "Flip dock side", () => {
-      this.#settings.side.value = this.#settings.side.value === "right" ? "left" : "right";
-    });
-    const updateFlipLabel = () => {
-      const onRight = this.#settings.side.value === "right";
-      flipBtn.textContent = onRight ? "⇤" : "⇥";
-      flipBtn.title = onRight ? "Move dock to left side" : "Move dock to right side";
-    };
-    updateFlipLabel();
-    this.#unwatchSettings.push(watch(this.#settings.side, updateFlipLabel));
-
-    const popOutBtn = btn("⇗", "Open in new window", () => this.popOut());
-
-    footer.appendChild(spacer);
-    footer.appendChild(settingsBtn);
-    footer.appendChild(flipBtn);
-    footer.appendChild(popOutBtn);
-    return footer;
+    return h(
+      "div",
+      {
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          borderTop: "1px solid var(--ui-color-neutral-border)",
+          background: "var(--ui-color-surface-low)",
+          flexShrink: 0,
+          minHeight: 26,
+          paddingX: 6,
+          color: "var(--ui-color-text-secondary)",
+        },
+      },
+      h("div", { style: { flex: 1 } }),
+      h(
+        "button",
+        {
+          type: "button",
+          title: "Preferences",
+          onClick: () => {
+            this.#settingsPopoverOpen.value = !this.#settingsPopoverOpen.value;
+          },
+          style: footerBtnStyle,
+        },
+        "⚙"
+      ),
+      h(
+        "button",
+        {
+          type: "button",
+          ref: (el) => {
+            const btn = el as HTMLButtonElement;
+            const apply = (onRight: boolean): void => {
+              btn.title = onRight ? flipTitleRight : flipTitleLeft;
+            };
+            apply(this.#settings.side.value === "right");
+            return watch(this.#settings.side, (s) => apply(s === "right"));
+          },
+          onClick: () => {
+            this.#settings.side.value = this.#settings.side.value === "right" ? "left" : "right";
+          },
+          style: footerBtnStyle,
+        },
+        flipLabel
+      ),
+      h(
+        "button",
+        {
+          type: "button",
+          title: "Open in new window",
+          onClick: () => this.popOut(),
+          style: footerBtnStyle,
+        },
+        "⇗"
+      )
+    );
   }
 
   #beginTabDrag(panelKey: string, downEv: MouseEvent): void {
