@@ -1,4 +1,4 @@
-import { defineComponent, type Child, type UIElement } from "../../core/element";
+import { defineWidget, type Child, type UIElement } from "../../core/element";
 
 export type ToolbarDensity = "compact" | "comfortable";
 export type ToolbarAlign = "start" | "center" | "end" | "between";
@@ -14,7 +14,7 @@ export interface ToolbarProps {
  * Horizontal strip hosting IconButtons, Badges, compact inputs. Used as
  * panel headers / section controls. Keep it role-neutral — don't paint.
  */
-export const Toolbar = defineComponent<ToolbarProps>((props): UIElement => {
+export const Toolbar = defineWidget<ToolbarProps>((props): UIElement => {
   const density = props.density ?? "compact";
   const align = props.align ?? "start";
   return (

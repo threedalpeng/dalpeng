@@ -1,5 +1,5 @@
 import { ref, watch, type ReadonlyRef } from "@dalpeng/core";
-import { defineComponent, type Child, type UIElement } from "../../core/element";
+import { defineWidget, type Child, type UIElement } from "../../core/element";
 
 export interface TreeNode {
   id: string;
@@ -34,7 +34,7 @@ export interface TreeProps {
  * Does NOT virtualize — suitable for O(100s) nodes. For larger trees use
  * For with a flattened visible-row list.
  */
-export const Tree = defineComponent<TreeProps>((props): UIElement => {
+export const Tree = defineWidget<TreeProps>((props): UIElement => {
   const internalExpanded = ref<Set<string>>(
     buildDefaultExpanded(readNodes(props.nodes), props.defaultExpanded ?? false)
   );

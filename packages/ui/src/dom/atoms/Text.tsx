@@ -1,5 +1,5 @@
 import { computed, isRef, type ReadonlyRef } from "@dalpeng/core";
-import { defineComponent, type UIElement } from "../../core/element";
+import { defineWidget, type UIElement } from "../../core/element";
 import type { Style } from "../../core/style";
 
 export interface TextProps<T = string | number> {
@@ -13,7 +13,7 @@ export interface TextProps<T = string | number> {
   align?: string;
 }
 
-export const Text = defineComponent<TextProps<unknown>>(
+export const Text = defineWidget<TextProps<unknown>>(
   ({ value, format, size, color, bold, align }): UIElement => {
     const style: Style = {};
     if (size !== undefined) style.fontSize = size;

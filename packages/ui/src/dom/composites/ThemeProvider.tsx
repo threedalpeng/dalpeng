@@ -1,6 +1,6 @@
 import type { ReadonlyRef } from "@dalpeng/core";
 import { isRef } from "@dalpeng/core";
-import { defineComponent, type Child, type UIElement } from "../../core/element";
+import { defineWidget, type Child, type UIElement } from "../../core/element";
 import type { Theme } from "../../core/theme";
 import { applyTheme } from "../applyTheme";
 
@@ -20,7 +20,7 @@ export interface ThemeProviderProps {
  * scope, not this provider. Prefer token-based styling which works through
  * cascade without JS lookup.
  */
-export const ThemeProvider = defineComponent<ThemeProviderProps>(
+export const ThemeProvider = defineWidget<ThemeProviderProps>(
   ({ theme, children }): UIElement => (
     <div
       ref={(el: Element) => {

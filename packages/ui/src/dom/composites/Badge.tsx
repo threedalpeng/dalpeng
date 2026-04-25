@@ -1,5 +1,5 @@
 import type { ReadonlyRef } from "@dalpeng/core";
-import { defineComponent, type UIElement } from "../../core/element";
+import { defineWidget, type UIElement } from "../../core/element";
 
 export type BadgeRole =
   | "primary"
@@ -26,7 +26,7 @@ export interface BadgeProps {
  * - `subtle`  — role.muted / role.text      (default for counts/labels)
  * - `outline` — transparent / role.border / role.text
  */
-export const Badge = defineComponent<BadgeProps>((props): UIElement => {
+export const Badge = defineWidget<BadgeProps>((props): UIElement => {
   const role: BadgeRole = props.role ?? "neutral";
   const variant: BadgeVariant = props.variant ?? "subtle";
   return (

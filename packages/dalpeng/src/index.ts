@@ -77,9 +77,9 @@ export {
   createDialogueController,
   createElement,
   defaultTheme,
-  defineComponent,
   defineTheme,
   defineUI,
+  defineWidget,
   // Dialogue
   Dialogue,
   Floating,
@@ -174,10 +174,10 @@ export type {
   ToolbarProps,
   TreeNode,
   TreeProps,
-  Component as UIComponent,
   UIElement,
   Vec2,
   ViewportCorner,
+  Widget,
 } from "@dalpeng/ui";
 export { useDialogueController } from "./hooks/dialogue";
 

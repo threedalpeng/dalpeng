@@ -30,7 +30,7 @@ export function requireUI(hookName: string): UIContext {
   const ui = getThisUI();
   if (!ui) {
     throw new Error(
-      `${hookName}() requires an active UI context (must be called inside defineUI/defineComponent setup).`
+      `${hookName}() requires an active UI context (must be called inside defineUI/defineWidget setup).`
     );
   }
   return ui;

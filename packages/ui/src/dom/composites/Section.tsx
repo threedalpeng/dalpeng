@@ -1,5 +1,5 @@
 import { ref, watch, type ReadonlyRef } from "@dalpeng/core";
-import { defineComponent, type Child, type UIElement } from "../../core/element";
+import { defineWidget, type Child, type UIElement } from "../../core/element";
 
 export interface SectionProps {
   title: string | ReadonlyRef<string>;
@@ -21,7 +21,7 @@ export interface SectionProps {
  * Controlled + uncontrolled — pass `collapsed` Ref for external state, or
  * rely on internal state via `defaultCollapsed`.
  */
-export const Section = defineComponent<SectionProps>((props): UIElement => {
+export const Section = defineWidget<SectionProps>((props): UIElement => {
   const internal = ref(props.defaultCollapsed ?? false);
   const state = props.collapsed ?? internal;
 

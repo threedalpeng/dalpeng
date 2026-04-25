@@ -1,4 +1,4 @@
-import { defineComponent, type Child, type UIElement } from "../../core/element";
+import { defineWidget, type Child, type UIElement } from "../../core/element";
 
 export type IconButtonSize = "sm" | "md" | "lg";
 export type IconButtonVariant = "ghost" | "subtle" | "solid";
@@ -24,7 +24,7 @@ const ICON_SIZE: Record<IconButtonSize, string> = {
  * Square icon-first button. Accessible label via `label` (aria-label) or
  * `title`. Children render as the icon slot (text glyph, inline SVG, etc).
  */
-export const IconButton = defineComponent<IconButtonProps>((props): UIElement => {
+export const IconButton = defineWidget<IconButtonProps>((props): UIElement => {
   const size = props.size ?? "md";
   const variant = props.variant ?? "ghost";
   const dim = SIZE_PX[size];

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defineComponent, h } from "../src/core/element";
+import { defineWidget, h } from "../src/core/element";
 import { resolveStyleValue } from "../src/core/style";
 import { defaultTheme, defineTheme, toColorRole, useTheme, type Theme } from "../src/core/theme";
 import { contrastRatio } from "../src/core/theme/oklch";
@@ -241,7 +241,7 @@ describe("useTheme — scope-aware lookup", () => {
 
   it("returns defaultTheme when mount has no explicit theme", () => {
     let captured: Theme | null = null;
-    const Inner = defineComponent<Record<string, never>>(() => {
+    const Inner = defineWidget<Record<string, never>>(() => {
       captured = useTheme();
       return h("div", null);
     });
@@ -253,7 +253,7 @@ describe("useTheme — scope-aware lookup", () => {
   it("returns the mount's explicit theme when provided", () => {
     const myTheme = defineTheme({ seeds: { primary: "#ff00ff" } });
     let captured: Theme | null = null;
-    const Inner = defineComponent<Record<string, never>>(() => {
+    const Inner = defineWidget<Record<string, never>>(() => {
       captured = useTheme();
       return h("div", null);
     });

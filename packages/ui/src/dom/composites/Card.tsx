@@ -1,4 +1,4 @@
-import { defineComponent, type Child, type UIElement } from "../../core/element";
+import { defineWidget, type Child, type UIElement } from "../../core/element";
 
 export type CardElevation = "flat" | "raised" | "high";
 export type CardPadding = "none" | "sm" | "md" | "lg";
@@ -16,7 +16,7 @@ export interface CardProps {
  * picks an inner spacing scale. Keep role-neutral — for branded highlights
  * use Badge / Section / IconButton on top of a Card.
  */
-export const Card = defineComponent<CardProps>((props): UIElement => {
+export const Card = defineWidget<CardProps>((props): UIElement => {
   const elevation = props.elevation ?? "raised";
   const padding = props.padding ?? "md";
   return (

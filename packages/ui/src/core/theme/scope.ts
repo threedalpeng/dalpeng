@@ -10,7 +10,7 @@ export function useTheme(): Theme {
   const scope = findScope("ui");
   if (!scope) {
     throw new Error(
-      "useTheme() requires an active UI context. Call inside defineComponent/defineUI setup."
+      "useTheme() requires an active UI context. Call inside defineWidget/defineUI setup."
     );
   }
   return (scope.ui as { theme?: Theme })?.theme ?? defaultTheme;

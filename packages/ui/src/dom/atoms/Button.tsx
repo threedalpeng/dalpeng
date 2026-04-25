@@ -1,5 +1,5 @@
 import type { ReadonlyRef } from "@dalpeng/core";
-import { defineComponent, type UIElement } from "../../core/element";
+import { defineWidget, type UIElement } from "../../core/element";
 
 export interface ButtonProps {
   label: string | ReadonlyRef<string>;
@@ -8,7 +8,7 @@ export interface ButtonProps {
   title?: string;
 }
 
-export const Button = defineComponent<ButtonProps>(
+export const Button = defineWidget<ButtonProps>(
   ({ label, onClick, disabled, title }): UIElement => (
     <button type="button" onClick={onClick} disabled={disabled} title={title}>
       {label}

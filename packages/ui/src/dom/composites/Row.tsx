@@ -1,5 +1,5 @@
 import type { ReadonlyRef } from "@dalpeng/core";
-import { defineComponent, type Child, type UIElement } from "../../core/element";
+import { defineWidget, type Child, type UIElement } from "../../core/element";
 
 export interface RowProps {
   /** Left slot — icon, checkbox, avatar. */
@@ -20,7 +20,7 @@ export interface RowProps {
  * One-line list row with leading / content / trailing slots. Used by
  * DevTools scene tree entries, dialogue choice lists, inspector rows.
  */
-export const Row = defineComponent<RowProps>((props): UIElement => {
+export const Row = defineWidget<RowProps>((props): UIElement => {
   const density = props.density ?? "compact";
   const paddingY = density === "compact" ? "$spacing.xs" : "$spacing.sm";
   const paddingX = "$spacing.sm";

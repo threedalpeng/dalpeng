@@ -1,17 +1,17 @@
 import { ref, type ReadonlyRef } from "@dalpeng/core";
 import { describe, expect, it } from "vitest";
-import { createElement, defineComponent, Fragment, h, type Child } from "../src/core/element";
+import { createElement, defineWidget, Fragment, h, type Child } from "../src/core/element";
 import { bindText, listen, type Cleanup } from "../src/dom/bindings";
 import { mount, renderElement } from "../src/dom/render";
 
 const ctx = { doc: document };
 
 describe("Foundation — setup runs exactly once per component instance", () => {
-  it("defineComponent setup body runs once even after many Ref writes", () => {
+  it("defineWidget setup body runs once even after many Ref writes", () => {
     let setupCalls = 0;
     const value = ref(0);
 
-    const Counter = defineComponent<Record<string, never>>(() => {
+    const Counter = defineWidget<Record<string, never>>(() => {
       setupCalls++;
       return <div>{value}</div>;
     });
@@ -35,7 +35,7 @@ describe("Foundation — Ref-prop precision", () => {
     let labelSetups = 0;
     const value = ref("initial");
 
-    const Label = defineComponent<{ value: ReadonlyRef<string> | string }>(({ value }) => {
+    const Label = defineWidget<{ value: ReadonlyRef<string> | string }>(({ value }) => {
       labelSetups++;
       return <span>{value as Child}</span>;
     });
@@ -131,7 +131,7 @@ describe("Foundation — cleanup cascade in LIFO order", () => {
     const order: string[] = [];
     let capturedEl: Element | null = null;
 
-    const Child = defineComponent<Record<string, never>>(() => (
+    const Child = defineWidget<Record<string, never>>(() => (
       <span
         ref={(el) => {
           capturedEl = el;
@@ -141,7 +141,7 @@ describe("Foundation — cleanup cascade in LIFO order", () => {
       />
     ));
 
-    const Parent = defineComponent<Record<string, never>>(() => (
+    const Parent = defineWidget<Record<string, never>>(() => (
       <div
         ref={(el) => {
           void el;
@@ -228,7 +228,7 @@ describe("Foundation — h() parity with JSX", () => {
 });
 
 describe("Foundation — Badge reference component", () => {
-  const Badge = defineComponent<{ text: string; tone?: "default" | "warn" | "accent" }>(
+  const Badge = defineWidget<{ text: string; tone?: "default" | "warn" | "accent" }>(
     ({ text, tone = "default" }) => (
       <span class={`badge tone-${tone}`} style={{ padding: "2px 6px", borderRadius: "4px" }}>
         {text}

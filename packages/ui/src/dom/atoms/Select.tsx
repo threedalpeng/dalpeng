@@ -1,5 +1,5 @@
 import type { ReadonlyRef, Ref } from "@dalpeng/core";
-import { defineComponent, type UIElement } from "../../core/element";
+import { defineWidget, type UIElement } from "../../core/element";
 import { bindValue } from "../bindings";
 
 export interface SelectOption {
@@ -13,7 +13,7 @@ export interface SelectProps {
   options: SelectOption[];
 }
 
-export const Select = defineComponent<SelectProps>(
+export const Select = defineWidget<SelectProps>(
   ({ source, label, options }): UIElement => (
     <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <span>{label}</span>

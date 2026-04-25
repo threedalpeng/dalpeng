@@ -18,7 +18,7 @@ export interface HostElement {
 
 export interface ComponentElement<P> {
   readonly kind: "component";
-  readonly component: Component<P>;
+  readonly component: Widget<P>;
   readonly props: P;
 }
 
@@ -45,7 +45,7 @@ export interface AdoptedElement {
   readonly cleanups?: ReadonlySet<Cleanup>;
 }
 
-export type Component<P = Record<string, never>> = (props: P) => UIElement;
+export type Widget<P = Record<string, never>> = (props: P) => UIElement;
 
 export type Child =
   | UIElement
@@ -152,15 +152,13 @@ const HOST_KIND = "host" as const;
 const TEXT_KIND = "text" as const;
 const ADOPTED_KIND = "adopted" as const;
 
-export function defineComponent<P = Record<string, never>>(
-  setup: (props: P) => UIElement
-): Component<P> {
+export function defineWidget<P = Record<string, never>>(setup: (props: P) => UIElement): Widget<P> {
   // Setup runs once per component instance. Ref props patch bindings, not setup.
   return (props: P) => setup(props);
 }
 
 export function createElement<P>(
-  component: Component<P>,
+  component: Widget<P>,
   props: P | null,
   ...children: Child[]
 ): ComponentElement<P>;
@@ -171,7 +169,7 @@ export function createElement(
   ...children: Child[]
 ): HostElement;
 export function createElement(
-  tag: string | FragmentTag | Component<unknown>,
+  tag: string | FragmentTag | Widget<unknown>,
   props: HostProps | Record<string, unknown> | null,
   ...children: Child[]
 ): UIElement {
@@ -189,7 +187,7 @@ export function createElement(
     }
     return {
       kind: COMPONENT_KIND,
-      component: tag as Component<unknown>,
+      component: tag as Widget<unknown>,
       props: finalProps,
     } satisfies ComponentElement<unknown>;
   }

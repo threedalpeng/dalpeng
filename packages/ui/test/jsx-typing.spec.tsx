@@ -1,6 +1,6 @@
 import { ref } from "@dalpeng/core";
 import { describe, expect, it } from "vitest";
-import { defineComponent } from "../src/core/element";
+import { defineWidget } from "../src/core/element";
 import { mount } from "../src/dom/render";
 
 // Type-level assertions disguised as runtime `it` blocks. The test suite
@@ -64,7 +64,7 @@ describe("HostProps typed event handlers", () => {
   });
 
   it("onInput / onChange / onKeyDown types compile", () => {
-    const Comp = defineComponent<{ onType: (v: string) => void }>(({ onType }) => (
+    const Comp = defineWidget<{ onType: (v: string) => void }>(({ onType }) => (
       <input
         type="text"
         onInput={(e) => onType((e.currentTarget as HTMLInputElement).value)}
@@ -206,7 +206,7 @@ describe("Fragment + component composition", () => {
       greeting: string;
       tone: "primary" | "danger";
     }
-    const Msg = defineComponent<P>(({ greeting, tone }) => (
+    const Msg = defineWidget<P>(({ greeting, tone }) => (
       <span style={{ color: `$color.${tone}.text` }}>{greeting}</span>
     ));
     const handle = mount(<Msg greeting="hi" tone="primary" />, ctx);

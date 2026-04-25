@@ -1,5 +1,5 @@
 import { ref, type ReadonlyRef, type Ref } from "@dalpeng/core";
-import { defineComponent, type UIElement } from "../../core/element";
+import { defineWidget, type UIElement } from "../../core/element";
 
 export interface RangeProps {
   source: Ref<number>;
@@ -9,7 +9,7 @@ export interface RangeProps {
   step?: number;
 }
 
-export const Range = defineComponent<RangeProps>(({ source, label, min, max, step }): UIElement => {
+export const Range = defineWidget<RangeProps>(({ source, label, min, max, step }): UIElement => {
   const display = ref(String(source.value));
 
   return (

@@ -1,6 +1,6 @@
 import { ref } from "@dalpeng/core";
 import { describe, expect, it, vi } from "vitest";
-import { defineComponent, h } from "../src/core/element";
+import { defineWidget, h } from "../src/core/element";
 import {
   auditTheme,
   defaultTheme,
@@ -23,7 +23,7 @@ describe("pushTheme — setup-scope theme push", () => {
 
     const custom = defineTheme({ seeds: { primary: "#ff0055" } });
 
-    const Inner = defineComponent<Record<string, never>>(() => {
+    const Inner = defineWidget<Record<string, never>>(() => {
       const pop = pushTheme(custom);
       inner = useTheme();
       pop();
@@ -92,7 +92,7 @@ describe("ThemeProvider follow-up — useTheme scope caveat", () => {
     const inner = defineTheme({ seeds: { primary: "#ff00ff" } });
     const captured = ref<Theme | null>(null);
 
-    const Probe = defineComponent<Record<string, never>>(() => {
+    const Probe = defineWidget<Record<string, never>>(() => {
       captured.value = useTheme();
       return h("div", null);
     });

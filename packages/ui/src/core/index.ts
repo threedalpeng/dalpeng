@@ -1,7 +1,7 @@
 export {
   Fragment,
   createElement,
-  defineComponent,
+  defineWidget,
   h,
   isAdopted,
   isComponent,
@@ -11,7 +11,6 @@ export {
   normalizeChildren,
   type AdoptedElement,
   type Child,
-  type Component,
   type ComponentElement,
   type FragmentElement,
   type HostElement,
@@ -19,6 +18,7 @@ export {
   type PropsWithChildren,
   type TextElement,
   type UIElement,
+  type Widget,
 } from "./element";
 
 export {
