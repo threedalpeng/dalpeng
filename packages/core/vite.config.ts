@@ -10,14 +10,19 @@ export default defineConfig({
   build: {
     target: "esnext",
     lib: {
-      entry: path.resolve(__dirname, "src/index.ts"),
+      entry: {
+        core: path.resolve(__dirname, "src/index.ts"),
+        unsafe: path.resolve(__dirname, "src/runtime/unsafe.ts"),
+      },
       formats: ["es"],
-      fileName: () => "core.js",
     },
     rollupOptions: {
       external: (id) => /^@dalpeng\/math(\/|$)/.test(id),
       output: {
         exports: "named",
+        preserveModules: false,
+        entryFileNames: "[name].js",
+        chunkFileNames: "chunks/[name]-[hash].js",
       },
     },
     minify: false,

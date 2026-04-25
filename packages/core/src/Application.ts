@@ -21,13 +21,13 @@ import View from "./graphics/View";
 import CameraFollow2D from "./graphics2d/CameraFollow2D";
 import SpriteAnimator from "./graphics2d/SpriteAnimator";
 import InputManager from "./InputManager";
-import type { RenderConfig } from "./RenderConfig";
+import type { FeatureState, RenderConfig } from "./RenderConfig";
 import RenderPipeline from "./rendering/RenderPipeline";
 import { isGameDescriptor, type LogicalDescriptor } from "./runtime/Descriptor";
+import { batch, ref, type ReadonlyRef } from "./runtime/flow";
 import type { EntityInstance } from "./runtime/Instance";
 import { LayerRegistry } from "./runtime/Layer";
 import { type Materializer } from "./runtime/Materializer";
-import { ref, type ReadonlyRef } from "./runtime/reactive";
 import type { UIRenderer } from "./runtime/UIRenderer";
 import type Scene from "./Scene";
 import Time from "./Time";
@@ -251,10 +251,47 @@ export default class Application {
   }
 
   renderer: RendererBackend = new WebGL2Renderer();
-  features: RenderConfig = {
-    postToneMapping: false,
+
+  // RenderConfig as per-field Refs. Reads: `app.features.bloom.value`.
+  // Writes: `app.features.bloom.value = true` — notifies subscribers via the
+  // standard Ref protocol (DevTools, game code, anywhere).
+  features: FeatureState = {
+    postToneMapping: ref<boolean>(false),
+    debugGL: ref<boolean | undefined>(undefined),
+    debugGLVerbose: ref<boolean | undefined>(undefined),
+    debugLightingView: ref<number | undefined>(undefined),
+    toneExposure: ref<number | undefined>(undefined),
+    toneGamma: ref<number | undefined>(undefined),
+    shadows: ref<boolean | undefined>(undefined),
+    shadowBias: ref<number | undefined>(undefined),
+    shadowStrength: ref<number | undefined>(undefined),
+    shadowMapSize: ref<number | undefined>(undefined),
+    shadowSlopeScale: ref<number | undefined>(undefined),
+    shadowOffsetFactor: ref<number | undefined>(undefined),
+    shadowOffsetUnits: ref<number | undefined>(undefined),
+    shadowDebug: ref<number | undefined>(undefined),
+    shadowDistance: ref<number | undefined>(undefined),
+    bloom: ref<boolean | undefined>(undefined),
+    bloomThreshold: ref<number | undefined>(undefined),
+    bloomIntensity: ref<number | undefined>(undefined),
+    bloomRadius: ref<number | undefined>(undefined),
+    textureMask: ref<number | undefined>(undefined),
+    ambientColor: ref<[number, number, number] | undefined>(undefined),
+    ambientIntensity: ref<number | undefined>(undefined),
+    ibl: ref<boolean | undefined>(undefined),
+    iblIntensity: ref<number | undefined>(undefined),
+    iblHdrUrl: ref<string | undefined>(undefined),
+    ssao: ref<boolean | undefined>(undefined),
+    ssaoRadius: ref<number | undefined>(undefined),
+    ssaoBias: ref<number | undefined>(undefined),
+    ssaoKernelSize: ref<number | undefined>(undefined),
+    skybox: ref<boolean | undefined>(undefined),
+    skyboxExposure: ref<number | undefined>(undefined),
+    fxaa: ref<boolean | undefined>(undefined),
+    debugProfiler: ref<boolean | undefined>(undefined),
+    debugLogger: ref<boolean | undefined>(undefined),
+    debugLogLevel: ref<"trace" | "debug" | "info" | "warn" | "error" | undefined>(undefined),
   };
-  watchFeature?: (key: string, cb: (val: unknown, old: unknown) => void) => () => void;
 
   pipeline = new RenderPipeline();
   canvasController = new CanvasController();
@@ -277,13 +314,17 @@ export default class Application {
     return this;
   }
 
-  configure(features: Partial<RenderConfig>): this {
-    Object.assign(this.features, features);
+  configure(partial: Partial<RenderConfig>): this {
+    for (const key in partial) {
+      const k = key as keyof RenderConfig;
+      const r = this.features[k];
+      if (r) (r as { value: unknown }).value = partial[k];
+    }
     return this;
   }
 
   async loadIBL(hdrUrl: string): Promise<void> {
-    this.features.iblHdrUrl = hdrUrl;
+    this.features.iblHdrUrl.value = hdrUrl;
     await this.pipeline.initIBL(this.renderer, hdrUrl);
   }
 
@@ -307,8 +348,9 @@ export default class Application {
     this.canvasController.mount(canvas, this.renderer);
     await this.pipeline.init(this.renderer);
 
-    if (this.features.iblHdrUrl) {
-      await this.pipeline.initIBL(this.renderer, this.features.iblHdrUrl);
+    const hdr = this.features.iblHdrUrl.value;
+    if (hdr) {
+      await this.pipeline.initIBL(this.renderer, hdr);
     }
 
     this.textures.init(this.renderer);
@@ -625,21 +667,30 @@ export default class Application {
       if (this.shouldQuit()) return;
 
       Time._updateDelta(t);
-      this.forEachActive((app) => app.input.poll());
-
-      this.forEachActive((app) => app.#flushPendingStarts());
-
-      while (Time._needsFixedUpdate()) {
-        this.forEachActive((app) => app.#fixedUpdate());
-      }
-
       const dt = Time.delta();
-      this.forEachActive((app) => app.#fireFrameHook("beforeUpdate", dt));
-      this.forEachActive((app) => app.#update());
-      this.forEachActive((app) => app.#lateUpdate());
 
-      this.forEachActive((app) => app.#flushLifecycleQueue());
-      this.forEachActive((app) => app.#flushPendingStarts());
+      // Mutation window — implicit batch. All ref writes / event emits from
+      // input, script updates, and lifecycle callbacks defer their subscriber
+      // fires to the boundary (end of batch). This yields frame-synchronous
+      // consistency: render sees fully-propagated state, ref subscribers fire
+      // once per frame regardless of how many times a ref was written.
+      batch(() => {
+        this.forEachActive((app) => app.input.poll());
+        this.forEachActive((app) => app.#flushPendingStarts());
+
+        while (Time._needsFixedUpdate()) {
+          this.forEachActive((app) => app.#fixedUpdate());
+        }
+
+        this.forEachActive((app) => app.#fireFrameHook("beforeUpdate", dt));
+        this.forEachActive((app) => app.#update());
+        this.forEachActive((app) => app.#lateUpdate());
+
+        this.forEachActive((app) => app.#flushLifecycleQueue());
+        this.forEachActive((app) => app.#flushPendingStarts());
+      });
+      // Boundary: batch exits here — pending reactive queue drains in
+      // topological (dep → derivative) order before the stable window begins.
 
       this.forEachActive((app) => app.#preRender());
       this.forEachActive((app) => app.#fireFrameHook("beforeRender", dt));

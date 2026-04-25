@@ -3,8 +3,8 @@ import type Application from "./Application";
 import type { AppNode } from "./AppNode";
 import type GameEntity from "./ecs/GameEntity";
 import Transform from "./ecs/Transform";
-import { computed, ref, type ReadonlyRef } from "./runtime/reactive";
-import EventEmitter from "./utils/EventEmitter";
+import { createDispatcher } from "./runtime/dispatcher";
+import { computed, ref, type ReadonlyRef } from "./runtime/flow";
 
 export default class Scene {
   static #nextId = 0;
@@ -14,7 +14,7 @@ export default class Scene {
   }
 
   name = "";
-  events = new EventEmitter();
+  events = createDispatcher();
 
   constructor(name: string = "") {
     this.#id = Scene.#nextId++;

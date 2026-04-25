@@ -37,7 +37,7 @@ import MeshBuilder from "./utils/mesh";
 import { worldToScreen } from "./utils/worldToScreen";
 export type { FrameStatsSummary } from "./Application";
 export type { CanvasOptions } from "./CanvasOptions";
-export type { RenderConfig } from "./RenderConfig";
+export type { FeatureState, RenderConfig } from "./RenderConfig";
 export type { TweenOptions } from "./animation/Tween";
 export type { GPUMesh, GPUPrimitive, ModelAsset } from "./asset/ModelManager";
 export type { TextureLoadOptions } from "./asset/TextureManager";
@@ -70,7 +70,7 @@ export type {
   ParsedSkin,
 } from "./utils/gltf/GLTFDocument";
 
-export { default as EventEmitter, type EventMap } from "./utils/EventEmitter";
+export { createDispatcher, type Dispatcher, type EventMap } from "./runtime/dispatcher";
 
 export {
   DEFAULT_LAYERS,
@@ -113,7 +113,8 @@ export {
   type TestSceneOptions,
 } from "./testing/testScene";
 
-export { batch, computed, isRef, ref, watch, type ReadonlyRef, type Ref } from "./runtime/reactive";
+export { batch, computed, isRef, ref, type ReadonlyRef, type Ref } from "./runtime/flow";
+export { watch, type Pipeline, type Source } from "./runtime/pipeline";
 
 export {
   beginCleanupScope,

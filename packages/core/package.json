@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/core.js"
+    },
+    "./unsafe": {
+      "types": "./dist/runtime/unsafe.d.ts",
+      "import": "./dist/unsafe.js"
     }
   },
   "files": [

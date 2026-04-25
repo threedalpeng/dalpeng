@@ -1,4 +1,4 @@
-import EventEmitter, { type EventMap } from "../utils/EventEmitter";
+import { createDispatcher, type Dispatcher, type EventMap } from "../runtime/dispatcher";
 import Entity from "./Entity.js";
 import type GameEntity from "./GameEntity.js";
 
@@ -83,30 +83,30 @@ export default class Component extends Entity {
     return this.#gameEntity.getComponent<Type>(type);
   }
 
-  #emitter = new EventEmitter<ComponentEventMap>();
+  #dispatcher: Dispatcher<ComponentEventMap> = createDispatcher<ComponentEventMap>();
 
   on<K extends keyof ComponentEventMap>(
     event: K,
     callback: (...args: ComponentEventMap[K]) => void
   ): () => void {
-    return this.#emitter.on(event, callback);
+    return this.#dispatcher.on(event, callback);
   }
 
   once<K extends keyof ComponentEventMap>(
     event: K,
     callback: (...args: ComponentEventMap[K]) => void
   ): () => void {
-    return this.#emitter.once(event, callback);
+    return this.#dispatcher.once(event, callback);
   }
 
   off<K extends keyof ComponentEventMap>(
     event: K,
     callback: (...args: ComponentEventMap[K]) => void
   ): void {
-    this.#emitter.off(event, callback);
+    this.#dispatcher.off(event, callback);
   }
 
   emit<K extends keyof ComponentEventMap>(event: K, ...data: ComponentEventMap[K]): void {
-    this.#emitter.emit(event, ...data);
+    this.#dispatcher.emit(event, ...data);
   }
 }

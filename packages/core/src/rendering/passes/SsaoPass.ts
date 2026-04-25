@@ -26,7 +26,7 @@ export default class SsaoPass implements RenderPass {
   }
 
   shouldRun(ctx: RenderFrameContext): boolean {
-    return !!ctx.features.ssao;
+    return !!ctx.features.ssao.value;
   }
 
   execute(ctx: RenderFrameContext): void {
@@ -43,10 +43,10 @@ export default class SsaoPass implements RenderPass {
     gb.normalRoughness.bind(1);
     if (this.#noiseTex) this.#noiseTex.bind(9);
 
-    const kernelSize = features.ssaoKernelSize ?? 64;
+    const kernelSize = features.ssaoKernelSize.value ?? 64;
     shaders.ssao.setUniform1i("uKernelSize", Math.min(kernelSize, 64));
-    shaders.ssao.setUniform1f("uRadius", features.ssaoRadius ?? 0.5);
-    shaders.ssao.setUniform1f("uBias", features.ssaoBias ?? 0.025);
+    shaders.ssao.setUniform1f("uRadius", features.ssaoRadius.value ?? 0.5);
+    shaders.ssao.setUniform1f("uBias", features.ssaoBias.value ?? 0.025);
     this.#noiseScale[0] = width / 4.0;
     this.#noiseScale[1] = height / 4.0;
     shaders.ssao.setUniformVec2("uNoiseScale", this.#noiseScale);

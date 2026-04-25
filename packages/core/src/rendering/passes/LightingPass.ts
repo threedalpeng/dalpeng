@@ -38,17 +38,17 @@ export default class LightingPass implements RenderPass {
     gb.emissive.bind(3);
 
     const iblRes = shared.iblPrecompute.resources;
-    if (features.ibl && iblRes) {
+    if (features.ibl.value && iblRes) {
       iblRes.irradianceCubemap.bind(6);
       iblRes.prefilteredCubemap.bind(7);
       iblRes.brdfLUT.bind(8);
       shaders.lighting.setUniform1i("uEnableIBL", 1);
-      shaders.lighting.setUniform1f("uIBLIntensity", features.iblIntensity ?? 1.0);
+      shaders.lighting.setUniform1f("uIBLIntensity", features.iblIntensity.value ?? 1.0);
     } else {
       shaders.lighting.setUniform1i("uEnableIBL", 0);
     }
 
-    if (features.ssao && resources.ssao) {
+    if (features.ssao.value && resources.ssao) {
       resources.ssao.texBlurred.bind(5);
       shaders.lighting.setUniform1i("uEnableSSAO", 1);
     } else {
@@ -63,23 +63,23 @@ export default class LightingPass implements RenderPass {
       clearColor: [0, 0, 0, 0],
       colorAttachments: [0],
     });
-    if (features.debugGLVerbose) {
+    if (features.debugGLVerbose.value) {
       renderer.debugDumpState?.("after lighting beginPass");
       renderer.debugCheckError?.("after lighting beginPass");
     }
 
     shaders.lighting.setUniform1i("uApplyGamma", 0);
-    shaders.lighting.setUniform1f("uGamma", features.toneGamma ?? 2.2);
-    shaders.lighting.setUniform1i("uDebugMode", features.debugLightingView ?? 0);
-    shaders.lighting.setUniform1i("uShadowDebug", features.shadowDebug ?? 0);
+    shaders.lighting.setUniform1f("uGamma", features.toneGamma.value ?? 2.2);
+    shaders.lighting.setUniform1i("uDebugMode", features.debugLightingView.value ?? 0);
+    shaders.lighting.setUniform1i("uShadowDebug", features.shadowDebug.value ?? 0);
 
-    const ambientSrc = features.ambientColor ?? [1, 1, 1];
+    const ambientSrc = features.ambientColor.value ?? [1, 1, 1];
     if (ambientSrc !== this.#lastAmbientColor) {
       this.#cachedAmbientColor = new Vec3(ambientSrc);
       this.#lastAmbientColor = ambientSrc;
     }
     shaders.lighting.setUniformVec3("uAmbientColor", this.#cachedAmbientColor);
-    shaders.lighting.setUniform1f("uAmbientIntensity", features.ambientIntensity ?? 0.01);
+    shaders.lighting.setUniform1f("uAmbientIntensity", features.ambientIntensity.value ?? 0.01);
 
     app.forEachActiveComponent(Camera, (camera) => {
       camera.renderCameraToLighting();
@@ -105,7 +105,7 @@ export default class LightingPass implements RenderPass {
       });
     }
 
-    if (features.debugGLVerbose) {
+    if (features.debugGLVerbose.value) {
       renderer.debugDumpState?.("after lights");
       renderer.debugCheckError?.("after lights");
     }
@@ -120,6 +120,6 @@ export default class LightingPass implements RenderPass {
     // sprites were the reproducer.
     for (let i = 0; i <= 8; i++) renderer.unbindTextureAt?.(i);
 
-    if (features.debugGLVerbose) renderer.debugCheckError?.("after lighting endPass");
+    if (features.debugGLVerbose.value) renderer.debugCheckError?.("after lighting endPass");
   }
 }

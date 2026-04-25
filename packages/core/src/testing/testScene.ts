@@ -71,7 +71,7 @@ function makeCoreHooks(app: Application): MaterializerHooks {
         viewport: () => ({ x: 0, y: 0, width: 0, height: 0 }),
         onCanvasResize: () => () => {},
         features: app.features as unknown as Record<string, unknown>,
-        watchFeature: app.watchFeature ?? (() => () => {}),
+        watchFeature: () => () => {},
         layers: app.layers,
         onDispose: () => {},
       };

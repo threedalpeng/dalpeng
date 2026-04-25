@@ -5,7 +5,7 @@ export default class BloomPass implements RenderPass {
   readonly name = "bloom";
 
   shouldRun(ctx: RenderFrameContext): boolean {
-    return !!ctx.features.bloom && !!ctx.resources.lighting;
+    return !!ctx.features.bloom.value && !!ctx.resources.lighting;
   }
 
   execute(ctx: RenderFrameContext): void {
@@ -28,7 +28,7 @@ export default class BloomPass implements RenderPass {
       resources.lighting.color.bind(4);
       bright.setUniform1i("uLighting", 4);
     }
-    bright.setUniform1f("uThreshold", features.bloomThreshold ?? 1.0);
+    bright.setUniform1f("uThreshold", features.bloomThreshold.value ?? 1.0);
     bright.setUniform1f("uSoftKnee", 0.5);
 
     renderer.beginPass({
@@ -49,7 +49,7 @@ export default class BloomPass implements RenderPass {
     const bloom = resources.bloom!;
     const blur: Shader = shaders.bloomBlur;
 
-    const iterations = Math.max(1, features.bloomRadius ?? 5);
+    const iterations = Math.max(1, features.bloomRadius.value ?? 5);
     const texelW = 1.0 / bloom.width;
     const texelH = 1.0 / bloom.height;
 

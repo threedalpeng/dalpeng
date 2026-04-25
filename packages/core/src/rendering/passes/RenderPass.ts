@@ -1,7 +1,7 @@
 import type Application from "../../Application";
 import type { RendererBackend } from "../../gfx/RendererBackend";
 import type GfxVertexArray from "../../gfx/VertexArray";
-import type { RenderConfig } from "../../RenderConfig";
+import type { FeatureState } from "../../RenderConfig";
 import type FrameResources from "../FrameResources";
 import type IBLPrecompute from "../IBLPrecompute";
 import type PipelineShaders from "./PipelineShaders";
@@ -27,7 +27,7 @@ export interface RenderFrameContext {
   readonly app: Application;
   readonly renderer: RendererBackend;
   readonly resources: FrameResources;
-  readonly features: RenderConfig;
+  readonly features: FeatureState;
   readonly shaders: PipelineShaders;
   readonly shared: SharedRenderResources;
   readonly pipeline: PipelineIntrospection;

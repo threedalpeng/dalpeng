@@ -16,7 +16,7 @@ export default class SkyboxPass implements RenderPass {
 
   shouldRun(ctx: RenderFrameContext): boolean {
     const hasEnv = !!ctx.shared.iblPrecompute.resources;
-    const requested = ctx.features.skybox ?? ctx.features.ibl;
+    const requested = ctx.features.skybox.value ?? ctx.features.ibl.value;
     return hasEnv && !!requested;
   }
 
@@ -50,7 +50,7 @@ export default class SkyboxPass implements RenderPass {
     });
     shaders.skybox.setUniform1f(
       "uExposure",
-      features.skyboxExposure ?? features.toneExposure ?? 1.0
+      features.skyboxExposure.value ?? features.toneExposure.value ?? 1.0
     );
 
     renderer.beginPass({

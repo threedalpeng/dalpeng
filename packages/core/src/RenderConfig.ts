@@ -1,3 +1,11 @@
+import type { Ref } from "./runtime/flow";
+
+/**
+ * Configuration surface — the value shape users pass to `withFeatures` or `app.configure`.
+ * At runtime, `Application.features` is a `FeatureState` (per-field Ref) rather than
+ * a plain `RenderConfig` so every mutation flows through the standard Ref protocol:
+ * writes notify subscribers, DevTools binds directly, no polling/Proxy/interception.
+ */
 export interface RenderConfig {
   postToneMapping: boolean;
   debugGL?: boolean;
@@ -43,3 +51,12 @@ export interface RenderConfig {
   debugLogger?: boolean;
   debugLogLevel?: "trace" | "debug" | "info" | "warn" | "error";
 }
+
+/**
+ * Runtime form of `RenderConfig` — each field is a `Ref` so mutations are
+ * observable by DevTools / game code via the standard reactive protocol.
+ * Read: `app.features.bloom.value`. Write: `app.features.bloom.value = true`.
+ */
+export type FeatureState = {
+  readonly [K in keyof RenderConfig]-?: Ref<RenderConfig[K]>;
+};

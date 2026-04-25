@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createEntityNode, createUINode } from "../src/runtime/Descriptor";
-import { batch, computed, ref } from "../src/runtime/reactive";
+import { batch, computed, ref } from "../src/runtime/flow";
+import { watch } from "../src/runtime/pipeline";
+import { flushSync } from "../src/runtime/unsafe";
 import { testScene } from "../src/testing/testScene";
 
 describe("Philosophy invariant — setup runs exactly once", () => {
@@ -325,6 +327,195 @@ describe("Philosophy invariant — scope stack supports nesting", () => {
 
     popUI();
     popEntity();
+  });
+});
+
+describe("Philosophy invariant — topological fire", () => {
+  it("chained computed fires subscribers in dep→derivative order regardless of subscribe order", () => {
+    const a = ref(1);
+    const b = computed(() => a.value * 2);
+    const c = computed(() => b.value * 10);
+
+    const order: string[] = [];
+    // Subscribe c FIRST — without topological ordering, sync cascade would
+    // fire c's subscriber before b's. Topological must correct this.
+    watch(c, (v) => order.push(`c:${v}`));
+    watch(b, (v) => order.push(`b:${v}`));
+
+    batch(() => {
+      a.value = 5;
+    });
+
+    expect(order).toEqual(["b:10", "c:100"]);
+  });
+
+  it("fan-in: two refs feeding one computed fires its subscriber once per batch", () => {
+    const a = ref(1);
+    const b = ref(2);
+    const sum = computed(() => a.value + b.value);
+
+    let fires = 0;
+    watch(sum, () => fires++);
+
+    batch(() => {
+      a.value = 10;
+      b.value = 20;
+    });
+
+    expect(fires).toBe(1);
+    expect(sum.value).toBe(30);
+  });
+});
+
+describe("Philosophy invariant — flushSync drains immediately", () => {
+  it("writes inside flushSync fire subscribers synchronously", () => {
+    const r = ref(0);
+    let calls = 0;
+    let seen = -1;
+    r.subscribe((v) => {
+      calls++;
+      seen = v;
+    });
+
+    flushSync(() => {
+      r.value = 42;
+      // By the time we're at this line the subscriber has already fired.
+      expect(calls).toBe(1);
+      expect(seen).toBe(42);
+    });
+  });
+
+  it("flushSync inside batch drains pending before bypassing", () => {
+    const r = ref(0);
+    const fires: number[] = [];
+    r.subscribe((v) => fires.push(v));
+
+    batch(() => {
+      r.value = 1; // pending
+      flushSync(() => {
+        // Draining happens before fn runs; fires should contain 1.
+        expect(fires).toEqual([1]);
+        r.value = 2; // sync path — fires immediately
+      });
+      expect(fires).toEqual([1, 2]);
+      r.value = 3; // back to batch pending
+    });
+
+    expect(fires).toEqual([1, 2, 3]);
+  });
+});
+
+describe("Philosophy invariant — cascade depth guard", () => {
+  it("aborts infinite subscriber cascade with a warning instead of hanging", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const a = ref(0);
+    const b = ref(0);
+    // Infinite loop: a subscriber writes b, b subscriber writes a.
+    a.subscribe((v) => {
+      b.value = v + 1;
+    });
+    b.subscribe((v) => {
+      a.value = v + 1;
+    });
+
+    batch(() => {
+      a.value = 1;
+    });
+
+    // Cascade must have aborted within the depth cap (8) — not hang.
+    // Exact final values are implementation-defined post-abort; the important
+    // claim is: the warning fired and the test completed.
+    expect(warn).toHaveBeenCalled();
+    const [msg] = warn.mock.calls[0];
+    expect(String(msg)).toContain("cascade depth exceeded");
+    warn.mockRestore();
+  });
+});
+
+describe("Philosophy invariant — pipeline builder", () => {
+  it("map + effect — transforms values before callback", () => {
+    const r = ref(1);
+    const seen: number[] = [];
+    watch(r)
+      .map((v) => v * 10)
+      .effect((v) => seen.push(v));
+
+    r.value = 2;
+    r.value = 3;
+    expect(seen).toEqual([20, 30]);
+  });
+
+  it("filter — skips values that fail predicate", () => {
+    const r = ref(0);
+    const seen: number[] = [];
+    watch(r)
+      .filter((v) => v % 2 === 0)
+      .effect((v) => seen.push(v));
+
+    r.value = 1;
+    r.value = 2;
+    r.value = 3;
+    r.value = 4;
+    expect(seen).toEqual([2, 4]);
+  });
+
+  it("distinct — collapses consecutive duplicates", () => {
+    const r = ref<{ id: number }>({ id: 0 });
+    const seen: number[] = [];
+    watch(r)
+      .distinct((a, b) => a.id === b.id)
+      .effect((v) => seen.push(v.id));
+
+    r.value = { id: 1 };
+    r.value = { id: 1 }; // skipped — same id as previous
+    r.value = { id: 2 };
+    r.value = { id: 2 }; // skipped
+    r.value = { id: 3 };
+    expect(seen).toEqual([1, 2, 3]);
+  });
+
+  it("multi-source — emits tuple on any source change", () => {
+    const a = ref(1);
+    const b = ref("x");
+    const seen: Array<[number, string]> = [];
+    watch([a, b] as const).effect(([av, bv]) => seen.push([av, bv]));
+
+    a.value = 2;
+    b.value = "y";
+    expect(seen).toEqual([
+      [2, "x"],
+      [2, "y"],
+    ]);
+  });
+
+  it("toRef — produces a ReadonlyRef with transformed initial and live updates", () => {
+    const src = ref(5);
+    const doubled = watch(src)
+      .map((v) => v * 2)
+      .toRef();
+
+    expect(doubled.value).toBe(5 * 2); // initial value threads through pipeline
+    src.value = 10;
+    expect(doubled.value).toBe(20);
+  });
+});
+
+describe("Philosophy invariant — performance smoke", () => {
+  it("1000 ref writes in a batch drain in under the frame budget", () => {
+    const refs = Array.from({ length: 1000 }, () => ref(0));
+    let fires = 0;
+    for (const r of refs) r.subscribe(() => fires++);
+
+    const t0 = performance.now();
+    batch(() => {
+      for (let i = 0; i < 1000; i++) refs[i].value = i + 1;
+    });
+    const elapsed = performance.now() - t0;
+
+    expect(fires).toBe(1000);
+    // Generous ceiling — the kernel target is < 2ms; CI jitter room allowed.
+    expect(elapsed).toBeLessThan(50);
   });
 });
 

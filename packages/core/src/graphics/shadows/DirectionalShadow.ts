@@ -65,7 +65,7 @@ export default class DirectionalShadowSystem {
       if (d > radius) radius = d;
     }
 
-    const maxDist = app.features.shadowDistance;
+    const maxDist = app.features.shadowDistance.value;
     if (maxDist !== undefined && maxDist > 0) {
       radius = Math.min(radius, maxDist);
     }
@@ -73,7 +73,7 @@ export default class DirectionalShadowSystem {
     radius = Math.max(radius, 0.1); // prevent degenerate projection
 
     // Round up to texel size to reduce shadow edge swimming
-    const mapSize = Math.max(16, app.features.shadowMapSize ?? 1024);
+    const mapSize = Math.max(16, app.features.shadowMapSize.value ?? 1024);
     const texelSize = (radius * 2) / mapSize;
     radius = Math.ceil(radius / texelSize) * texelSize;
 
@@ -109,8 +109,8 @@ export default class DirectionalShadowSystem {
       clearDepth: 1,
       colorWrite: false,
       polygonOffset: {
-        factor: app.features.shadowOffsetFactor ?? 1.1,
-        units: app.features.shadowOffsetUnits ?? 4.0,
+        factor: app.features.shadowOffsetFactor.value ?? 1.1,
+        units: app.features.shadowOffsetUnits.value ?? 4.0,
       },
       viewport: { x: 0, y: 0, w: mapSize, h: mapSize },
     });
@@ -133,7 +133,7 @@ export default class DirectionalShadowSystem {
     shader.setUniform1f("uShadowStrength", 0.0);
     shader.setUniform1i("uShadowMapDepth", shadowUnit);
 
-    if (!app.features.shadows || !this.lastLightVP || !resources.shadow) {
+    if (!app.features.shadows.value || !this.lastLightVP || !resources.shadow) {
       // WebGL silently drops the draw call if a sampler unit has no bound texture.
       app.textures.placeholder.bind(shadowUnit);
       return;
@@ -142,11 +142,14 @@ export default class DirectionalShadowSystem {
 
     resources.shadow.depth.bind(shadowUnit);
     shader.setUniformMat4("uLightViewProj", this.lastLightVP);
-    shader.setUniform1f("uShadowBias", app.features.shadowBias ?? 0.005);
-    shader.setUniform1f("uShadowSlopeScale", Math.max(0.0, app.features.shadowSlopeScale ?? 1.0));
+    shader.setUniform1f("uShadowBias", app.features.shadowBias.value ?? 0.005);
+    shader.setUniform1f(
+      "uShadowSlopeScale",
+      Math.max(0.0, app.features.shadowSlopeScale.value ?? 1.0)
+    );
     shader.setUniform1f(
       "uShadowStrength",
-      Math.max(0.0, Math.min(1.0, app.features.shadowStrength ?? 1.0))
+      Math.max(0.0, Math.min(1.0, app.features.shadowStrength.value ?? 1.0))
     );
   }
 }

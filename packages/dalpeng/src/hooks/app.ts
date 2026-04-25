@@ -16,43 +16,6 @@ import { domUIRenderer } from "@dalpeng/ui";
 import { pushScope, requireApp } from "../context";
 import type { UseScene } from "./scene";
 
-type FeatureListener = (newVal: unknown, oldVal: unknown) => void;
-
-export interface ReactiveFeatures {
-  features: RenderConfig;
-  watch(key: string, cb: FeatureListener): () => void;
-}
-
-function createReactiveFeatures(initial: RenderConfig): ReactiveFeatures {
-  const listeners = new Map<string, Set<FeatureListener>>();
-  const features = new Proxy(initial, {
-    set(target, prop: string, value) {
-      const oldVal = (target as unknown as Record<string, unknown>)[prop];
-      if (value === oldVal) return true;
-      (target as unknown as Record<string, unknown>)[prop] = value;
-      const cbs = listeners.get(prop);
-      if (cbs) {
-        cbs.forEach((cb) => cb(value, oldVal));
-      }
-      return true;
-    },
-  });
-  function watch(key: string, cb: FeatureListener): () => void {
-    if (!listeners.has(key)) {
-      listeners.set(key, new Set());
-    }
-    listeners.get(key)!.add(cb);
-    return () => {
-      const set = listeners.get(key);
-      if (set) {
-        set.delete(cb);
-        if (set.size === 0) listeners.delete(key);
-      }
-    };
-  }
-  return { features, watch };
-}
-
 export type UseApp = ReturnType<typeof defineApp>;
 export function defineApp(setup: () => UseScene | undefined) {
   return () => {
@@ -75,7 +38,7 @@ export function withCanvasOptions(options: CanvasOptions) {
 
 export function withFeatures(features: Partial<RenderConfig>) {
   const app = requireApp("withFeatures");
-  Object.assign(app.features, features);
+  app.configure(features);
 }
 
 export function withLayers(layers: readonly Layer[]) {
@@ -133,7 +96,10 @@ function makeMaterializerHooks(app: Application): MaterializerHooks {
         },
         features: app.features as unknown as Record<string, unknown>,
         watchFeature(key, cb) {
-          return app.watchFeature ? app.watchFeature(key, cb) : () => {};
+          const r = app.features[key as keyof RenderConfig] as
+            | { subscribe(cb: (n: unknown, o: unknown) => void): () => void }
+            | undefined;
+          return r ? r.subscribe(cb) : () => {};
         },
         layers: app.layers,
         onDispose(cb) {
@@ -151,12 +117,8 @@ export async function runApp(
 ) {
   const app = useApp();
 
-  const { features, watch } = createReactiveFeatures(app.features);
-  app.features = features;
-  app.watchFeature = watch;
-
   if (options?.features) {
-    Object.assign(app.features, options.features);
+    app.configure(options.features);
   }
   await app.runOn(target, options);
 

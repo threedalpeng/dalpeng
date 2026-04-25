@@ -32,7 +32,7 @@ export default class GeometryPass implements RenderPass {
       colorAttachments: [0, 1, 2, 3],
       viewport: { x: 0, y: 0, w: width, h: height },
     });
-    if (features.debugGLVerbose) {
+    if (features.debugGLVerbose.value) {
       renderer.debugDumpState?.("after geometry beginPass");
       renderer.debugCheckError?.("after geometry beginPass");
     }
@@ -50,6 +50,6 @@ export default class GeometryPass implements RenderPass {
       r.render();
     });
     renderer.endPass();
-    if (features.debugGLVerbose) renderer.debugCheckError?.("after geometry endPass");
+    if (features.debugGLVerbose.value) renderer.debugCheckError?.("after geometry endPass");
   }
 }

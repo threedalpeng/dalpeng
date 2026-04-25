@@ -8,7 +8,6 @@ export {
   Camera,
   CameraFollow2D,
   Easings,
-  EventEmitter,
   InputManager,
   Light,
   MeshBuilder,

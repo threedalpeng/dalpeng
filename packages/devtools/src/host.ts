@@ -1,11 +1,11 @@
 import type {
   Application,
   Component,
+  FeatureState,
   FrameStatsSummary,
   GameEntity,
   LogEntry,
   ReadonlyRef,
-  RenderConfig,
   Scene,
 } from "@dalpeng/core";
 
@@ -58,7 +58,7 @@ export interface DevToolsHost {
   readonly app: ReadonlyRef<Application | null>;
   readonly frameStats: ReadonlyRef<FrameStatsSummary>;
   readonly activeScene: ReadonlyRef<Scene | null>;
-  readonly features: RenderConfig;
+  readonly features: FeatureState;
   readonly entities: ReadonlyRef<readonly GameEntity[]>;
   readonly logs: ReadonlyRef<readonly LogEntry[]>;
   readonly patches: ReadonlyRef<readonly AnyPatch[]>;

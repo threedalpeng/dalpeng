@@ -129,9 +129,14 @@ export default class RenderPipeline implements PipelineIntrospection {
     resources.ensureSize(renderer, width, height);
     renderer.setViewport(0, 0, width, height);
 
-    if (features.ibl && features.iblHdrUrl && !this.#iblPrecompute.resources && !this.#iblPending) {
+    if (
+      features.ibl.value &&
+      features.iblHdrUrl.value &&
+      !this.#iblPrecompute.resources &&
+      !this.#iblPending
+    ) {
       this.#iblPending = true;
-      this.initIBL(renderer, features.iblHdrUrl).then(() => {
+      this.initIBL(renderer, features.iblHdrUrl.value).then(() => {
         this.#iblPending = false;
       });
     }

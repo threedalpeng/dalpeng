@@ -1,4 +1,4 @@
-import { computed, ref, type ReadonlyRef } from "../runtime/reactive";
+import { computed, ref, type ReadonlyRef } from "../runtime/flow";
 
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error";
 export type LogModule = "render" | "shader" | "gl" | "animation" | "asset" | "app";

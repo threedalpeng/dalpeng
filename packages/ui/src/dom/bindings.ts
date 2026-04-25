@@ -1,4 +1,5 @@
 import {
+  batch,
   hasActiveCleanupScope,
   isRef,
   registerCleanup,
@@ -142,8 +143,15 @@ export function listen(
   handler: EventListener,
   opts?: AddEventListenerOptions
 ): Cleanup {
-  target.addEventListener(event, handler, opts);
-  return autoRegister(() => target.removeEventListener(event, handler, opts));
+  // Wrap in batch so ref / dispatcher writes inside the handler defer
+  // subscriber fires to a single boundary drain instead of cascading sync
+  // through the DOM event's call stack. The handler itself still runs
+  // synchronously (so preventDefault / stopPropagation still work).
+  const wrapped: EventListener = (ev) => {
+    batch(() => handler(ev));
+  };
+  target.addEventListener(event, wrapped, opts);
+  return autoRegister(() => target.removeEventListener(event, wrapped, opts));
 }
 
 /**

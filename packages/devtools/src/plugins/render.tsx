@@ -1,30 +1,25 @@
-import { ref, watch, type Application, type Ref, type RenderConfig } from "@dalpeng/core";
+import { watch, type Application, type Ref, type RenderConfig } from "@dalpeng/core";
 import { defineUI, Range, Select, Toggle } from "@dalpeng/ui";
 import { Section } from "@dalpeng/ui/dom";
 import type { DevToolsHost } from "../host";
 import type { DevToolsPlugin } from "../plugin";
 import { definePlugin } from "../plugin";
 
-// ─── featureRef: Application.features[key] ↔ Ref two-way binding ─────────
-//
-// Application.features (RenderConfig) is plain mutation — the renderer reads
-// it every frame. DevTools wants reactive atoms (Toggle / Range / Select)
-// bound to each knob; featureRef bridges the gap. Writes from the Ref
-// propagate to app.features; reads reflect the last known value. External
-// mutations to app.features won't push back (no getter/setter interception);
-// DevTools is the only writer in practice.
-
+// Application.features[key] is already a `Ref<RenderConfig[K]>` (post
+// Ref-based feature state) — this helper just seeds the Ref to a UI-visible
+// fallback when it's still `undefined` (renderer default not yet materialized),
+// then widens the type for atoms that require non-nullable sources (Range /
+// Select). External mutations propagate automatically via the Ref protocol.
 function featureRef<K extends keyof RenderConfig>(
   app: Application,
   key: K,
   fallback: NonNullable<RenderConfig[K]>
 ): Ref<NonNullable<RenderConfig[K]>> {
-  const initial = (app.features[key] ?? fallback) as NonNullable<RenderConfig[K]>;
-  const r = ref<NonNullable<RenderConfig[K]>>(initial);
-  watch(r, (v) => {
-    (app.features as unknown as Record<string, unknown>)[key as string] = v;
-  });
-  return r;
+  const r = app.features[key];
+  if (r.value === undefined) {
+    (r as { value: unknown }).value = fallback;
+  }
+  return r as Ref<NonNullable<RenderConfig[K]>>;
 }
 
 // ─── Plugin ───────────────────────────────────────────────────────────────

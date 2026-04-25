@@ -110,7 +110,7 @@ export default class MeshRenderer extends BaseRenderer {
     this.geometryShader.setUniformMat3("uTexTransform", this.material.texTransform);
 
     // Texture flags: apply texture mask to bits 0-3, preserve HAS_TANGENT (bit 4) and OCCLUSION (bit 5) unconditionally
-    const texMask = this.currentApp.features.textureMask ?? 0xf;
+    const texMask = this.currentApp.features.textureMask.value ?? 0xf;
     const maskedTexBits = this.material.texFlags & texMask & 0xf;
     const keepBits = this.material.texFlags & ~0xf; // bits 4+ (HAS_TANGENT, OCCLUSION)
     this.geometryShader.setUniform1i("uTexFlags", maskedTexBits | keepBits);

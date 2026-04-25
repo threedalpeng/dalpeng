@@ -9,7 +9,7 @@ export default class FxaaPass implements RenderPass {
   }
 
   shouldRun(ctx: RenderFrameContext): boolean {
-    return !!ctx.features.fxaa;
+    return !!ctx.features.fxaa.value;
   }
 
   execute(ctx: RenderFrameContext): void {

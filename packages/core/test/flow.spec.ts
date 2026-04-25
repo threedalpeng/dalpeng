@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { computed, isRef, ref, watch } from "../src/runtime/reactive";
+import { computed, isRef, ref } from "../src/runtime/flow";
+import { watch } from "../src/runtime/pipeline";
 
 describe("ref", () => {
   it("stores and updates value", () => {
