@@ -31,7 +31,6 @@ export default class Scene {
 
   _pendingRootDescriptors: AppNode[] = [];
 
-  rootEntities: { [key: number]: GameEntity } = {};
   #entities = new Set<GameEntity>();
   #tagMap = new Map<string, Set<GameEntity>>();
 
@@ -41,16 +40,24 @@ export default class Scene {
     return Array.from(this.#entities);
   });
 
+  /**
+   * Iterate root-level entities (no parent). Filtered live from the unified
+   * `#entities` set — no separate book-keeping to drift out of sync.
+   */
+  *rootEntities(): IterableIterator<GameEntity> {
+    for (const e of this.#entities) {
+      if (e.parent === null) yield e;
+    }
+  }
+
   addEntity(entity: GameEntity) {
     entity.detach();
     entity.scene = this;
-    this.rootEntities[entity.id] = entity;
     this._attachEntityHierarchy(entity);
     return this;
   }
 
   removeEntity(entity: GameEntity) {
-    delete this.rootEntities[entity.id];
     this._detachEntityHierarchy(entity);
     return this;
   }

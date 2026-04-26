@@ -570,8 +570,8 @@ export default class Application {
   }
 
   switchScene(oldScene: Scene, newSceneFactory: () => Scene): void {
-    for (const entityId of Object.keys(oldScene.rootEntities)) {
-      this.#executeDestroy(oldScene.rootEntities[Number(entityId)]);
+    for (const root of Array.from(oldScene.rootEntities())) {
+      this.#executeDestroy(root);
     }
     this.#flushLifecycleQueue();
     this.removeScene(oldScene);
@@ -593,8 +593,8 @@ export default class Application {
       this.#materializer.materializeRoots(newScene, pending as unknown as LogicalDescriptor[]);
     }
 
-    for (const entityId of Object.keys(newScene.rootEntities)) {
-      const stack: GameEntity[] = [newScene.rootEntities[Number(entityId)]];
+    for (const root of newScene.rootEntities()) {
+      const stack: GameEntity[] = [root];
       while (stack.length) {
         const current = stack.pop()!;
         for (const script of current.getComponents(Script)) {
@@ -618,8 +618,8 @@ export default class Application {
     this.#disposeCallbacks.clear();
 
     for (const [, scene] of this.#sceneList) {
-      for (const entityId of Object.keys(scene.rootEntities)) {
-        this.#executeDestroy(scene.rootEntities[Number(entityId)]);
+      for (const root of Array.from(scene.rootEntities())) {
+        this.#executeDestroy(root);
       }
     }
     this.#sceneList.clear();
