@@ -1,6 +1,7 @@
 import type { RendererBackend } from "../gfx/RendererBackend";
 import type GfxSampler from "../gfx/Sampler";
 import type GfxTexture from "../gfx/Texture";
+import AssetCache from "./AssetCache";
 
 export interface TextureLoadOptions {
   srgb?: boolean;
@@ -9,18 +10,11 @@ export interface TextureLoadOptions {
 
 export default class TextureManager {
   #renderer!: RendererBackend;
-  #cache = new Map<string, GfxTexture>();
-  #loading = new Map<string, Promise<GfxTexture>>();
+  readonly #cache = new AssetCache<GfxTexture>({
+    dispose: (tex) => tex.dispose(),
+  });
   #placeholder!: GfxTexture;
   #defaultSampler!: GfxSampler;
-  #initPromise: Promise<void>;
-  #resolveInit!: () => void;
-
-  constructor() {
-    this.#initPromise = new Promise<void>((resolve) => {
-      this.#resolveInit = resolve;
-    });
-  }
 
   init(renderer: RendererBackend): void {
     this.#renderer = renderer;
@@ -43,7 +37,7 @@ export default class TextureManager {
       maxAnisotropy: 4,
     });
 
-    this.#resolveInit();
+    this.#cache.markReady();
   }
 
   get placeholder(): GfxTexture {
@@ -54,17 +48,8 @@ export default class TextureManager {
     return this.#defaultSampler;
   }
 
-  async load(url: string, opts?: TextureLoadOptions): Promise<GfxTexture> {
-    await this.#initPromise;
-    if (this.#cache.has(url)) return this.#cache.get(url)!;
-    if (this.#loading.has(url)) return this.#loading.get(url)!;
-
-    const promise = this.#doLoad(url, opts ?? {});
-    this.#loading.set(url, promise);
-    const tex = await promise;
-    this.#loading.delete(url);
-    this.#cache.set(url, tex);
-    return tex;
+  load(url: string, opts?: TextureLoadOptions): Promise<GfxTexture> {
+    return this.#cache.load(url, () => this.#doLoad(url, opts ?? {}));
   }
 
   get(url: string): GfxTexture | undefined {
@@ -84,20 +69,12 @@ export default class TextureManager {
    * this texture — the engine has no ref counting.
    */
   unload(url: string): boolean {
-    const tex = this.#cache.get(url);
-    if (!tex) return false;
-    tex.dispose();
-    this.#cache.delete(url);
-    return true;
+    return this.#cache.unload(url);
   }
 
   /** Release every cached texture. Does NOT touch the placeholder/sampler. */
   unloadAll(): void {
-    for (const [url, tex] of this.#cache) {
-      tex.dispose();
-      void url;
-    }
-    this.#cache.clear();
+    this.#cache.unloadAll();
   }
 
   async #doLoad(url: string, opts: TextureLoadOptions): Promise<GfxTexture> {
@@ -128,9 +105,7 @@ export default class TextureManager {
   }
 
   dispose(): void {
-    for (const tex of this.#cache.values()) tex.dispose();
-    this.#cache.clear();
-    this.#loading.clear();
+    this.#cache.dispose();
     this.#placeholder?.dispose();
     this.#defaultSampler?.dispose();
   }

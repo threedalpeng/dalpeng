@@ -14,6 +14,7 @@ import type {
 } from "../utils/gltf/GLTFDocument";
 import { GLTFParser } from "../utils/gltf/GLTFParser";
 import type { Mesh } from "../utils/mesh";
+import AssetCache from "./AssetCache";
 
 export interface GPUPrimitive {
   mesh: Mesh;
@@ -39,32 +40,19 @@ export interface ModelAsset {
 
 export default class ModelManager {
   #renderer!: RendererBackend;
-  #cache = new Map<string, ModelAsset>();
-  #loading = new Map<string, Promise<ModelAsset>>();
-  #initPromise: Promise<void>;
-  #resolveInit!: () => void;
-
-  constructor() {
-    this.#initPromise = new Promise<void>((resolve) => {
-      this.#resolveInit = resolve;
-    });
-  }
+  readonly #cache = new AssetCache<ModelAsset>({
+    dispose: (asset) => {
+      for (const tex of asset.textures) tex?.dispose();
+    },
+  });
 
   init(renderer: RendererBackend): void {
     this.#renderer = renderer;
-    this.#resolveInit();
+    this.#cache.markReady();
   }
 
-  async load(url: string): Promise<ModelAsset> {
-    await this.#initPromise;
-    if (this.#cache.has(url)) return this.#cache.get(url)!;
-    if (this.#loading.has(url)) return this.#loading.get(url)!;
-    const promise = this.#doLoad(url);
-    this.#loading.set(url, promise);
-    const asset = await promise;
-    this.#loading.delete(url);
-    this.#cache.set(url, asset);
-    return asset;
+  load(url: string): Promise<ModelAsset> {
+    return this.#cache.load(url, () => this.#doLoad(url));
   }
 
   get(url: string): ModelAsset | undefined {
@@ -81,28 +69,15 @@ export default class ModelManager {
    * through `TextureManager` are not affected — free them separately.
    */
   unload(url: string): boolean {
-    const asset = this.#cache.get(url);
-    if (!asset) return false;
-    for (const tex of asset.textures) tex?.dispose();
-    this.#cache.delete(url);
-    return true;
+    return this.#cache.unload(url);
   }
 
   unloadAll(): void {
-    for (const asset of this.#cache.values()) {
-      for (const tex of asset.textures) tex?.dispose();
-    }
-    this.#cache.clear();
+    this.#cache.unloadAll();
   }
 
   dispose(): void {
-    for (const asset of this.#cache.values()) {
-      for (const tex of asset.textures) {
-        tex?.dispose();
-      }
-    }
-    this.#cache.clear();
-    this.#loading.clear();
+    this.#cache.dispose();
   }
 
   async #doLoad(url: string): Promise<ModelAsset> {
