@@ -1,14 +1,29 @@
+import { createDispatcher, type Dispatcher, type EventMap } from "../runtime/dispatcher";
 import type { EntityInstance } from "../runtime/Instance";
 import type Scene from "../Scene.js";
 import Component, { type ComponentConstructor } from "./Component.js";
 import Entity from "./Entity.js";
 import Transform from "./Transform";
 
+/**
+ * Event shape carried by `GameEntity.emit/.on`. Extend by declaration merge:
+ *
+ *     declare module "@dalpeng/core" {
+ *       interface GameEntityEventMap {
+ *         hit: [amount: number];
+ *       }
+ *     }
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GameEntityEventMap extends EventMap {}
+
 export default class GameEntity extends Entity {
   static #gameEntityList = new Map<number, GameEntity>();
   #tag = "default";
   /** Per-entity component storage, keyed by constructor reference (not class name). */
   #componentsByType = new Map<ComponentConstructor<Component>, Component[]>();
+  /** Lazily allocated — most entities never emit, so we save the per-entity overhead. */
+  #events: Dispatcher<GameEntityEventMap> | null = null;
 
   constructor(name = "") {
     super();
@@ -78,7 +93,42 @@ export default class GameEntity extends Entity {
       }
     }
     this.#componentsByType.clear();
+    this.#events?.clear();
+    this.#events = null;
     GameEntity.#gameEntityList.delete(this.id);
+  }
+
+  // Event bus — entity-scoped, typed via GameEntityEventMap declaration merge.
+  // Cross-entity subscription: `other.on("hit", cb)`. No automatic bubbling —
+  // parent does not receive child events; pattern that explicitly via the
+  // sender's emit + a parent-side subscription. Listeners registered inside
+  // an active scope auto-cleanup with the scope.
+
+  on<K extends keyof GameEntityEventMap>(
+    event: K,
+    callback: (...args: GameEntityEventMap[K]) => void
+  ): () => void {
+    if (!this.#events) this.#events = createDispatcher<GameEntityEventMap>();
+    return this.#events.on(event, callback);
+  }
+
+  once<K extends keyof GameEntityEventMap>(
+    event: K,
+    callback: (...args: GameEntityEventMap[K]) => void
+  ): () => void {
+    if (!this.#events) this.#events = createDispatcher<GameEntityEventMap>();
+    return this.#events.once(event, callback);
+  }
+
+  off<K extends keyof GameEntityEventMap>(
+    event: K,
+    callback: (...args: GameEntityEventMap[K]) => void
+  ): void {
+    this.#events?.off(event, callback);
+  }
+
+  emit<K extends keyof GameEntityEventMap>(event: K, ...args: GameEntityEventMap[K]): void {
+    this.#events?.emit(event, ...args);
   }
 
   addComponent<Type extends Component>(type: ComponentConstructor<Type>): Type {

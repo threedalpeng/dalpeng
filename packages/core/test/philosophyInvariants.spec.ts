@@ -237,6 +237,48 @@ describe("Philosophy invariant — Component.on returns unsubscribe", () => {
   });
 });
 
+describe("Philosophy invariant — GameEntity event bus", () => {
+  it("emit notifies subscribers and returned unsub stops them", async () => {
+    const { default: GameEntity } = await import("../src/ecs/GameEntity");
+    const entity = new GameEntity();
+
+    let calls = 0;
+    let last: unknown[] = [];
+    const unsub = entity.on("ping", (...args) => {
+      calls++;
+      last = args;
+    });
+
+    entity.emit("ping", 1, "a");
+    expect(calls).toBe(1);
+    expect(last).toEqual([1, "a"]);
+
+    unsub();
+    entity.emit("ping", 2);
+    expect(calls).toBe(1);
+  });
+
+  it("emit on entity with no subscribers is a no-op (lazy dispatcher)", async () => {
+    const { default: GameEntity } = await import("../src/ecs/GameEntity");
+    const entity = new GameEntity();
+    expect(() => entity.emit("never")).not.toThrow();
+  });
+
+  it("remove() clears all entity-level subscribers", async () => {
+    const { default: GameEntity } = await import("../src/ecs/GameEntity");
+    const entity = new GameEntity();
+
+    let calls = 0;
+    entity.on("hit", () => calls++);
+    entity.emit("hit");
+    expect(calls).toBe(1);
+
+    entity.remove();
+    entity.emit("hit");
+    expect(calls).toBe(1);
+  });
+});
+
 describe("Philosophy invariant — scope stack supports nesting", () => {
   it("nested pushScope frames restore outer state when popped", async () => {
     const { pushScope, findScope } = await import("../src/runtime/scope");

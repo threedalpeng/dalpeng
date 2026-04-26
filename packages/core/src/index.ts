@@ -70,6 +70,7 @@ export type {
   ParsedSkin,
 } from "./utils/gltf/GLTFDocument";
 
+export type { GameEntityEventMap } from "./ecs/GameEntity";
 export { createDispatcher, type Dispatcher, type EventMap } from "./runtime/dispatcher";
 
 export {
