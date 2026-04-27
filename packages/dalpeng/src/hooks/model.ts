@@ -1,21 +1,28 @@
 import {
   Animator,
   Camera,
+  computed,
   GameEntity,
   Light,
   MeshRenderer,
+  ref,
   Skeleton,
   SkinnedMeshRenderer,
   Transform,
   type ModelAsset,
+  type ReadonlyRef,
 } from "@dalpeng/core";
 import { Quaternion, Vec3 } from "@dalpeng/math";
 import { requireEntity } from "../context";
+import type { LoadState } from "./texture";
 
 export interface ModelHandle {
   asset: ModelAsset | null;
   isLoaded: boolean;
   ready: Promise<ModelAsset>;
+  state: ReadonlyRef<LoadState>;
+  loading: ReadonlyRef<boolean>;
+  error: ReadonlyRef<unknown | null>;
 }
 
 /** Must be called inside defineEntity() setup. */
@@ -23,18 +30,28 @@ export function useModel(url: string): ModelHandle {
   const entity = requireEntity("useModel");
   const models = entity.currentApp.models;
 
+  const state = ref<LoadState>("loading");
+  const error = ref<unknown | null>(null);
+  const loading = computed(() => state.value === "loading");
+
   const handle: ModelHandle = {
     asset: null,
     isLoaded: false,
+    state,
+    loading,
+    error,
     ready: models
       .load(url)
       .then((asset) => {
         handle.asset = asset;
         handle.isLoaded = true;
+        state.value = "ready";
         return asset;
       })
       .catch((err: unknown) => {
         console.error("useModel failed:", url, err);
+        error.value = err;
+        state.value = "error";
         throw err;
       }),
   };

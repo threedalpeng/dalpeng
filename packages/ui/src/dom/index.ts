@@ -49,6 +49,7 @@ export {
 export { Menu, type MenuItem, type MenuOpts } from "./composites/Menu";
 export { Row, type RowProps } from "./composites/Row";
 export { Section, type SectionProps } from "./composites/Section";
+export { Suspense, type SuspenseProps } from "./composites/Suspense";
 export { ThemeProvider, type ThemeProviderProps } from "./composites/ThemeProvider";
 export {
   Toolbar,

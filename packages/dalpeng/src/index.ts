@@ -95,6 +95,7 @@ export {
   Select,
   Show,
   Split,
+  Suspense,
   Tabs,
   Text,
   ThemeProvider,
