@@ -4,10 +4,12 @@ import {
   MeshBuilder,
   MeshRenderer,
   Script,
+  Transform,
   type AppNode,
   type Component,
   type EntityNode,
 } from "@dalpeng/core";
+import type { Quaternion, Vec3 } from "@dalpeng/math";
 import { getThisUI as uiGetActiveScope, withLayer as uiWithLayer } from "@dalpeng/ui";
 import { getThisEntity, hasActiveCleanupScope, registerCleanup, requireEntity } from "../context";
 
@@ -43,6 +45,25 @@ export function useMesh(
   renderer.mesh = MeshBuilder[type]();
   init?.(renderer);
   return renderer;
+}
+
+export interface TransformInit {
+  position?: Vec3;
+  rotation?: Quaternion;
+  scale?: Vec3;
+}
+
+/**
+ * Shortcut for the very common `useComponent(Transform, (t) => { ... })`
+ * pattern. Initial position / rotation / scale are applied at setup; for
+ * runtime mutation use the returned Transform directly.
+ */
+export function useTransform(init?: TransformInit): Transform {
+  return useComponent(Transform, (t) => {
+    if (init?.position) t.position = init.position;
+    if (init?.rotation) t.rotation = init.rotation;
+    if (init?.scale) t.scale = init.scale;
+  });
 }
 
 export function onUpdate(update: () => void): () => void {
