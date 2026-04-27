@@ -51,6 +51,7 @@ export type {
   PassTiming,
   Toast,
 } from "./debug";
+export type { RenderTarget, RenderTargetDescriptor } from "./gfx/RenderTarget";
 export type { default as GfxTexture } from "./gfx/Texture";
 export type { ParticleEmitterConfig } from "./graphics/ParticleEmitter";
 export type { SpriteAnimationClip } from "./graphics2d/SpriteAnimationClip";

@@ -8,6 +8,7 @@ export * from "./event";
 export * from "./gameEntity";
 export * from "./input";
 export * from "./model";
+export * from "./renderTarget";
 export * from "./scene";
 export * from "./sceneTransition";
 export * from "./sprite2d";
