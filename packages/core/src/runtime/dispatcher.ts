@@ -10,16 +10,7 @@ export interface Dispatcher<E extends EventMap = EventMap> {
   clear(event?: keyof E): void;
 }
 
-/**
- * Create a typed event dispatcher. `.on` / `.once` returns an Unsubscribe
- * function and, when called inside an active cleanup scope, auto-registers
- * the unsubscribe so the listener detaches when the scope (entity / UI /
- * explicit cleanup frame) disposes.
- *
- * Replaces the previous `EventEmitter` utility. API-shape-compatible so
- * existing `Component.on/.emit` / `scene.events.on/.emit` call sites work
- * without change — the only behavioral difference is scope auto-cleanup.
- */
+/** Typed event dispatcher. `.on` / `.once` auto-register cleanup with the active scope. */
 export function createDispatcher<E extends EventMap = EventMap>(): Dispatcher<E> {
   const listeners = new Map<keyof E, Set<(...args: any[]) => void>>();
 
@@ -53,7 +44,7 @@ export function createDispatcher<E extends EventMap = EventMap>(): Dispatcher<E>
     emit(event, ...args) {
       const set = listeners.get(event);
       if (!set) return;
-      // Snapshot — a listener may mutate the set (e.g., unsubscribe itself).
+      // A listener may unsubscribe itself; snapshot to avoid live-set mutation.
       const snapshot = Array.from(set);
       for (let i = 0; i < snapshot.length; i++) snapshot[i](...(args as any[]));
     },

@@ -10,21 +10,16 @@ import { requireEntity } from "../context";
 export type LoadState = "loading" | "ready" | "error";
 
 export interface TextureHandle {
-  /** Resolved texture, null until load completes. Plain field for hot-path reads. */
+  /** Plain-field hot-path read; null until ready. */
   texture: GfxTexture | null;
-  /** Plain-field convenience mirror of `state.value === "ready"`. */
+  /** Plain mirror of `state.value === "ready"`. */
   isLoaded: boolean;
-  /** Promise of the resolved texture — for `await` patterns. */
   ready: Promise<GfxTexture>;
-  /** Reactive load state. Subscribe via `<Suspense pending={...}>` or watch(). */
   state: ReadonlyRef<LoadState>;
-  /** Convenience: true while state is "loading". */
   loading: ReadonlyRef<boolean>;
-  /** Last load error if state is "error". */
   error: ReadonlyRef<unknown | null>;
 }
 
-/** Must be called inside defineEntity() setup. */
 export function useTexture(url: string, opts?: TextureLoadOptions): TextureHandle {
   const entity = requireEntity("useTexture");
   const textures = entity.currentApp.textures;

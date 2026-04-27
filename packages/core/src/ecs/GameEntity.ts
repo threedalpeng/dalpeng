@@ -5,15 +5,7 @@ import Component, { type ComponentConstructor } from "./Component.js";
 import Entity from "./Entity.js";
 import Transform from "./Transform";
 
-/**
- * Event shape carried by `GameEntity.emit/.on`. Extend by declaration merge:
- *
- *     declare module "@dalpeng/core" {
- *       interface GameEntityEventMap {
- *         hit: [amount: number];
- *       }
- *     }
- */
+/** Extend via declaration merge: `interface GameEntityEventMap { hit: [n: number] }`. */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GameEntityEventMap extends EventMap {}
 
@@ -22,7 +14,7 @@ export default class GameEntity extends Entity {
   #tag = "default";
   /** Per-entity component storage, keyed by constructor reference (not class name). */
   #componentsByType = new Map<ComponentConstructor<Component>, Component[]>();
-  /** Lazily allocated — most entities never emit, so we save the per-entity overhead. */
+  // Lazy: most entities never emit, so skip the per-entity dispatcher alloc.
   #events: Dispatcher<GameEntityEventMap> | null = null;
 
   constructor(name = "") {
@@ -98,11 +90,8 @@ export default class GameEntity extends Entity {
     GameEntity.#gameEntityList.delete(this.id);
   }
 
-  // Event bus — entity-scoped, typed via GameEntityEventMap declaration merge.
-  // Cross-entity subscription: `other.on("hit", cb)`. No automatic bubbling —
-  // parent does not receive child events; pattern that explicitly via the
-  // sender's emit + a parent-side subscription. Listeners registered inside
-  // an active scope auto-cleanup with the scope.
+  // No bubbling: parents don't receive child events. Cross-entity uses
+  // `other.on(...)` directly. Listeners auto-clean when in an active scope.
 
   on<K extends keyof GameEntityEventMap>(
     event: K,

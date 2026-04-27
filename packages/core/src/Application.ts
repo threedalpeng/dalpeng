@@ -669,11 +669,9 @@ export default class Application {
       Time._updateDelta(t);
       const dt = Time.delta();
 
-      // Mutation window — implicit batch. All ref writes / event emits from
-      // input, script updates, and lifecycle callbacks defer their subscriber
-      // fires to the boundary (end of batch). This yields frame-synchronous
-      // consistency: render sees fully-propagated state, ref subscribers fire
-      // once per frame regardless of how many times a ref was written.
+      // Mutation window: ref writes during input/update/lifecycle defer their
+      // subscriber fires to the batch boundary, so render sees fully-
+      // propagated state and N writes collapse to 1 fire.
       batch(() => {
         this.forEachActive((app) => app.input.poll());
         this.forEachActive((app) => app.#flushPendingStarts());
@@ -689,8 +687,7 @@ export default class Application {
         this.forEachActive((app) => app.#flushLifecycleQueue());
         this.forEachActive((app) => app.#flushPendingStarts());
       });
-      // Boundary: batch exits here — pending reactive queue drains in
-      // topological (dep → derivative) order before the stable window begins.
+      // Boundary: queue drains topologically (deps before derivatives) here.
 
       this.forEachActive((app) => app.#preRender());
       this.forEachActive((app) => app.#fireFrameHook("beforeRender", dt));

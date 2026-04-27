@@ -40,10 +40,7 @@ export default class Scene {
     return Array.from(this.#entities);
   });
 
-  /**
-   * Iterate root-level entities (no parent). Filtered live from the unified
-   * `#entities` set — no separate book-keeping to drift out of sync.
-   */
+  /** Roots are filtered live from `#entities` rather than tracked separately. */
   *rootEntities(): IterableIterator<GameEntity> {
     for (const e of this.#entities) {
       if (e.parent === null) yield e;

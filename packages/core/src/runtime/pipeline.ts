@@ -1,32 +1,21 @@
 import { ref, type ReadonlyRef } from "./flow";
 import { hasActiveCleanupScope, registerCleanup } from "./scope";
 
-/**
- * Watch sources — either a single Ref or a tuple of Refs. Tuple form emits
- * an array of the current values whenever any source changes.
- */
+/** Single ref, or a tuple emitting `[r1.value, r2.value, ...]` on any change. */
 export type Source<T> = ReadonlyRef<T> | readonly ReadonlyRef<unknown>[];
 
 type Downstream<T> = (value: T) => void;
-// An operator is a factory that, given a downstream callback, returns an
-// upstream callback. State (debounce timers, distinct lastValue, etc.) is
-// captured in the returned closure — instantiated per subscription.
+// Operator factory: wraps a downstream callback, returns an upstream one.
+// State (debounce timer, distinct last, ...) lives in the returned closure
+// and is instantiated per subscription.
 type OpFactory = (downstream: Downstream<unknown>) => Downstream<unknown>;
 
-/**
- * Per-subscription context — each terminal call creates one. Holds cleanups
- * owned by time-deferring operators (debounce timer, rAF handles) so the
- * subscription can fully tear down.
- */
+// Per-subscription cleanup pail for time-deferring ops (timers, rAF handles).
 interface OpContext {
   readonly cleanups: Array<() => void>;
 }
 
-/**
- * A lazy reactive pipeline. Operators accumulate; no subscription is created
- * until a terminal (`effect` / `toRef`) is called. Single terminal per
- * pipeline — composing helpers from a pipeline is done by re-constructing.
- */
+/** Lazy reactive pipeline. No subscription until a terminal is called. */
 export interface Pipeline<T> {
   map<U>(fn: (v: T) => U): Pipeline<U>;
   filter(pred: (v: T) => boolean): Pipeline<T>;
@@ -40,17 +29,8 @@ export interface Pipeline<T> {
   nextFrame(): Pipeline<T>;
   afterUpdate(): Pipeline<T>;
 
-  /**
-   * Subscribe with a side-effect callback. Returns an Unsubscribe that also
-   * auto-registers with the active cleanup scope if one is present.
-   */
   effect(cb: (value: T) => void): () => void;
-
-  /**
-   * Materialize the pipeline's output as a derived ReadonlyRef. Useful for
-   * time-shifted derived state (e.g., `watch(query).debounce(300).toRef()`).
-   * The returned Ref's subscription lifetime is scope-auto-cleaned.
-   */
+  /** Materialize as a derived Ref. Useful for time-shifted state. */
   toRef(): ReadonlyRef<T>;
 }
 
@@ -202,10 +182,8 @@ class PipelineImpl<T> implements Pipeline<T> {
   }
 
   afterRender(): Pipeline<T> {
-    // Double-rAF pattern: first rAF fires before next paint; second rAF runs
-    // after the browser has composited, which aligns with "after this frame's
-    // render has been committed". Suitable for triggering animations in
-    // response to state that was just rendered.
+    // Double rAF: first fires before paint, second after compositing — i.e.
+    // "after this frame's render committed".
     return this.#extendWithCleanup<T>((down, ctx) => {
       const pending: number[] = [];
       ctx.cleanups.push(() => {
@@ -229,10 +207,8 @@ class PipelineImpl<T> implements Pipeline<T> {
   }
 
   afterUpdate(): Pipeline<T> {
-    // Microtask — drains after current synchronous work (including the rest
-    // of the mutation window) but before yielding to the browser. In the
-    // frame loop this fires before preRender. Outside the loop it fires
-    // immediately at next microtask boundary.
+    // Microtask: drains after the current sync stack, before browser yield.
+    // Inside the frame loop this lands before preRender.
     return this.#extend<T>((down) => (v) => {
       queueMicrotask(() => down(v));
     });
@@ -264,23 +240,16 @@ class PipelineImpl<T> implements Pipeline<T> {
     return out as ReadonlyRef<T>;
   }
 
-  // Like #extend but passes an op context so the operator can register
-  // cleanups (e.g., debounce clears pending timer on unsubscribe).
+  // Variant that threads compile-time ctx into the op via the
+  // `currentCompileCtx` side-channel — keeps OpFactory's signature uniform.
   #extendWithCleanup<U>(
     factory: (down: Downstream<unknown>, ctx: OpContext) => Downstream<unknown>
   ): Pipeline<U> {
-    // We stash the factory and provide ctx at compile time. The wrapper op
-    // accepts a Downstream but we intercept to thread ctx in.
-    const wrappedFactory: OpFactory = (down) => {
-      // ctx is injected via a side-channel at compile time
-      return factory(down, currentCompileCtx as OpContext);
-    };
+    const wrappedFactory: OpFactory = (down) => factory(down, currentCompileCtx as OpContext);
     return this.#extend<U>(wrappedFactory);
   }
 
   #compile(finalCb: Downstream<unknown>, ctx: OpContext): Downstream<unknown> {
-    // Compose ops right-to-left. Each op wraps the downstream callback
-    // produced so far, returning a new upstream callback.
     currentCompileCtx = ctx;
     try {
       let emit: Downstream<unknown> = finalCb;
@@ -293,15 +262,11 @@ class PipelineImpl<T> implements Pipeline<T> {
     }
   }
 
+  // For toRef(): synchronous ops produce an initial value; time-deferring ops
+  // (debounce / throttleFrame / nextFrame / afterRender / afterUpdate) leave
+  // captured undefined until their first deferred emit lands. Any timer / rAF
+  // scheduled during synthesis is cancelled before return.
   #initialValue(): T | undefined {
-    // Synthesize the initial emit by running the source's current value
-    // through the pipeline. Synchronous ops (map / filter / distinct / take /
-    // skip) fire immediately; time-deferring ops (debounce / throttleFrame /
-    // nextFrame / afterRender / afterUpdate) schedule but do NOT synthesize a
-    // synchronous value — for those, the ref stays at whatever captured is
-    // (undefined if none synchronous) until the first deferred emit lands.
-    //
-    // We throw away any timing state set during synthesis (cleanup in ctx).
     const ctx: OpContext = { cleanups: [] };
     let captured: T | undefined;
     const emit = this.#compile((v) => {
@@ -310,18 +275,16 @@ class PipelineImpl<T> implements Pipeline<T> {
     try {
       emit(readSource(this.#source));
     } catch {
-      // Synthesis failure is non-fatal — ref starts undefined.
+      // Synthesis failure is non-fatal: ref starts undefined.
     }
     for (const c of ctx.cleanups) c();
     return captured;
   }
 }
 
-// Side-channel for passing compile-time ctx into operator factories without
-// widening the OpFactory type. Only set during #compile.
+// Compile-time ctx side-channel — set only during #compile, lets factories
+// reach OpContext without widening OpFactory's signature.
 let currentCompileCtx: OpContext | null = null;
-
-// ─── watch() with dual signatures ───────────────────────────────────────
 
 export function watch<T>(
   source: ReadonlyRef<T>,
@@ -342,7 +305,6 @@ export function watch(
   cb?: (v: unknown, old: unknown) => void,
   opts?: { immediate?: boolean }
 ): Pipeline<unknown> | (() => void) {
-  // Short form: watch(ref, cb) — direct subscription, no pipeline
   if (cb !== undefined) {
     if (Array.isArray(source)) {
       throw new TypeError(
@@ -360,6 +322,5 @@ export function watch(
     return unsubscribe;
   }
 
-  // Pipeline form
   return new PipelineImpl<unknown>(source);
 }

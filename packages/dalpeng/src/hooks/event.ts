@@ -28,10 +28,8 @@ export function emitSceneEvent<E extends EventMap, K extends keyof E>(
 }
 
 /**
- * Subscribe to an event on `target` entity from inside a `defineEntity` setup.
- * Auto-unsubscribes when the calling entity is destroyed (not when `target` is
- * destroyed — that is handled by `target` clearing its own dispatcher on
- * remove). Use this when one entity wants to react to events from another.
+ * Subscribe to events from `target` and auto-unsub on the CALLING entity's
+ * destroy (target's destroy is handled by target's own dispatcher cleanup).
  */
 export function useEntityEvent<K extends keyof GameEntityEventMap>(
   target: GameEntity,
@@ -43,10 +41,7 @@ export function useEntityEvent<K extends keyof GameEntityEventMap>(
   onDestroy(unsub);
 }
 
-/**
- * Emit an event on the current entity (the one whose `defineEntity` setup is
- * active). Cross-entity emits are direct — call `other.emit(event, ...args)`.
- */
+/** Emit on the current entity. Cross-entity: call `other.emit(...)` directly. */
 export function emitEntityEvent<K extends keyof GameEntityEventMap>(
   event: K,
   ...args: GameEntityEventMap[K]

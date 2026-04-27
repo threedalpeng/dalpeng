@@ -3,40 +3,21 @@ import { requireEntity } from "../context";
 import { onDestroy } from "./gameEntity";
 
 export interface RenderTargetHandle {
-  /** Color attachment 0 — the texture other materials sample from. */
   readonly texture: GfxTexture;
-  /** Underlying engine render target. Pass to pipeline passes that target an RT. */
   readonly target: RenderTarget;
-  /** Current width in pixels (drawable units). */
   readonly width: number;
-  /** Current height in pixels (drawable units). */
   readonly height: number;
-  /**
-   * Recreate the target at a new size. Existing texture/target are disposed
-   * and replaced; consumers holding `.texture` references must re-read.
-   */
+  /** Dispose old + recreate at new size. Consumers holding `.texture` must re-read. */
   resize(width: number, height: number): void;
-  /** Dispose now. Auto-called on entity destroy if used inside defineEntity. */
   dispose(): void;
 }
 
 export interface RenderTargetOptions {
-  /** Texture format for the color attachment. Defaults to "rgba8unorm". */
   format?: "rgba8unorm" | "srgba8unorm" | "rgba16f";
-  /** Allocate a depth attachment alongside the color. Defaults to false. */
   depth?: boolean;
 }
 
-/**
- * Allocate a GPU render target sized `width × height` and bind its lifetime
- * to the calling entity. The returned `texture` can be sampled by other
- * materials (mini-map, mirror, in-game CCTV, etc.).
- *
- * Pipeline integration — having a Camera render INTO this target — is a
- * separate concern and lands in a follow-up. For now the handle lets users
- * own the GPU resource lifecycle through dalpeng's hook discipline; advanced
- * code can drive the renderer manually against `target`.
- */
+/** Allocate a GPU render target bound to the calling entity's lifetime. */
 export function useRenderTarget(
   width: number,
   height: number,

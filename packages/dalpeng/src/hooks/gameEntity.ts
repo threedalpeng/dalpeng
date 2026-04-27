@@ -53,11 +53,7 @@ export interface TransformInit {
   scale?: Vec3;
 }
 
-/**
- * Shortcut for the very common `useComponent(Transform, (t) => { ... })`
- * pattern. Initial position / rotation / scale are applied at setup; for
- * runtime mutation use the returned Transform directly.
- */
+/** Shortcut for `useComponent(Transform, (t) => {...})` with init pose. */
 export function useTransform(init?: TransformInit): Transform {
   return useComponent(Transform, (t) => {
     if (init?.position) t.position = init.position;

@@ -1,19 +1,6 @@
-/**
- * Generic asset cache with race-safe load coalescing and an init gate.
- *
- * Concurrent `load(key, loader)` calls for the same key share a single in-
- * flight promise. The init gate lets a manager defer loads until its backend
- * dependency (renderer, GL context, etc.) is ready. The optional disposer
- * runs on unload / dispose so callers don't have to write the same teardown
- * loop in every manager.
- */
 export interface AssetCacheConfig<T> {
-  /** Disposer invoked when an entry is unloaded or the cache is disposed. */
   dispose?(value: T): void;
-  /**
-   * If true, the cache is ready immediately and `load()` does not wait on
-   * `markReady()`. Use for caches that have no async backend init step.
-   */
+  /** When true, skip the init gate. Caches with no async backend dependency. */
   readyOnConstruct?: boolean;
 }
 
@@ -34,14 +21,14 @@ export default class AssetCache<T> {
     if (config.readyOnConstruct) this.markReady();
   }
 
-  /** Open the init gate so subsequent `load()` calls proceed. Idempotent. */
+  /** Idempotent. */
   markReady(): void {
     if (this.#ready) return;
     this.#ready = true;
     this.#resolveInit();
   }
 
-  /** Race-safe load. Coalesces concurrent calls for the same `key`. */
+  /** Concurrent calls for the same `key` share one in-flight promise. */
   async load(key: string, loader: () => Promise<T>): Promise<T> {
     await this.#initPromise;
     const cached = this.#cache.get(key);
@@ -68,12 +55,11 @@ export default class AssetCache<T> {
     return this.#cache.has(key);
   }
 
-  /** Devtools introspection. Returns live entries — do not mutate. */
+  /** Live entries; do not mutate. */
   entries(): Iterable<[string, T]> {
     return this.#cache.entries();
   }
 
-  /** Release one entry; runs disposer if configured. Returns true on hit. */
   unload(key: string): boolean {
     const value = this.#cache.get(key);
     if (value === undefined) return false;
@@ -82,7 +68,6 @@ export default class AssetCache<T> {
     return true;
   }
 
-  /** Release every cached entry. Loading promises are left to settle naturally. */
   unloadAll(): void {
     if (this.#config.dispose) {
       for (const value of this.#cache.values()) this.#config.dispose(value);
@@ -90,7 +75,6 @@ export default class AssetCache<T> {
     this.#cache.clear();
   }
 
-  /** Full teardown — drops cache + in-flight map + runs disposer. */
   dispose(): void {
     this.unloadAll();
     this.#loading.clear();

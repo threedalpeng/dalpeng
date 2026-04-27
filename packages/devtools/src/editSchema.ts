@@ -38,15 +38,9 @@ export function getComponentSchema(component: Component): ComponentSchema | null
 }
 
 /**
- * Stable, human-readable name for a component. Prefers the schema's
- * displayName, falls back to `constructor.name`. Every consumer that needs
- * to show or persist a component identity should call this. Never read
- * `component.constructor.name` directly.
- *
- * Production minification rewrites class names (e.g. `Health` to `mt`),
- * which breaks patch persistence keyed by component type. We warn once per
- * unregistered ctor so the issue surfaces during development; the cure is
- * to call `registerComponentSchema(MyComponent, { displayName: "..." })`.
+ * Stable component identity for Inspector + patch persistence. Prefers the
+ * registered schema's displayName; falls back to `constructor.name`, which
+ * minifies in prod and breaks persistence — hence the dev warning.
  */
 export function componentDisplayName(component: Component): string {
   const ctor = component.constructor as ComponentCtor;
@@ -67,7 +61,6 @@ function warnMissingDisplayName(ctor: ComponentCtor): void {
   );
 }
 
-/** True if a schema is registered for this component's class. */
 export function hasComponentSchema(component: Component): boolean {
   return registry.has(component.constructor as ComponentCtor);
 }
